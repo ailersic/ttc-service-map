@@ -1,10 +1,13 @@
-body {
+html, body {
     margin: 0;
+    padding: 0;
+    height: 100%;
     font-family: Futura, Trebuchet MS, Arial, sans-serif;
     background: #000000;
-    max-height: 100vh;
     box-sizing: border-box;
     color: white;
+    display: flex;
+    flex-direction: column;
 }
 
 h1 {
@@ -12,8 +15,11 @@ h1 {
     font-size: 2.5em;
     color: white;
     font-weight: 300;
-    height: 40px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
 }
+
 h2 {
     text-align: left;
     color: white;
@@ -21,13 +27,13 @@ h2 {
 }
 
 #map {
-    height: calc(100vh - 200px);
+    flex: 1; /* Allows the map to take up remaining space */
     width: 100%;
 }
 
 #reportDisruption {
-    height: 30px;
     width: 100%;
+    flex-shrink: 0;
 }
 
 .gm-ui-hover-effect { display: none !important; }
