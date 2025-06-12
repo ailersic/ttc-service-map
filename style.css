@@ -1,0 +1,33 @@
+body {
+    margin: 0;
+    font-family: Futura, Trebuchet MS, Arial, sans-serif;
+    background: #000000;
+    max-height: 100vh;
+    box-sizing: border-box;
+    color: white;
+}
+
+h1 {
+    text-align: center;
+    font-size: 2.5em;
+    color: white;
+    font-weight: 300;
+    height: 40px;
+}
+h2 {
+    text-align: left;
+    color: white;
+    font-weight: 300;
+}
+
+#map {
+    height: calc(100vh - 200px);
+    width: 100%;
+}
+
+#reportDisruption {
+    height: 30px;
+    width: 100%;
+}
+
+.gm-ui-hover-effect { display: none !important; }

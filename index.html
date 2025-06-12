@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTC Service Map</title>
+    <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+    <script src="icons.js"></script>
+    <script src="lines.js"></script>
+
+    <h1>UNOFFICIAL <img src="TTClogo.svg" style="height: 1em; vertical-align: baseline;"> SERVICE MAP</h1>
+    
+    <div id="map"></div>
+
+    <div id="reportDisruption">
+        <h2>Report a Service Disruption</h2>
+        <select name="lineSelect" id="lineSelect">
+            <option disabled selected value>Select a line...</option>
+        </select>
+        <select name="startStation" id="startStationSelect">
+            <option disabled selected value>From...</option></select>
+        <select name="endStation" id="endStationSelect">
+            <option disabled selected value>To...</option>
+        </select>
+        <select name="serviceReductionType" id="serviceReductionTypeSelect">
+            <option disabled selected value>Type of service disruption...</option>
+        </select>
+        <input type="text" id="serviceReductionDescription" placeholder="Description" autocomplete="off">
+        <button onclick="reportServiceReduction()">Report</button>
+    </div>
+
+    <script>
+        let lineSelectList = document.getElementById('lineSelect');
+        lines.forEach(function(line, index) {lineSelectList.add(new Option(line.name, index))});
+        lineSelectList.options[0].selected = true;
+
+        let serviceReductionTypeSelectList = document.getElementById('serviceReductionTypeSelect');
+        serviceReductionTypes.forEach(function(type, index) {
+            serviceReductionTypeSelectList.add(new Option(type.type, index));
+        });
+        serviceReductionTypeSelectList.options[0].selected = true;
+
+        document.getElementById('startStationSelect').options[0].selected = true;
+        document.getElementById('endStationSelect').options[0].selected = true;
+
+        lineSelectList.addEventListener('change', function() {
+            let lineIdx = this.value;
+            let startStationList = document.getElementById('startStationSelect');
+            let endStationList = document.getElementById('endStationSelect');
+            
+            // Clear existing options
+            startStationList.options.length = 1;
+            endStationList.options.length = 1;
+
+            // Populate start and end station dropdowns
+            lines[lineIdx].stations.forEach(function(station, index) {
+                startStationList.add(new Option(station.name, index));
+                endStationList.add(new Option(station.name, index));
+            });
+
+            startStationList.options[0].selected = true;
+            endStationList.options[0].selected = true;
+        });
+    </script>
+    
+    <script>
+        (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
+            key: "AIzaSyAb5I1R7e5z5bwjG_TLXKsaKd_jf6HaNf4",
+            v: "weekly",
+            // Use the 'v' parameter to indicate the version to use (weekly, beta, alpha, etc.).
+            // Add other bootstrap parameters as needed, using camel case.
+        });
+
+        let map;
+
+        async function initMap() {
+            const { Map } = await google.maps.importLibrary("maps");
+
+            map = new Map(document.getElementById("map"), {
+                center: { lat: 43.715, lng: -79.40833256158255 },
+                zoom: 12,
+            });
+
+            // Reduced speed zones
+            lines[0].addServiceReduction(6, 10, 0, "Reduced speed due to poor track condition.");
+            lines[0].addServiceReduction(14, 15, 0, "Reduced speed due to poor track condition.");
+            lines[0].addServiceReduction(30, 32, 0, "Reduced speed due to poor track condition.");
+            //lines[0].addServiceReduction(33, 35, 0, "Reduced speed due to poor track condition.");
+            lines[1].addServiceReduction(7, 8, 0, "Reduced speed due to poor track condition.");
+            lines[1].addServiceReduction(25, 26, 0, "Reduced speed due to poor track condition.");
+            lines[1].addServiceReduction(28, 29, 0, "Reduced speed due to poor track condition.");
+
+            lines[0].addServiceReduction(32, 37, 3, "Closing at 11 PM from Monday, June 9 to Thursday, June 12.");
+
+            lines[0].addServiceReduction(18, 20, 1, "Bypassing Osgoode because a disgruntled lawyer is holding the station hostage.");
+            lines[2].addServiceReduction(0, 5, 2, "Closed forever because this city is falling apart.");
+
+            refreshMap();
+        }
+
+        initMap();
+    </script>
+</body>
+</html>
