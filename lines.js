@@ -24,11 +24,12 @@ class ServiceReductionType {
 }
 
 const serviceReductionTypes = [
-    new ServiceReductionType("Delay", "rgb(255, 127, 0)", snail),
-    new ServiceReductionType("Bypass", "rgb(0, 0, 255)", diamond),
-    new ServiceReductionType("Cancellation", "rgb(255, 0, 0)", cross),
-    new ServiceReductionType("Early Closing", "rgb(0, 0, 255)", clock),
-    new ServiceReductionType("Late Opening", "rgb(0, 127, 255)", clock)
+    new ServiceReductionType("Delay", "rgb(200, 100, 0)", snail),
+    new ServiceReductionType("Bypass", "rgb(100, 100, 255)", diamond),
+    new ServiceReductionType("Suspension", "rgb(255, 75, 75)", cross),
+    new ServiceReductionType("Early Closing", "rgb(100, 100, 255)", clock),
+    new ServiceReductionType("Late Opening", "rgb(25, 127, 255)", clock),
+    new ServiceReductionType("Planned disruption", "rgb(255, 75, 75)", exclamation)
 ]
 
 class Line {
@@ -163,6 +164,10 @@ var lines = [
     )
 ];
 
+var allSegmentPolylines = [];
+var allReductionPolylines = [];
+var allMarkers = [];
+
 function reportServiceReduction() {
     let lineIdx = document.getElementById('lineSelect').value;
     let startStationIdx = document.getElementById('startStationSelect').value;
@@ -203,52 +208,72 @@ function reportServiceReduction() {
     document.getElementById('serviceReductionDescription').value = "";
 }
 
-var allPolylines = [];
-var allMarkers = [];
-
 function refreshMap() {
     // Clear existing markers and polylines
-    allPolylines.forEach(polyline => polyline.setMap(null));
+    allSegmentPolylines.forEach(polyline => polyline.setMap(null));
     allMarkers.forEach(marker => marker.setMap(null));
-    allPolylines = [];
+    allReductionPolylines.forEach(polyline => polyline.setMap(null));
+
+    allSegmentPolylines = [];
     allMarkers = [];
+    allReductionPolylines = [];
 
     // Re-render all lines
-    lines.forEach(line => 
-        renderLine(line)
-    );
+    renderLines();
 
-    allPolylines.forEach(polyline => polyline.setMap(map));
+    allSegmentPolylines.forEach(polyline => polyline.setMap(map));
     allMarkers.forEach(marker => marker.setMap(map));
+    allReductionPolylines.forEach(polyline => polyline.setMap(map));
 }
 
-function renderLine(line) {
-    // Draw the transit line
-    drawTransitLine(line);
-
-    // Add station markers
-    addStationMarkers(line);
+function renderLines() {
+    lines.forEach(line => {
+        addLineSegments(line);
+        addStationMarkers(line);
+        addServiceReductions(line);
+    });
 }
 
-function drawTransitLine(line) {
+function addLineSegments(line) {
     let normalServiceSegments = [[]];
+    let reducedServiceSegments = [[]];
     let iseg = 0;
+    let isegRed = 0;
+    let lastStationNormal = true;
+
     for (let i = 0; i < line.stations.length; i++) {
         let normalServiceFlag = true;
         for (let j = 0; j < line.serviceReductions.length; j++) {
-            if (i === line.serviceReductions[j].endStationIdx) {
-                iseg++;
-                normalServiceSegments.push([]);
-            }
-            if (i > line.serviceReductions[j].startStationIdx && i < line.serviceReductions[j].endStationIdx) {
+            if (i >= line.serviceReductions[j].startStationIdx && i < line.serviceReductions[j].endStationIdx) {
                 normalServiceFlag = false;
             }
         }
-        if (normalServiceFlag) {
-            normalServiceSegments[iseg].push(i);
+        
+        if (lastStationNormal == normalServiceFlag) {
+            if (normalServiceFlag) {
+                normalServiceSegments[iseg].push(i);
+            } else {
+                reducedServiceSegments[isegRed].push(i);
+            }
         }
+        else {
+            if (normalServiceFlag) {
+                iseg++;
+                normalServiceSegments.push([]);
+            }
+            else {
+                isegRed++;
+                reducedServiceSegments.push([]);
+            }
+            normalServiceSegments[iseg].push(i);
+            reducedServiceSegments[isegRed].push(i);
+        }
+
+        lastStationNormal = normalServiceFlag;
     }
 
+    // Create polylines for normal service segments
+    // These show infoboxes on mouseover
     for (let i = 0; i < normalServiceSegments.length; i++) {
         if (normalServiceSegments[i].length > 1) {
             let transitPolyLine = new google.maps.Polyline({
@@ -285,71 +310,28 @@ function drawTransitLine(line) {
             });
 
             // Store the polyline in the global array
-            allPolylines.push(transitPolyLine);
+            allSegmentPolylines.push(transitPolyLine);
         }
     }
 
-    for (let i = 0; i < line.serviceReductions.length; i++) {
-        const stationIdxs = [];
-        for (let j = line.serviceReductions[i].startStationIdx; j <= line.serviceReductions[i].endStationIdx; j++) {
-            stationIdxs.push(j);
-        }
-        let serviceReductionType = serviceReductionTypes[line.serviceReductions[i].typeIdx];
-
-        let serviceReductionPolyLine = new google.maps.Polyline({
-            path: stationIdxs.map(idx => ({
-                lat: line.stations[idx].lat,
-                lng: line.stations[idx].lng
-            })),
-            geodesic: true,
-            strokeColor: serviceReductionType.colour,
-            strokeOpacity: 1.0,
-            strokeWeight: 4,
-            icons: [{
-                icon: serviceReductionType.icon,
-                offset: '20px',
-                repeat: '50px',
-                fixedRotation: true
-            }]
-        });
-
-        const serviceReductionInfoWindow = new google.maps.InfoWindow();
-
-        serviceReductionPolyLine.addListener('mouseover', (event) => {
-            serviceReductionInfoWindow.setContent(`
-                <div style="color: black; font-weight: bold; text-align: center;">
-                    <div style="font-size: 14px; text-align: center;">${line.name}</div>
-                    <div style="font-size: 12px; margin-top: 4px; width: 300px; text-align: center;">
-                        ${serviceReductionType.type} from ${line.stations[line.serviceReductions[i].startStationIdx].name} to ${line.stations[line.serviceReductions[i].endStationIdx].name}
-                    </div>
-                    <div style="font-size: 11px; color: #666; margin-top: 4px; margin-bottom: 4px; width: 300px; text-align: center;">
-                        ${line.serviceReductions[i].description}
-                    </div>
-                    <button id="button_${i}">Delete</button>
-                </div>
-            `);
-            serviceReductionInfoWindow.setPosition(event.latLng);
-            serviceReductionInfoWindow.open(map);
-            
-            // Add event listener to the button after InfoWindow opens
-            google.maps.event.addListenerOnce(serviceReductionInfoWindow, 'domready', () => {
-                const button = document.getElementById(`button_${i}`);
-                if (button) {
-                    button.addEventListener('click', () => {
-                        line.delServiceReduction(i);
-                        serviceReductionInfoWindow.close();
-                        refreshMap();
-                    });
-                }
+    // Create polylines for reduced service segments
+    // These show no infoboxes
+    for (let i = 0; i < reducedServiceSegments.length; i++) {
+        if (reducedServiceSegments[i].length > 1) {
+            let transitPolyLine = new google.maps.Polyline({
+                path: reducedServiceSegments[i].map(idx => ({
+                    lat: line.stations[idx].lat,
+                    lng: line.stations[idx].lng
+                })),
+                geodesic: true,
+                strokeColor: line.colour,
+                strokeOpacity: 1.0,
+                strokeWeight: 4
             });
-        });
 
-        serviceReductionPolyLine.addListener('mouseout', () => {
-            serviceReductionInfoWindow.close();
-        });
-
-        // Store the polyline in the global array
-        allPolylines.push(serviceReductionPolyLine);
+            // Store the polyline in the global array
+            allSegmentPolylines.push(transitPolyLine);
+        }
     }
 }
 
@@ -359,13 +341,16 @@ function addStationMarkers(line) {
         let stationMarker = new google.maps.Marker({
             position: { lat: station.lat, lng: station.lng },
             map: map,
+            zIndex: -1,
             icon: {
                 path: google.maps.SymbolPath.CIRCLE,
                 scale: 3,
                 fillColor: '#FFFFFF',
-                fillOpacity: 1,
+                fillOpacity: 0.5,
                 strokeColor: '#000000',
-                strokeWeight: 2
+                strokeWeight: 2,
+                strokeOpacity: 0.5,
+                clickable: false
             }
         });
 
@@ -387,4 +372,74 @@ function addStationMarkers(line) {
         // Store the marker in the global array
         allMarkers.push(stationMarker);
     });
+}
+
+function createServiceReductionHandler(infoWindow, line, i) {
+    let serviceReductionType = serviceReductionTypes[line.serviceReductions[i].typeIdx];
+    
+    return function(event) {
+        infoWindow.setContent(`
+            <div style="color: black; font-weight: bold; text-align: center;">
+                <div style="font-size: 14px; text-align: center;">${line.name}</div>
+                <div style="font-size: 12px; margin-top: 4px; width: 300px; text-align: center;">
+                    ${serviceReductionType.type} from ${line.stations[line.serviceReductions[i].startStationIdx].name} to ${line.stations[line.serviceReductions[i].endStationIdx].name}
+                </div>
+                <div style="font-size: 11px; color: #666; margin-top: 4px; margin-bottom: 4px; width: 300px; text-align: center;">
+                    ${line.serviceReductions[i].description}
+                </div>
+                <button id="button_${i}">Delete</button>
+            </div>
+        `);
+        infoWindow.setPosition(event.latLng);
+        infoWindow.open(map);
+
+        // Add event listener to the button after InfoWindow opens
+        google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
+            const button = document.getElementById(`button_${i}`);
+            if (button) {
+                button.addEventListener('click', () => {
+                    line.delServiceReduction(i);
+                    infoWindow.close();
+                    refreshMap();
+                });
+            }
+        });
+    }
+}
+
+function addServiceReductions(line) {
+    // Create polylines for service reductions
+    // These show infoboxes on mouseover with information about the service reduction
+    for (let i = 0; i < line.serviceReductions.length; i++) {
+        const stationIdxs = [];
+        for (let j = line.serviceReductions[i].startStationIdx; j <= line.serviceReductions[i].endStationIdx; j++) {
+            stationIdxs.push(j);
+        }
+        let serviceReductionType = serviceReductionTypes[line.serviceReductions[i].typeIdx];
+
+        let serviceReductionPolyLine = new google.maps.Polyline({
+            path: stationIdxs.map(idx => ({
+                lat: line.stations[idx].lat,
+                lng: line.stations[idx].lng
+            })),
+            geodesic: true,
+            strokeColor: serviceReductionType.colour,
+            strokeOpacity: 0.3,
+            strokeWeight: 16,
+            icons: [{
+                icon: serviceReductionType.icon,
+                offset: '50%',
+                fixedRotation: true
+            }]
+        });
+
+        const serviceReductionInfoWindow = new google.maps.InfoWindow();
+        const serviceReductionHandler = createServiceReductionHandler(serviceReductionInfoWindow, line, i);
+
+        serviceReductionPolyLine.addListener('mouseover', serviceReductionHandler);
+        serviceReductionPolyLine.addListener('mouseout', () => { serviceReductionInfoWindow.close(); });
+
+        // Store the polyline in the global array
+        allReductionPolylines.push(serviceReductionPolyLine);
+    }
 }
