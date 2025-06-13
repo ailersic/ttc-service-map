@@ -24,12 +24,11 @@ class ServiceReductionType {
 }
 
 const serviceReductionTypes = [
-    new ServiceReductionType("Delay", "rgb(200, 100, 0)", snail),
-    new ServiceReductionType("Bypass", "rgb(100, 100, 255)", diamond),
-    new ServiceReductionType("Suspension", "rgb(255, 75, 75)", cross),
-    new ServiceReductionType("Early Closing", "rgb(100, 100, 255)", clock),
-    new ServiceReductionType("Late Opening", "rgb(25, 127, 255)", clock),
-    new ServiceReductionType("Planned disruption", "rgb(255, 75, 75)", exclamation)
+    new ServiceReductionType("Delays", "rgb(200, 100, 0)", snail),
+    new ServiceReductionType("Bypass", "rgb(100, 100, 255)", noentry),
+    new ServiceReductionType("Closed", "rgb(255, 75, 75)", cross),
+    new ServiceReductionType("Planned disruption", "rgb(100, 100, 255)", clock),
+    new ServiceReductionType("Alert", "rgb(255, 75, 75)", exclamation)
 ]
 
 class Line {
@@ -39,7 +38,41 @@ class Line {
         this.stations = stations;
         this.serviceReductions = [];
     }
-    addServiceReduction(startStationIdx, endStationIdx, typeIdx, description) {
+    addServiceReduction(startStation, endStation, effectDesc, description) {
+        let startStationIdx = this.stations.findIndex(station => station.name === startStation);
+        let endStationIdx = this.stations.findIndex(station => station.name === endStation);
+        let typeIdx = serviceReductionTypes.findIndex(type => type.type === effectDesc);
+
+        // If the type is not found, we try to interpret it
+        if (typeIdx === -1) {
+            if (effectDesc.toLowerCase().includes("closure")) {
+                if (description.toLowerCase().includes("will be")) {
+                    typeIdx = serviceReductionTypes.findIndex(typeObj => typeObj.type === "Planned disruption");
+                } else {
+                    typeIdx = serviceReductionTypes.findIndex(typeObj => typeObj.type === "Closed");
+                }
+            }
+            // more interpretation logic can be added here
+            // can also check for strings in description
+        }
+
+        // If the type is still not found, default to "Alert"
+        if (typeIdx === -1) {
+            typeIdx = serviceReductionTypes.findIndex(typeObj => typeObj.type === "Alert");
+        }
+
+        // If the start and end stations are the same, we expand the range by one station in each direction
+        if (startStationIdx === endStationIdx) {
+            startStationIdx = max(0, startStationIdx - 1);
+            endStationIdx = min(this.stations.length - 1, endStationIdx + 1);
+        }
+
+        if (startStationIdx > endStationIdx) {
+            let temp = startStationIdx;
+            startStationIdx = endStationIdx;
+            endStationIdx = temp;
+        }
+
         let serviceReduction = new ServiceReduction(
             startStationIdx,
             endStationIdx,
@@ -74,25 +107,25 @@ var lines = [
             new Station("Lawrence West", 43.71607620491878, -79.4442270314626),
             new Station("Glencairn", 43.70953037049754, -79.44122305518754),
             new Station("Eglinton West", 43.69873284217742, -79.43586106172029),
-            new Station("St. Clair West", 43.68378028148699, -79.41531235945945),
+            new Station("St Clair West", 43.68378028148699, -79.41531235945945),
             new Station("Dupont", 43.674812167696075, -79.40706011190075),
             new Station("Spadina", 43.6666836721813, -79.40379151979856),
-            new Station("St. George", 43.66753162794397, -79.39983394394515),
+            new Station("St George", 43.66753162794397, -79.39983394394515),
             new Station("Museum", 43.667001094688864, -79.39342228999425),
             new Station("Queen's Park", 43.65982914288105, -79.39041528757528),
-            new Station("St. Patrick", 43.65485383359176, -79.38832288888297),
+            new Station("St Patrick", 43.65485383359176, -79.38832288888297),
             new Station("Osgoode", 43.65083536237515, -79.3866308412332),
-            new Station("St. Andrew", 43.6476522582488, -79.38479965053693),
+            new Station("St Andrew", 43.6476522582488, -79.38479965053693),
             new Station("Union", 43.645205213069175, -79.38062332345591),
             new Station("King", 43.64915316616652, -79.3778703059319),
             new Station("Queen", 43.652389965280314, -79.37917263440282),
             new Station("Dundas", 43.656337119376246, -79.38091870872829),
             new Station("College", 43.66131086431013, -79.38307664264218),
             new Station("Wellesley", 43.66495708267232, -79.38456153203441),
-            new Station("Bloor-Yonge", 43.67026016107548, -79.38673613009153),
+            new Station("Bloor", 43.67026016107548, -79.38673613009153),
             new Station("Rosedale", 43.676963390798626, -79.3895103712672),
             new Station("Summerhill", 43.681990445499345, -79.39157534637779),
-            new Station("St. Clair", 43.688059621112565, -79.39410004447326),
+            new Station("St Clair", 43.688059621112565, -79.39410004447326),
             new Station("Davisville", 43.69828585917402, -79.39659973903765),
             new Station("Eglinton", 43.70674370334689, -79.39832509993391),
             new Station("Lawrence", 43.72509836615263, -79.40220833297154),
@@ -121,9 +154,9 @@ var lines = [
             new Station("Christie", 43.66356894014715, -79.41842770430013),
             new Station("Bathurst", 43.6651267566993, -79.41118571181181),
             new Station("Spadina", 43.6666836721813, -79.40379151979856),
-            new Station("St. George", 43.66753162794397, -79.39983394394515),
+            new Station("St George", 43.66753162794397, -79.39983394394515),
             new Station("Bay", 43.66969955004571, -79.38946192844412),
-            new Station("Bloor-Yonge", 43.67026016107548, -79.38673613009153),
+            new Station("Yonge", 43.67026016107548, -79.38673613009153),
             new Station("Sherbourne", 43.67232921261314, -79.3768831623304),
             new Station("Castle Frank", 43.67376265187694, -79.36818662216531),
             new Station("Broadview", 43.67625521238776, -79.35875712452531),
@@ -168,46 +201,6 @@ var allSegmentPolylines = [];
 var allReductionPolylines = [];
 var allMarkers = [];
 
-function reportServiceReduction() {
-    let lineIdx = document.getElementById('lineSelect').value;
-    let startStationIdx = document.getElementById('startStationSelect').value;
-    let endStationIdx = document.getElementById('endStationSelect').value;
-    let typeIdx = document.getElementById('serviceReductionTypeSelect').value;
-    let description = document.getElementById('serviceReductionDescription').value;
-
-    if (lineIdx == "" || startStationIdx == "" || endStationIdx == "" || typeIdx == "" || description.trim() === "") {
-        alert("Invalid input. Please ensure all fields are filled correctly.");
-        return;
-    }
-
-    if (startStationIdx === endStationIdx) {
-        alert("Start and end stations cannot be the same.");
-        return;
-    }
-
-    if (parseInt(startStationIdx) > parseInt(endStationIdx)) {
-        let temp = startStationIdx;
-        startStationIdx = endStationIdx;
-        endStationIdx = temp;
-    }
-
-    lines[lineIdx].addServiceReduction(
-        parseInt(startStationIdx),
-        parseInt(endStationIdx),
-        parseInt(typeIdx),
-        description
-    );
-
-    // Refresh the map to show the new service reduction
-    refreshMap();
-
-    document.getElementById('lineSelect').options[0].selected = true;
-    document.getElementById('startStationSelect').options[0].selected = true;
-    document.getElementById('endStationSelect').options[0].selected = true;
-    document.getElementById('serviceReductionTypeSelect').options[0].selected = true;
-    document.getElementById('serviceReductionDescription').value = "";
-}
-
 function refreshMap() {
     // Clear existing markers and polylines
     allSegmentPolylines.forEach(polyline => polyline.setMap(null));
@@ -230,6 +223,8 @@ function renderLines() {
     lines.forEach(line => {
         addLineSegments(line);
         addStationMarkers(line);
+    });
+    lines.forEach(line => {
         addServiceReductions(line);
     });
 }
@@ -290,13 +285,13 @@ function addLineSegments(line) {
             let startStationName = line.stations[normalServiceSegments[i][0]].name;
             let endStationName = line.stations[normalServiceSegments[i][normalServiceSegments[i].length - 1]].name;
 
-            const lineInfoWindow = new google.maps.InfoWindow();
+            const lineInfoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
 
             transitPolyLine.addListener('mouseover', (event) => {
                 lineInfoWindow.setContent(`
-                    <div style="color: black; font-weight: bold; text-align: center;">
-                        <div style="font-size: 14px; width: 300px; text-align: center;">${line.name}</div>
-                        <div style="font-size: 12px; margin-top: 4px; width: 300px; text-align: center;">
+                    <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
+                        <div style="font-size: 14px; text-align: center;">${line.name}</div>
+                        <div style="font-size: 12px; margin-top: 4px; margin-bottom: 4px; text-align: center;">
                             Normal service from ${startStationName} to ${endStationName}
                         </div>
                     </div>
@@ -354,21 +349,6 @@ function addStationMarkers(line) {
             }
         });
 
-        // Add info window with station name
-        //const infoWindow = new google.maps.InfoWindow({
-        //    content: `<div style="color: black; font-weight: bold;">${station.name}</div>`
-        //});
-
-        // Show station name on mouseover
-        //stationMarker.addListener('mouseover', () => {
-        //    infoWindow.setPosition({ lat: station.lat, lng: station.lng });
-        //    infoWindow.open(map);
-        //});
-
-        //stationMarker.addListener('mouseout', () => {
-        //    infoWindow.close();
-        //});
-
         // Store the marker in the global array
         allMarkers.push(stationMarker);
     });
@@ -379,31 +359,18 @@ function createServiceReductionHandler(infoWindow, line, i) {
     
     return function(event) {
         infoWindow.setContent(`
-            <div style="color: black; font-weight: bold; text-align: center;">
+            <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
                 <div style="font-size: 14px; text-align: center;">${line.name}</div>
-                <div style="font-size: 12px; margin-top: 4px; width: 300px; text-align: center;">
+                <div style="font-size: 12px; margin-top: 4px; text-align: center;">
                     ${serviceReductionType.type} from ${line.stations[line.serviceReductions[i].startStationIdx].name} to ${line.stations[line.serviceReductions[i].endStationIdx].name}
                 </div>
-                <div style="font-size: 11px; color: #666; margin-top: 4px; margin-bottom: 4px; width: 300px; text-align: center;">
+                <div style="font-size: 11px; color: #666; margin-top: 4px; margin-bottom: 4px; text-align: center;">
                     ${line.serviceReductions[i].description}
                 </div>
-                <button id="button_${i}">Delete</button>
             </div>
         `);
         infoWindow.setPosition(event.latLng);
         infoWindow.open(map);
-
-        // Add event listener to the button after InfoWindow opens
-        google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
-            const button = document.getElementById(`button_${i}`);
-            if (button) {
-                button.addEventListener('click', () => {
-                    line.delServiceReduction(i);
-                    infoWindow.close();
-                    refreshMap();
-                });
-            }
-        });
     }
 }
 
@@ -433,7 +400,7 @@ function addServiceReductions(line) {
             }]
         });
 
-        const serviceReductionInfoWindow = new google.maps.InfoWindow();
+        const serviceReductionInfoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
         const serviceReductionHandler = createServiceReductionHandler(serviceReductionInfoWindow, line, i);
 
         serviceReductionPolyLine.addListener('mouseover', serviceReductionHandler);

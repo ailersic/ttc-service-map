@@ -16,24 +16,22 @@ h1 {
     color: white;
     font-weight: 300;
     margin-top: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     flex-shrink: 0;
 }
 
 h2 {
-    text-align: left;
+    text-align: center;
+    font-size: 1em;
     color: white;
     font-weight: 300;
+    margin-bottom: 20px;
+    flex-shrink: 0;
 }
 
 #map {
     flex: 1; /* Allows the map to take up remaining space */
     width: 100%;
-}
-
-#reportDisruption {
-    width: 100%;
-    flex-shrink: 0;
 }
 
 .gm-ui-hover-effect { display: none !important; }

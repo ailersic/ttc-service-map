@@ -16,6 +16,15 @@ const cross = {
     scale: 1.5
 };
 
+const noentry = {
+    path: "M 0,0 m -8,0 a 8,8 0 1,0 16,0 a 8,8 0 1,0 -16,0 M 5.65,5.65 L -5.65,-5.65",
+    strokeWeight: 4,
+    strokeOpacity: 1,
+    fillColor: "#ffffff",
+    fillOpacity: 1,
+    scale: 1.5
+};
+
 const clock = {
     path: "M 0,0 m -8,0 a 8,8 0 1,0 16,0 a 8,8 0 1,0 -16,0 M 0,0 L 0,-5 M 0,0 L 4,3",
     strokeWeight: 4,

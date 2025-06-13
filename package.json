@@ -1,0 +1,14 @@
+{
+  "name": "ttc-service-map",
+  "version": "1.0.0",
+  "description": "A web application to visualize TTC service reductions on a map.",
+  "main": "server.js",
+  "author": "Andrew F. Ilersich",
+  "license": "GPL-3.0-only",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "scripts": {
+    "start": "node server.js"
+  }
+}
