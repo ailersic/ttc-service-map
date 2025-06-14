@@ -60,3 +60,11 @@ const snail = {
     fillOpacity: 1,
     scale: 1.5
 }
+
+const dash = {
+    path: "M 0,0 L 0,5",
+    strokeWeight: 4,
+    strokeOpacity: 1,
+    fillOpacity: 1,
+    scale: 1
+};

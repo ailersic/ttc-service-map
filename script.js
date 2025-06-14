@@ -127,7 +127,7 @@ var lines = [
             new Station("Dundas", 43.656337119376246, -79.38091870872829),
             new Station("College", 43.66131086431013, -79.38307664264218),
             new Station("Wellesley", 43.66495708267232, -79.38456153203441),
-            new Station("Bloor", 43.67026016107548, -79.38673613009153),
+            new Station("Bloor-Yonge", 43.67026016107548, -79.38673613009153),
             new Station("Rosedale", 43.676963390798626, -79.3895103712672),
             new Station("Summerhill", 43.681990445499345, -79.39157534637779),
             new Station("St Clair", 43.688059621112565, -79.39410004447326),
@@ -161,7 +161,7 @@ var lines = [
             new Station("Spadina", 43.6666836721813, -79.40379151979856),
             new Station("St George", 43.66753162794397, -79.39983394394515),
             new Station("Bay", 43.66969955004571, -79.38946192844412),
-            new Station("Yonge", 43.67026016107548, -79.38673613009153),
+            new Station("Bloor-Yonge", 43.67026016107548, -79.38673613009153),
             new Station("Sherbourne", 43.67232921261314, -79.3768831623304),
             new Station("Castle Frank", 43.67376265187694, -79.36818662216531),
             new Station("Broadview", 43.67625521238776, -79.35875712452531),
@@ -204,33 +204,40 @@ var lines = [
 
 var allSegmentPolylines = [];
 var allReductionPolylines = [];
-var allMarkers = [];
+var allStationMarkers = [];
+var allReductionMarkers = [];
 
-function refreshMap() {
+async function refreshMap() {
     // Clear existing markers and polylines
     allSegmentPolylines.forEach(polyline => polyline.setMap(null));
-    allMarkers.forEach(marker => marker.setMap(null));
+    allStationMarkers.forEach(marker => marker.setMap(null));
     allReductionPolylines.forEach(polyline => polyline.setMap(null));
+    allReductionMarkers.forEach(marker => marker.setMap(null));
 
     allSegmentPolylines = [];
-    allMarkers = [];
+    allStationMarkers = [];
     allReductionPolylines = [];
+    allReductionMarkers = [];
 
     // Re-render all lines
     renderLines();
 
     allSegmentPolylines.forEach(polyline => polyline.setMap(map));
-    allMarkers.forEach(marker => marker.setMap(map));
+    allStationMarkers.forEach(marker => marker.setMap(map));
+    console.log(allReductionPolylines.length, allReductionMarkers.length);
     allReductionPolylines.forEach(polyline => polyline.setMap(map));
+    allReductionMarkers.forEach(marker => marker.setMap(map));
 }
 
 function renderLines() {
     lines.forEach(line => {
         addLineSegments(line);
-        addStationMarkers(line);
     });
     lines.forEach(line => {
         addServiceReductions(line);
+    });
+    lines.forEach(line => {
+        addStationMarkers(line);
     });
 }
 
@@ -284,7 +291,8 @@ function addLineSegments(line) {
                 geodesic: true,
                 strokeColor: line.colour,
                 strokeOpacity: 1.0,
-                strokeWeight: 4
+                strokeWeight: 4,
+                zIndex: 1
             });
 
             let startStationName = line.stations[normalServiceSegments[i][0]].name;
@@ -325,8 +333,14 @@ function addLineSegments(line) {
                 })),
                 geodesic: true,
                 strokeColor: line.colour,
-                strokeOpacity: 1.0,
-                strokeWeight: 4
+                strokeOpacity: 0.0,
+                strokeWeight: 4,
+                zIndex: 1,
+                icons: [{
+                    icon: dash,
+                    offset: '5px',
+                    repeat: '15px',
+                }]
             });
 
             // Store the polyline in the global array
@@ -341,21 +355,37 @@ function addStationMarkers(line) {
         let stationMarker = new google.maps.Marker({
             position: { lat: station.lat, lng: station.lng },
             map: map,
-            zIndex: -1,
+            zIndex: 1,
             icon: {
                 path: google.maps.SymbolPath.CIRCLE,
                 scale: 3,
                 fillColor: '#FFFFFF',
-                fillOpacity: 0.5,
+                fillOpacity: 1,
                 strokeColor: '#000000',
                 strokeWeight: 2,
-                strokeOpacity: 0.5,
+                strokeOpacity: 1,
                 clickable: false
             }
         });
 
+        // Create an info window for the station
+        const infoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
+        stationMarker.addListener('mouseover', (event) => {
+            infoWindow.setContent(`
+                <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
+                    <div style="font-size: 14px; text-align: center;">${station.name}</div>
+                </div>
+            `);
+            infoWindow.setPosition(event.latLng);
+            infoWindow.open(map);
+        });
+        stationMarker.addListener('mouseout', () => {
+            infoWindow.close();
+        }
+        );
+
         // Store the marker in the global array
-        allMarkers.push(stationMarker);
+        allStationMarkers.push(stationMarker);
     });
 }
 
@@ -398,20 +428,58 @@ function addServiceReductions(line) {
             strokeColor: serviceReductionType.colour,
             strokeOpacity: 0.3,
             strokeWeight: 16,
-            icons: [{
-                icon: serviceReductionType.icon,
-                offset: '50%',
-                fixedRotation: true
-            }]
+            zIndex: 100,
+            //icons: [{icon: serviceReductionType.icon,offset: '50%',fixedRotation: true}]
+        });
+
+        // get midpoint of the polyline for the marker
+        const path = serviceReductionPolyLine.getPath().getArray();
+        let midLat = path[0].lat();
+        let midLng = path[0].lng();
+
+        let totalDistance = 0;
+        for (let i = 0; i < path.length - 1; i++) {
+            totalDistance += google.maps.geometry.spherical.computeDistanceBetween(path[i], path[i + 1]);
+        }
+        let accumulatedDistance = 0;
+        for (let i = 0; i < path.length - 1; i++) {
+            delta = google.maps.geometry.spherical.computeDistanceBetween(path[i], path[i + 1]);
+            accumulatedDistance += delta;
+            if (accumulatedDistance >= totalDistance / 2) {
+                // We found the midpoint
+                let ratio = (totalDistance / 2 - accumulatedDistance + delta) / delta;
+                midLat = path[i].lat() + ratio * (path[i + 1].lat() - path[i].lat());
+                midLng = path[i].lng() + ratio * (path[i + 1].lng() - path[i].lng());
+                break;
+            }
+        }
+
+        // Create a marker at the midpoint of the polyline
+        let serviceReductionMarker = new google.maps.Marker({
+            position: { lat: midLat, lng: midLng },
+            map: map,
+            zIndex: 100,
+            icon: {
+                path: serviceReductionType.icon.path,
+                strokeColor: serviceReductionType.colour,
+                strokeWeight: serviceReductionType.icon.strokeWeight,
+                strokeOpacity: serviceReductionType.icon.strokeOpacity,
+                scale: serviceReductionType.icon.scale,
+                fillColor: serviceReductionType.icon.fillColor,
+                fillOpacity: serviceReductionType.icon.fillOpacity,
+            }
         });
 
         const serviceReductionInfoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
         const serviceReductionHandler = createServiceReductionHandler(serviceReductionInfoWindow, line, i);
 
-        serviceReductionPolyLine.addListener('mouseover', serviceReductionHandler);
-        serviceReductionPolyLine.addListener('mouseout', () => { serviceReductionInfoWindow.close(); });
+        serviceReductionMarker.addListener('mouseover', serviceReductionHandler);
+        serviceReductionMarker.addListener('mouseout', () => { serviceReductionInfoWindow.close(); });
 
         // Store the polyline in the global array
         allReductionPolylines.push(serviceReductionPolyLine);
+
+        // Store the marker in the global array
+        allReductionMarkers.push(serviceReductionMarker);
     }
 }

@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const app = express();
-const PORT = 3000;
+//const PORT = 3000;
 
 // Serve static files
 app.use(express.static('.'));
@@ -53,8 +53,8 @@ app.get('/api/fetch', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-});
+//app.listen(PORT, () => {
+//    console.log(`Server running at http://localhost:${PORT}`);
+//});
 
 module.exports = app; // Export the app for testing purposes
