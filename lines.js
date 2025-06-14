@@ -42,7 +42,7 @@ class Line {
     addServiceReduction(startStation, endStation, effectDesc, description) {
         let startStationIdx = this.stations.findIndex(station => station.name === startStation);
         let endStationIdx = this.stations.findIndex(station => station.name === endStation);
-        let typeIdx = serviceReductionTypes.findIndex(type => type.type === effectDesc);
+        let typeIdx = serviceReductionTypes.findIndex(type => type.type.toLowerCase() === effectDesc.toLowerCase());
 
         // If the type is not found, we try to interpret it
         if (typeIdx === -1) {
