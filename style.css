@@ -29,6 +29,11 @@ h2 {
     flex-shrink: 0;
 }
 
+a {
+    color: #00aaff;
+    text-decoration: none;
+}
+
 #map {
     flex: 1; /* Allows the map to take up remaining space */
     width: 100%;
