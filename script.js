@@ -240,6 +240,21 @@ function renderLines() {
     });
 }
 
+function createLineHandler(infoWindow, line, startStationName, endStationName) {
+    return function(event) {
+        infoWindow.setContent(`
+            <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
+                <div style="font-size: 14px; text-align: center;">${line.name}</div>
+                <div style="font-size: 12px; margin-top: 4px; margin-bottom: 4px; text-align: center;">
+                    Normal service from ${startStationName} to ${endStationName}
+                </div>
+            </div>
+        `);
+        infoWindow.setPosition(event.latLng);
+        infoWindow.open(map);
+    }
+}
+
 function addLineSegments(line) {
     let normalServiceSegments = [[]];
     let reducedServiceSegments = [[]];
@@ -298,23 +313,15 @@ function addLineSegments(line) {
             let endStationName = line.stations[normalServiceSegments[i][normalServiceSegments[i].length - 1]].name;
 
             const lineInfoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
+            const lineHandler = createLineHandler(lineInfoWindow, line, startStationName, endStationName);
 
-            transitPolyLine.addListener('mouseover', (event) => {
-                lineInfoWindow.setContent(`
-                    <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
-                        <div style="font-size: 14px; text-align: center;">${line.name}</div>
-                        <div style="font-size: 12px; margin-top: 4px; margin-bottom: 4px; text-align: center;">
-                            Normal service from ${startStationName} to ${endStationName}
-                        </div>
-                    </div>
-                `);
-                lineInfoWindow.setPosition(event.latLng);
-                lineInfoWindow.open(map);
-            });
+            // Add event listeners for the polyline
+            transitPolyLine.addListener('mouseover', lineHandler);
+            transitPolyLine.addListener('click', lineHandler);
 
-            transitPolyLine.addListener('mouseout', () => {
-                lineInfoWindow.close();
-            });
+            // Close the info window on mouseout
+            transitPolyLine.addListener('mouseout', () => { lineInfoWindow.close(); });
+            map.addListener('click', () => { lineInfoWindow.close(); });
 
             // Store the polyline in the global array
             allSegmentPolylines.push(transitPolyLine);
@@ -348,6 +355,18 @@ function addLineSegments(line) {
     }
 }
 
+function createStationHandler(infoWindow, station) {
+    return function(event) {
+        infoWindow.setContent(`
+            <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
+                <div style="font-size: 14px; text-align: center;">${station.name}</div>
+            </div>
+        `);
+        infoWindow.setPosition(event.latLng);
+        infoWindow.open(map);
+    }
+}
+
 function addStationMarkers(line) {
     line.stations.forEach(station => {
         // Create a circle marker for each station
@@ -362,26 +381,21 @@ function addStationMarkers(line) {
                 fillOpacity: 1,
                 strokeColor: '#000000',
                 strokeWeight: 2,
-                strokeOpacity: 1,
-                clickable: false
+                strokeOpacity: 1
             }
         });
 
         // Create an info window for the station
         const infoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
-        stationMarker.addListener('mouseover', (event) => {
-            infoWindow.setContent(`
-                <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
-                    <div style="font-size: 14px; text-align: center;">${station.name}</div>
-                </div>
-            `);
-            infoWindow.setPosition(event.latLng);
-            infoWindow.open(map);
-        });
-        stationMarker.addListener('mouseout', () => {
-            infoWindow.close();
-        }
-        );
+        const stationHandler = createStationHandler(infoWindow, station);
+
+        // Add event listeners for the marker
+        stationMarker.addListener('mouseover', stationHandler);
+        stationMarker.addListener('click', stationHandler);
+
+        // Close the info window on mouseout
+        stationMarker.addListener('mouseout', () => { infoWindow.close(); });
+        map.addListener('click', () => { infoWindow.close(); });
 
         // Store the marker in the global array
         allStationMarkers.push(stationMarker);
@@ -392,6 +406,8 @@ function createServiceReductionHandler(infoWindow, line, i) {
     let serviceReductionType = serviceReductionTypes[line.serviceReductions[i].typeIdx];
     
     return function(event) {
+
+        
         infoWindow.setContent(`
             <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
                 <div style="font-size: 14px; text-align: center;">${line.name}</div>
@@ -472,8 +488,13 @@ function addServiceReductions(line) {
         const serviceReductionInfoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
         const serviceReductionHandler = createServiceReductionHandler(serviceReductionInfoWindow, line, i);
 
+        // Add event listeners for the marker
         serviceReductionMarker.addListener('mouseover', serviceReductionHandler);
+        serviceReductionMarker.addListener('click', serviceReductionHandler);
+
+        // Close the info window on mouseout
         serviceReductionMarker.addListener('mouseout', () => { serviceReductionInfoWindow.close(); });
+        map.addListener('click', () => { serviceReductionInfoWindow.close(); });
 
         // Store the polyline in the global array
         allReductionPolylines.push(serviceReductionPolyLine);
