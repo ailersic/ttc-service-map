@@ -55,7 +55,7 @@
 
             //lines[0].addServiceReduction("St Andrew", "St Patrick", "Bypass", "Bypassing Osgoode because a disgruntled lawyer is holding the station hostage.");
             
-            lines[2].addServiceReduction("Kennedy", "McCowan", "Closed", "Permanently closed.");
+            lines[2].addServiceReduction("Kennedy", "McCowan", "No service", "Permanently closed.");
 
             alertsjson.alerts.forEach(alert => {
                 lines[alert.lineIdx].addServiceReduction(alert.startStation, alert.endStation, alert.effectDesc, alert.description);

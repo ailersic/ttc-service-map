@@ -26,7 +26,7 @@ class ServiceReductionType {
 const serviceReductionTypes = [
     new ServiceReductionType("Delays", "rgb(200, 100, 0)", snail),
     new ServiceReductionType("Bypass", "rgb(100, 100, 255)", noentry),
-    new ServiceReductionType("Closed", "rgb(255, 75, 75)", cross),
+    new ServiceReductionType("No service", "rgb(255, 75, 75)", cross),
     new ServiceReductionType("Planned disruption", "rgb(100, 100, 255)", clock),
     new ServiceReductionType("Alert", "rgb(255, 75, 75)", exclamation),
     new ServiceReductionType("Service restored", "rgb(0, 158, 0)", check)
@@ -50,7 +50,7 @@ class Line {
                 if (description.toLowerCase().includes("will be")) {
                     typeIdx = serviceReductionTypes.findIndex(typeObj => typeObj.type === "Planned disruption");
                 } else {
-                    typeIdx = serviceReductionTypes.findIndex(typeObj => typeObj.type === "Closed");
+                    typeIdx = serviceReductionTypes.findIndex(typeObj => typeObj.type === "No service");
                 }
             }
 
