@@ -207,7 +207,7 @@ var allReductionPolylines = [];
 var allStationMarkers = [];
 var allReductionMarkers = [];
 
-async function refreshMap() {
+function refreshMap() {
     // Clear existing markers and polylines
     allSegmentPolylines.forEach(polyline => polyline.setMap(null));
     allStationMarkers.forEach(marker => marker.setMap(null));
@@ -224,7 +224,6 @@ async function refreshMap() {
 
     allSegmentPolylines.forEach(polyline => polyline.setMap(map));
     allStationMarkers.forEach(marker => marker.setMap(map));
-    console.log(allReductionPolylines.length, allReductionMarkers.length);
     allReductionPolylines.forEach(polyline => polyline.setMap(map));
     allReductionMarkers.forEach(marker => marker.setMap(map));
 }
