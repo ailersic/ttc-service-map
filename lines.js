@@ -63,8 +63,8 @@ class Line {
 
         // If the start and end stations are the same, we expand the range by one station in each direction
         if (startStationIdx === endStationIdx) {
-            startStationIdx = max(0, startStationIdx - 1);
-            endStationIdx = min(this.stations.length - 1, endStationIdx + 1);
+            startStationIdx = Math.max(0, startStationIdx - 1);
+            endStationIdx = Math.min(this.stations.length - 1, endStationIdx + 1);
         }
 
         if (startStationIdx > endStationIdx) {
