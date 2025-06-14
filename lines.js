@@ -28,7 +28,8 @@ const serviceReductionTypes = [
     new ServiceReductionType("Bypass", "rgb(100, 100, 255)", noentry),
     new ServiceReductionType("Closed", "rgb(255, 75, 75)", cross),
     new ServiceReductionType("Planned disruption", "rgb(100, 100, 255)", clock),
-    new ServiceReductionType("Alert", "rgb(255, 75, 75)", exclamation)
+    new ServiceReductionType("Alert", "rgb(255, 75, 75)", exclamation),
+    new ServiceReductionType("Service restored", "rgb(0, 158, 0)", check)
 ]
 
 class Line {
@@ -51,6 +52,10 @@ class Line {
                 } else {
                     typeIdx = serviceReductionTypes.findIndex(typeObj => typeObj.type === "Closed");
                 }
+            }
+
+            if (effectDesc.toLowerCase().includes("regular service")) {
+                typeIdx = serviceReductionTypes.findIndex(typeObj => typeObj.type === "Service restored");
             }
             // more interpretation logic can be added here
             // can also check for strings in description
