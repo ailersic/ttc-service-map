@@ -16,20 +16,19 @@ class ServiceReduction {
 }
 
 class ServiceReductionType {
-    constructor(type, colour, icon) {
-        this.type = type;
-        this.colour = colour;
+    constructor(name, icon) {
+        this.name = name;
         this.icon = icon;
     }
 }
 
 const serviceReductionTypes = [
-    new ServiceReductionType("Delays", "rgb(200, 100, 0)", snail),
-    new ServiceReductionType("Bypass", "rgb(100, 100, 255)", noentry),
-    new ServiceReductionType("No service", "rgb(255, 75, 75)", cross),
-    new ServiceReductionType("Planned disruption", "rgb(100, 100, 255)", clock),
-    new ServiceReductionType("Alert", "rgb(255, 75, 75)", exclamation),
-    new ServiceReductionType("Service restored", "rgb(0, 158, 0)", check)
+    new ServiceReductionType("Alert", exclamation),
+    new ServiceReductionType("Delays", snail),
+    new ServiceReductionType("Bypass", noentry),
+    new ServiceReductionType("No service", cross),
+    new ServiceReductionType("Planned disruption", clock),
+    new ServiceReductionType("Service restored", check)
 ]
 
 class Line {
@@ -42,20 +41,20 @@ class Line {
     addServiceReduction(startStation, endStation, effectDesc, description) {
         let startStationIdx = this.stations.findIndex(station => station.name === startStation);
         let endStationIdx = this.stations.findIndex(station => station.name === endStation);
-        let typeIdx = serviceReductionTypes.findIndex(type => type.type.toLowerCase() === effectDesc.toLowerCase());
+        let typeIdx = serviceReductionTypes.findIndex(type => type.name.toLowerCase() === effectDesc.toLowerCase());
 
         // If the type is not found, we try to interpret it
         if (typeIdx === -1) {
             if (effectDesc.toLowerCase().includes("closure")) {
                 if (description.toLowerCase().includes("will be")) {
-                    typeIdx = serviceReductionTypes.findIndex(typeObj => typeObj.type === "Planned disruption");
+                    typeIdx = serviceReductionTypes.findIndex(type => type.name === "Planned disruption");
                 } else {
-                    typeIdx = serviceReductionTypes.findIndex(typeObj => typeObj.type === "No service");
+                    typeIdx = serviceReductionTypes.findIndex(type => type.name === "No service");
                 }
             }
 
             if (effectDesc.toLowerCase().includes("regular service")) {
-                typeIdx = serviceReductionTypes.findIndex(typeObj => typeObj.type === "Service restored");
+                typeIdx = serviceReductionTypes.findIndex(type => type.name === "Service restored");
             }
             // more interpretation logic can be added here
             // can also check for strings in description
@@ -63,7 +62,7 @@ class Line {
 
         // If the type is still not found, default to "Alert"
         if (typeIdx === -1) {
-            typeIdx = serviceReductionTypes.findIndex(typeObj => typeObj.type === "Alert");
+            typeIdx = serviceReductionTypes.findIndex(type => type.name === "Alert");
         }
 
         // If the start and end stations are the same, we expand the range by one station in each direction
@@ -386,16 +385,16 @@ function addStationMarkers(line) {
         });
 
         // Create an info window for the station
-        const infoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
-        const stationHandler = createStationHandler(infoWindow, station);
+        //const infoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
+        //const stationHandler = createStationHandler(infoWindow, station);
 
         // Add event listeners for the marker
-        stationMarker.addListener('mouseover', stationHandler);
-        stationMarker.addListener('click', stationHandler);
+        //stationMarker.addListener('mouseover', stationHandler);
+        //stationMarker.addListener('click', stationHandler);
 
         // Close the info window on mouseout
-        stationMarker.addListener('mouseout', () => { infoWindow.close(); });
-        map.addListener('click', () => { infoWindow.close(); });
+        //stationMarker.addListener('mouseout', () => { infoWindow.close(); });
+        //map.addListener('click', () => { infoWindow.close(); });
 
         // Store the marker in the global array
         allStationMarkers.push(stationMarker);
@@ -412,7 +411,7 @@ function createServiceReductionHandler(infoWindow, line, i) {
             <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
                 <div style="font-size: 14px; text-align: center;">${line.name}</div>
                 <div style="font-size: 12px; margin-top: 4px; text-align: center;">
-                    ${serviceReductionType.type} from ${line.stations[line.serviceReductions[i].startStationIdx].name} to ${line.stations[line.serviceReductions[i].endStationIdx].name}
+                    ${serviceReductionType.name} from ${line.stations[line.serviceReductions[i].startStationIdx].name} to ${line.stations[line.serviceReductions[i].endStationIdx].name}
                 </div>
                 <div style="font-size: 11px; color: #666; margin-top: 4px; margin-bottom: 4px; text-align: center;">
                     ${line.serviceReductions[i].description}
@@ -440,7 +439,7 @@ function addServiceReductions(line) {
                 lng: line.stations[idx].lng
             })),
             geodesic: true,
-            strokeColor: serviceReductionType.colour,
+            strokeColor: serviceReductionType.icon.strokeColor,
             strokeOpacity: 0.3,
             strokeWeight: 16,
             zIndex: 100,
@@ -474,15 +473,7 @@ function addServiceReductions(line) {
             position: { lat: midLat, lng: midLng },
             map: map,
             zIndex: 100,
-            icon: {
-                path: serviceReductionType.icon.path,
-                strokeColor: serviceReductionType.colour,
-                strokeWeight: serviceReductionType.icon.strokeWeight,
-                strokeOpacity: serviceReductionType.icon.strokeOpacity,
-                scale: serviceReductionType.icon.scale,
-                fillColor: serviceReductionType.icon.fillColor,
-                fillOpacity: serviceReductionType.icon.fillOpacity,
-            }
+            icon: serviceReductionType.icon
         });
 
         const serviceReductionInfoWindow = new google.maps.InfoWindow({ maxWidth: 200 });

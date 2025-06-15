@@ -16,7 +16,7 @@
 
     <h1>TTCMAP.CA</h1>
 
-    <h2 id="subheading">Map of Subway Network Status - Last updated: Loading...</h2>
+    <h2 id="subheading">Map of subway network status - Last updated: Loading...</h2>
     
     <div id="map"></div>
 
@@ -41,6 +41,57 @@
                 zoom: 12,
                 mapId: "42",
             });
+
+            // Create legend with service reduction types
+            const legend = document.createElement("div");
+            legend.id = "legend";
+            
+            const header = document.createElement("div");
+            header.id = "legend-header";
+            header.innerHTML = `<h3>LEGEND<span>+</span></h3>`;
+            legend.appendChild(header);
+
+            const content = document.createElement("div");
+            content.id = "legend-content";
+            content.style.display = "none"; // Initially hidden
+
+            for (const serviceReductionType of serviceReductionTypes) {
+                const icon = serviceReductionType.icon;
+                const name = serviceReductionType.name;
+
+                size = 48;
+                svg = `<svg width="${size}" height="${size}" viewBox="${-size/2} ${-size/2} ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                    <g transform="scale(${icon.scale})">
+                    <path d="${icon.path}" 
+                    stroke="${icon.strokeColor}" 
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="${icon.strokeWeight / icon.scale}" 
+                    fill="${icon.fillColor}"/>
+                    </g>
+                    </svg>`;
+
+                const typeDiv = document.createElement("div");
+                //typeDiv.innerHTML = `${svg} <span style="font-size:1.5em; ">${name}</span>`;
+                typeDiv.innerHTML = `<div style="display: flex; align-items: center; gap: 8px; margin: 5px 0;">
+                    <div style="flex-shrink: 0;">${svg}</div>
+                    <div style="flex: 1; font-size: 1.5em; word-wrap: break-word;">${name}</div>
+                </div>`
+                content.appendChild(typeDiv);
+            }
+
+            legend.appendChild(content);
+            legend.addEventListener("click", () => {
+                if (content.style.display === "none") {
+                    content.style.display = "block";
+                    header.innerHTML = `<h3>LEGEND<span>−</span></h3>`;
+                } else {
+                    content.style.display = "none";
+                    header.innerHTML = `<h3>LEGEND<span>+</span></h3>`;
+                }
+            });
+
+            map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
 
             const response = await fetch('/api/fetch');
             const alertsjson = await response.json();
@@ -73,7 +124,7 @@
                 hour12: true,
             };
             
-            document.getElementById("subheading").innerHTML = `Map of Subway Network Status - Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)}`;
+            document.getElementById("subheading").innerHTML = `Map of subway network status - Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)}`;
 
             refreshMap();
         }

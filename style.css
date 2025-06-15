@@ -29,6 +29,39 @@ h2 {
     flex-shrink: 0;
 }
 
+#legend {
+    font-family: Futura, Trebuchet MS, Arial, sans-serif;
+    background: #000000;
+    padding: 10px;
+    margin: 10px;
+    width: 150px;
+    max-height: 70%;
+    overflow-y: auto;
+}
+
+#legend h3 {
+    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    width: 100%;
+    font-size: 2em;
+    color: white;
+    font-weight: 300;
+}
+
+#legend svg {
+    vertical-align: middle;
+}
+
+#legend-header {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+}
+
 a {
     color: #00aaff;
     text-decoration: none;
