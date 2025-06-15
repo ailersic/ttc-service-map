@@ -424,6 +424,30 @@ function createServiceReductionHandler(infoWindow, line, i) {
 }
 
 function addServiceReductions(line) {
+    // Check if any service reductions cover the same stations, and combine them if they do
+    // This is done to avoid having multiple service reductions for the same segment
+    let i1 = 0;
+    while (i1 < line.serviceReductions.length) {
+        let i2 = 0;
+        while (i2 < i1) {
+            if (line.serviceReductions[i1].startStationIdx === line.serviceReductions[i2].startStationIdx &&
+                line.serviceReductions[i1].endStationIdx === line.serviceReductions[i2].endStationIdx) {
+                // If the service reduction is the same as a previous one, combine them
+                line.serviceReductions[i1].description += `<br> *** <br>${line.serviceReductions[i2].description}`;
+                if (line.serviceReductions[i2].typeIdx < line.serviceReductions[i1].typeIdx) {
+                    // If service reduction types differ, use generic alert type
+                    line.serviceReductions[i1].typeIdx = serviceReductionTypes.findIndex(type => type.name === "Alert");
+                }
+                // Remove the previous service reduction
+                line.delServiceReduction(i2);
+                i1--; // Adjust index since we removed an item
+                break; // Exit the loop since we modified the array
+            }
+            i2++;
+        }
+        i1++;
+    }
+
     // Create polylines for service reductions
     // These show infoboxes on mouseover with information about the service reduction
     for (let i = 0; i < line.serviceReductions.length; i++) {
@@ -445,6 +469,9 @@ function addServiceReductions(line) {
             zIndex: 100,
             //icons: [{icon: serviceReductionType.icon,offset: '50%',fixedRotation: true}]
         });
+
+        // Store the polyline in the global array
+        allReductionPolylines.push(serviceReductionPolyLine);
 
         // get midpoint of the polyline for the marker
         const path = serviceReductionPolyLine.getPath().getArray();
@@ -486,9 +513,6 @@ function addServiceReductions(line) {
         // Close the info window on mouseout
         serviceReductionMarker.addListener('mouseout', () => { serviceReductionInfoWindow.close(); });
         map.addListener('click', () => { serviceReductionInfoWindow.close(); });
-
-        // Store the polyline in the global array
-        allReductionPolylines.push(serviceReductionPolyLine);
 
         // Store the marker in the global array
         allReductionMarkers.push(serviceReductionMarker);

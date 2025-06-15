@@ -41,7 +41,7 @@ const clock = {
 };
 
 const exclamation = {
-    path: "M 0,0 m -8,0 a 8,8 0 1,0 16,0 a 8,8 0 1,0 -16,0 M 0,0 L 0,-4 M 0,3.9 L 0,4",
+    path: "M 0,0 m -8,0 a 8,8 0 1,0 16,0 a 8,8 0 1,0 -16,0 M 0,1 L 0,-4.5 M 0,4.5 L 0,4.6",
     strokeColor: "rgb(255, 75, 75)",
     strokeWeight: 4,
     strokeOpacity: 1,
