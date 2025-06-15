@@ -97,14 +97,16 @@
             const alertsjson = await response.json();
 
             // Reduced speed zones
-            lines[0].addServiceReduction("Sheppard West", "Glencairn", "Delays", "Reduced speed due to poor track condition.");
-            lines[0].addServiceReduction("Spadina", "St George", "Delays", "Reduced speed due to poor track condition.");
-            lines[0].addServiceReduction("St Clair", "Eglinton", "Delays", "Reduced speed due to poor track condition.");
-            lines[0].addServiceReduction("Lawrence", "Sheppard-Yonge", "Delays", "Reduced speed due to poor track condition.");
+            lines[0].addServiceReduction("Sheppard West", "Wilson", "Delays", "Reduced speed northbound due to poor track condition.");
+            lines[0].addServiceReduction("Yorkdale", "Lawrence West", "Delays", "Reduced speed southbound due to poor track condition.");
+            lines[0].addServiceReduction("Glencairn", "Lawrence West", "Delays", "Reduced speed both ways due to poor track condition.");
+            lines[0].addServiceReduction("Spadina", "St George", "Delays", "Reduced speed both ways due to poor track condition.");
+            lines[0].addServiceReduction("St Clair", "Eglinton", "Delays", "Reduced speed southbound due to poor track condition.");
+            lines[0].addServiceReduction("Lawrence", "Sheppard-Yonge", "Delays", "Reduced speed southbound due to poor track condition.");
             
-            lines[1].addServiceReduction("Keele", "Dundas West", "Delays", "Reduced speed due to poor track condition.");
-            lines[1].addServiceReduction("Coxwell", "Woodbine", "Delays", "Reduced speed due to poor track condition.");
-            lines[1].addServiceReduction("Victoria Park", "Warden", "Delays", "Reduced speed due to poor track condition.");
+            lines[1].addServiceReduction("Keele", "Dundas West", "Delays", "Reduced speed eastbound due to poor track condition.");
+            lines[1].addServiceReduction("Coxwell", "Woodbine", "Delays", "Reduced speed eastbound due to poor track condition.");
+            lines[1].addServiceReduction("Victoria Park", "Warden", "Delays", "Reduced speed eastbound due to poor track condition.");
 
             //lines[0].addServiceReduction("St Andrew", "St Patrick", "Bypass", "Bypassing Osgoode because a disgruntled lawyer is holding the station hostage.");
             
