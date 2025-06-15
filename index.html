@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TTC Service Map</title>
+    <title>TTCmap.ca</title>
     <link rel="stylesheet" href="style.css"/>
     <script>
         window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -14,9 +14,9 @@
     <script src="icons.js"></script>
     <script src="script.js"></script>
 
-    <h1>TORONTO TRANSIT SERVICE MAP</h1>
+    <h1>TTCMAP.CA</h1>
 
-    <h2>Last updated: Loading...</h2>
+    <h2 id="subheading">Map of Subway Network Status - Last updated: Loading...</h2>
     
     <div id="map"></div>
 
@@ -72,7 +72,8 @@
                 minute: '2-digit',
                 hour12: true,
             };
-            document.querySelector("h2").textContent = `Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)}`;
+            
+            document.getElementById("subheading").innerHTML = `Map of Subway Network Status - Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)}`;
 
             refreshMap();
         }
