@@ -432,11 +432,21 @@ function addServiceReductions(line) {
         while (i2 < i1) {
             if (line.serviceReductions[i1].startStationIdx === line.serviceReductions[i2].startStationIdx &&
                 line.serviceReductions[i1].endStationIdx === line.serviceReductions[i2].endStationIdx) {
+                
                 // If the service reduction is the same as a previous one, combine them
                 line.serviceReductions[i1].description += `<br> *** <br>${line.serviceReductions[i2].description}`;
-                if (line.serviceReductions[i2].typeIdx < line.serviceReductions[i1].typeIdx) {
-                    // If service reduction types differ, use generic alert type
-                    line.serviceReductions[i1].typeIdx = serviceReductionTypes.findIndex(type => type.name === "Alert");
+
+                if (line.serviceReductions[i2].typeIdx != line.serviceReductions[i1].typeIdx) {
+
+                    // If service reduction types differ, check if one is "No service" and set it to that
+                    // Otherwise, set it to "Alert"
+                    let noServiceIdx = serviceReductionTypes.findIndex(type => type.name === "No service");
+
+                    if (line.serviceReductions[i2].typeIdx === noServiceIdx || line.serviceReductions[i1].typeIdx === noServiceIdx) {
+                        line.serviceReductions[i1].typeIdx = noServiceIdx;
+                    } else {
+                        line.serviceReductions[i1].typeIdx = serviceReductionTypes.findIndex(type => type.name === "Alert");
+                    }
                 }
                 // Remove the previous service reduction
                 line.delServiceReduction(i2);
