@@ -1,3 +1,6 @@
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                 ('ontouchstart' in window);
+
 class Station {
     constructor(name, lat, lng) {
         this.name = name;
@@ -206,17 +209,21 @@ var allReductionPolylines = [];
 var allStationMarkers = [];
 var allReductionMarkers = [];
 
+var currentInfoWindow = null;
+
 function refreshMap() {
     // Clear existing markers and polylines
     allSegmentPolylines.forEach(polyline => polyline.setMap(null));
     allStationMarkers.forEach(marker => marker.setMap(null));
     allReductionPolylines.forEach(polyline => polyline.setMap(null));
     allReductionMarkers.forEach(marker => marker.setMap(null));
+    if (currentInfoWindow !== null && currentInfoWindow.getMap()) { currentInfoWindow.close(); }
 
     allSegmentPolylines = [];
     allStationMarkers = [];
     allReductionPolylines = [];
     allReductionMarkers = [];
+    currentInfoWindow = null;
 
     // Re-render all lines
     renderLines();
@@ -237,21 +244,6 @@ function renderLines() {
     lines.forEach(line => {
         addStationMarkers(line);
     });
-}
-
-function createLineHandler(infoWindow, line, startStationName, endStationName) {
-    return function(event) {
-        infoWindow.setContent(`
-            <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
-                <div style="font-size: 14px; text-align: center;">${line.name}</div>
-                <div style="font-size: 12px; margin-top: 4px; margin-bottom: 4px; text-align: center;">
-                    Normal service from ${startStationName} to ${endStationName}
-                </div>
-            </div>
-        `);
-        infoWindow.setPosition(event.latLng);
-        infoWindow.open(map);
-    }
 }
 
 function addLineSegments(line) {
@@ -304,7 +296,7 @@ function addLineSegments(line) {
                 geodesic: true,
                 strokeColor: line.colour,
                 strokeOpacity: 1.0,
-                strokeWeight: 4,
+                strokeWeight: 6,
                 zIndex: 1
             });
 
@@ -312,15 +304,60 @@ function addLineSegments(line) {
             let endStationName = line.stations[normalServiceSegments[i][normalServiceSegments[i].length - 1]].name;
 
             const lineInfoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
-            const lineHandler = createLineHandler(lineInfoWindow, line, startStationName, endStationName);
+            lineInfoWindow.setContent(`
+                <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
+                    <div style="font-size: 14px; text-align: center;">${line.name}</div>
+                    <div style="font-size: 12px; margin-top: 4px; margin-bottom: 4px; text-align: center;">
+                        Normal service from ${startStationName} to ${endStationName}
+                    </div>
+                </div>
+            `);
+            
+            // If on mobile device
+            if (isMobile) {
+                // Toggle the info window on click event
+                transitPolyLine.addListener('click', (event) => {
+                    if (lineInfoWindow.getMap()) {
+                        lineInfoWindow.close();
+                        currentInfoWindow = null;
+                    }
+                    else {
+                        if (currentInfoWindow !== null) { currentInfoWindow.close();}
+                        lineInfoWindow.setPosition(event.latLng);
+                        lineInfoWindow.open(map);
+                        currentInfoWindow = lineInfoWindow;
 
-            // Add event listeners for the polyline
-            transitPolyLine.addListener('mouseover', lineHandler);
-            transitPolyLine.addListener('click', lineHandler);
+                        // After the info window opens, close it if clicked on
+                        currentInfoWindow.addListener('domready', () => {
+                            const iwOuter = document.querySelector('.gm-style-iw-c');
+                            if (iwOuter) {
+                                iwOuter.addEventListener('click', (e) => {
+                                    currentInfoWindow.close();
+                                    currentInfoWindow = null;
+                                    e.stopPropagation();
+                                });
+                            }
+                        });
+                    }
+                });
 
-            // Close the info window on mouseout
-            transitPolyLine.addListener('mouseout', () => { lineInfoWindow.close(); });
-            map.addListener('click', () => { lineInfoWindow.close(); });
+                // If the user clicks anywhere else, close the info window
+                map.addListener('click', () => {
+                    currentInfoWindow.close();
+                    currentInfoWindow = null;
+                });
+            }
+
+            // If on computer
+            else {
+                transitPolyLine.addListener('mouseover', (event) => {
+                    lineInfoWindow.setPosition(event.latLng);
+                    lineInfoWindow.open(map);
+                });
+                transitPolyLine.addListener('mouseout', () => {
+                    lineInfoWindow.close();
+                });
+            }
 
             // Store the polyline in the global array
             allSegmentPolylines.push(transitPolyLine);
@@ -328,7 +365,7 @@ function addLineSegments(line) {
     }
 
     // Create polylines for reduced service segments
-    // These show no infoboxes
+    // These are dashed lines that do not have infoboxes
     for (let i = 0; i < reducedServiceSegments.length; i++) {
         if (reducedServiceSegments[i].length > 1) {
             let transitPolyLine = new google.maps.Polyline({
@@ -339,7 +376,7 @@ function addLineSegments(line) {
                 geodesic: true,
                 strokeColor: line.colour,
                 strokeOpacity: 0.0,
-                strokeWeight: 4,
+                strokeWeight: 6,
                 zIndex: 1,
                 icons: [{
                     icon: dash,
@@ -399,28 +436,6 @@ function addStationMarkers(line) {
         // Store the marker in the global array
         allStationMarkers.push(stationMarker);
     });
-}
-
-function createServiceReductionHandler(infoWindow, line, i) {
-    let serviceReductionType = serviceReductionTypes[line.serviceReductions[i].typeIdx];
-    
-    return function(event) {
-
-        
-        infoWindow.setContent(`
-            <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
-                <div style="font-size: 14px; text-align: center;">${line.name}</div>
-                <div style="font-size: 12px; margin-top: 4px; text-align: center;">
-                    ${serviceReductionType.name} from ${line.stations[line.serviceReductions[i].startStationIdx].name} to ${line.stations[line.serviceReductions[i].endStationIdx].name}
-                </div>
-                <div style="font-size: 11px; color: #666; margin-top: 4px; margin-bottom: 4px; text-align: center;">
-                    ${line.serviceReductions[i].description}
-                </div>
-            </div>
-        `);
-        infoWindow.setPosition(event.latLng);
-        infoWindow.open(map);
-    }
 }
 
 function addServiceReductions(line) {
@@ -513,16 +528,64 @@ function addServiceReductions(line) {
             icon: serviceReductionType.icon
         });
 
-        const serviceReductionInfoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
-        const serviceReductionHandler = createServiceReductionHandler(serviceReductionInfoWindow, line, i);
+        let serviceReductionInfoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
+        serviceReductionInfoWindow.setContent(`
+            <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
+                <div style="font-size: 14px; text-align: center;">${line.name}</div>
+                <div style="font-size: 12px; margin-top: 4px; text-align: center;">
+                    ${serviceReductionType.name} from ${line.stations[line.serviceReductions[i].startStationIdx].name} to ${line.stations[line.serviceReductions[i].endStationIdx].name}
+                </div>
+                <div style="font-size: 11px; color: #666; margin-top: 4px; margin-bottom: 4px; text-align: center;">
+                    ${line.serviceReductions[i].description}
+                </div>
+            </div>
+        `);
 
-        // Add event listeners for the marker
-        serviceReductionMarker.addListener('mouseover', serviceReductionHandler);
-        serviceReductionMarker.addListener('click', serviceReductionHandler);
+        // If on mobile device
+        if (isMobile) {
+            // Toggle the info window on click event
+            serviceReductionMarker.addListener('click', (event) => {
+                if (serviceReductionInfoWindow.getMap()) {
+                    serviceReductionInfoWindow.close();
+                    currentInfoWindow = null;
+                }
+                else {
+                    if (currentInfoWindow !== null) { currentInfoWindow.close();}
+                    serviceReductionInfoWindow.setPosition(event.latLng);
+                    serviceReductionInfoWindow.open(map);
+                    currentInfoWindow = serviceReductionInfoWindow;
 
-        // Close the info window on mouseout
-        serviceReductionMarker.addListener('mouseout', () => { serviceReductionInfoWindow.close(); });
-        map.addListener('click', () => { serviceReductionInfoWindow.close(); });
+                    // After the info window opens, close it if clicked on
+                    currentInfoWindow.addListener('domready', () => {
+                        const iwOuter = document.querySelector('.gm-style-iw-c');
+                        if (iwOuter) {
+                            iwOuter.addEventListener('click', (e) => {
+                                currentInfoWindow.close();
+                                currentInfoWindow = null;
+                                e.stopPropagation();
+                            });
+                        }
+                    });
+                }
+            });
+
+            // If the user clicks anywhere else, close the info window
+            map.addListener('click', () => {
+                currentInfoWindow.close();
+                currentInfoWindow = null;
+            });
+        }
+
+        // If on computer
+        else {
+            serviceReductionMarker.addListener('mouseover', (event) => {
+                serviceReductionInfoWindow.setPosition(event.latLng);
+                serviceReductionInfoWindow.open(map);
+            });
+            serviceReductionMarker.addListener('mouseout', () => {
+                serviceReductionInfoWindow.close();
+            });
+        }
 
         // Store the marker in the global array
         allReductionMarkers.push(serviceReductionMarker);
