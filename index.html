@@ -113,7 +113,11 @@
             lines[2].addServiceReduction("Kennedy", "McCowan", "No service", "Permanently closed.");
 
             alertsjson.alerts.forEach(alert => {
-                lines[alert.lineIdx].addServiceReduction(alert.startStation, alert.endStation, alert.effectDesc, alert.description);
+                if (alert.lineIdx < 0 || alert.lineIdx >= lines.length || alert.lineIdx === null) {
+                    console.error(`Invalid line index ${alert.lineIdx} for alert:`, alert);
+                } else {
+                    lines[alert.lineIdx].addServiceReduction(alert.startStation, alert.endStation, alert.effectDesc, alert.description);
+                }
             });
 
             const lastUpdatedDate = new Date(alertsjson.lastUpdated);

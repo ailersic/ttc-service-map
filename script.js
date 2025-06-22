@@ -42,6 +42,10 @@ class Line {
         this.serviceReductions = [];
     }
     addServiceReduction(startStation, endStation, effectDesc, description) {
+        if (startStation === null || endStation === null || effectDesc === null || description === null) {
+            console.error("Invalid parameters for service reduction. All parameters must be non-null.");
+            return;
+        }
         let startStationIdx = this.stations.findIndex(station => station.name === startStation);
         let endStationIdx = this.stations.findIndex(station => station.name === endStation);
         let typeIdx = serviceReductionTypes.findIndex(type => type.name.toLowerCase() === effectDesc.toLowerCase());
