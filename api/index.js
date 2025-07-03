@@ -21,16 +21,24 @@ app.get('/api/fetch', async (req, res) => {
         jsonData.routes.forEach(route => {
             let lineIdx = -1;
 
+            let description = route.title;
+            if (route.description.length > route.title.length) {
+                description = route.description;
+            }
+
             if (route.routeType == "Subway") {
                 if (route.route == "1") {lineIdx = 0;}
                 else if (route.route == "2") {lineIdx = 1;}
                 else if (route.route == "4") {lineIdx = 3;}
+                else {
+                    if (description.includes("Line 1")) { lineIdx = 0; }
+                    else if (description.includes("Line 2")) { lineIdx = 1; }
+                    else if (description.includes("Line 4")) { lineIdx = 3; }
+                }
             }
 
             else if (route.routeType == "Streetcar") { return; }
             else if (route.routeType == "Bus") { return; }
-
-            let description = route.title;
 
             alerts.push({
                 lineIdx: lineIdx,

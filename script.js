@@ -42,12 +42,16 @@ class Line {
         this.serviceReductions = [];
     }
     addServiceReduction(startStation, endStation, effectDesc, description) {
-        if (startStation === null || endStation === null || effectDesc === null || description === null) {
-            console.error("Invalid parameters for service reduction. All parameters must be non-null.");
+        if (description === null || description === "") {
+            console.error("Error: description must be non-empty.");
             return;
         }
-        let startStationIdx = this.stations.findIndex(station => station.name === startStation);
-        let endStationIdx = this.stations.findIndex(station => station.name === endStation);
+        description = description.replace(/<a[\s\S]*?\/a>/gi, ""); // Remove <a> tags
+        description = description.trim();
+
+        if (effectDesc === null) { effectDesc = "Alert"; } // Default to "Alert" if no effect description is provided
+
+        // Find type of alert
         let typeIdx = serviceReductionTypes.findIndex(type => type.name.toLowerCase() === effectDesc.toLowerCase());
 
         // If the type is not found, we try to interpret it
@@ -70,6 +74,39 @@ class Line {
         // If the type is still not found, default to "Alert"
         if (typeIdx === -1) {
             typeIdx = serviceReductionTypes.findIndex(type => type.name === "Alert");
+        }
+
+        // Find the indices of the start and end stations
+        let startStationIdx = this.stations.findIndex(station => station.name === startStation);
+        let endStationIdx = this.stations.findIndex(station => station.name === endStation);
+
+        // If both stations are not found, we try to find them in the description
+        if (startStationIdx === -1 && endStationIdx === -1) {
+            let matchingStations = []
+            this.stations.forEach((station) => {
+                if (description.includes(station.name)) {
+                    matchingStations.push(station.name);
+                }
+            });
+
+            // check if any matching stations are substrings of other matching stations
+            matchingStations = matchingStations.filter((station, index) => {
+                return !matchingStations.some((otherStation, otherIndex) => {
+                    return (index !== otherIndex) && otherStation.includes(station);
+                });
+            });
+
+            // If we have two matching stations, we assume they are the start and end stations
+            if (matchingStations.length === 2) {
+                startStationIdx = this.stations.findIndex(station => station.name === matchingStations[0]);
+                endStationIdx = this.stations.findIndex(station => station.name === matchingStations[1]);
+            } else if (matchingStations.length === 1) {
+                startStationIdx = this.stations.findIndex(station => station.name === matchingStations[0]);
+                endStationIdx = startStationIdx; // If only one station is found, we assume it's both start and end
+            } else {
+                console.error(`Error: could not find stations in the description. Matching stations: ${matchingStations.join(", ")}`);
+                return;
+            }
         }
 
         // If the start and end stations are the same, we expand the range by one station in each direction
