@@ -107,6 +107,14 @@ class Line {
                 console.error(`Error: could not find stations in the description. Matching stations: ${matchingStations.join(", ")}`);
                 return;
             }
+        } else if (startStationIdx === -1 || endStationIdx === -1) {
+            // If one of the stations can't be identified, we return an error
+            if (startStationIdx === -1) {
+                console.error(`Error: could not find start station "${startStation}" in the list of stations.`);
+            } else {
+                console.error(`Error: could not find end station "${endStation}" in the list of stations.`);
+            }
+            return;
         }
 
         // If the start and end stations are the same, we expand the range by one station in each direction

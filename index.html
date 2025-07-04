@@ -16,7 +16,7 @@
 
     <h1>TTCMAP.CA</h1>
 
-    <h2 id="subheading">Map of subway network status - Last updated: Loading...</h2>
+    <h2 id="subheading">Map of subway network status - Last updated: Loading...<br>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a></h2>
     
     <div id="map"></div>
 
@@ -135,7 +135,7 @@
                 hour12: true,
             };
             
-            document.getElementById("subheading").innerHTML = `Map of subway network status - Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)}`;
+            document.getElementById("subheading").innerHTML = `Map of subway network status - Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)}<br>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a>`;
 
             refreshMap();
         }
