@@ -143,7 +143,7 @@ var lines = [
         "Line 1 - Yonge-University",
         " #FFCA09",
         [
-            new Station("Vaughan Metropolitan Centre", 43.79359492365686, -79.52692630674109),
+            new Station("Vaughan", 43.79359492365686, -79.52692630674109),
             new Station("Highway 407", 43.78320639592452, -79.52373678592252),
             new Station("Pioneer Village", 43.77768026474626, -79.51102028702846),
             new Station("York University", 43.7739463783467, -79.49968857490713),
