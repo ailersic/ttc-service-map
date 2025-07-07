@@ -25,7 +25,6 @@ h2 {
     font-size: 1em;
     color: white;
     font-weight: 300;
-    margin-bottom: 20px;
     flex-shrink: 0;
 }
 
@@ -70,6 +69,38 @@ a {
 #map {
     flex: 1; /* Allows the map to take up remaining space */
     width: 100%;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 .gm-ui-hover-effect { display: none !important; }
+
+div.button-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 0px;
+    margin-bottom: 10px;
+}
+
+.button {
+    border: none;
+    padding: 12px 12px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 1em;
+    font-family: Futura, Trebuchet MS, Arial, sans-serif;
+    margin: 4px 2px;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    background-color: white;
+    color: black;
+    border-radius: 8px;
+}
+
+.button:hover {
+    background-color: rgb(200, 200, 200);
+}
+.button:active {
+    background-color: rgb(150, 150, 150);
+}

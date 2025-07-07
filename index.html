@@ -16,11 +16,25 @@
 
     <h1>TTCMAP.CA</h1>
 
-    <h2 id="subheading">Map of subway network status - Last updated: Loading...<br>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a></h2>
+    <h2 id="subheading">Last updated: Loading...<br>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a></h2>
     
     <div id="map"></div>
 
-    <h2>This website is not affiliated with the TTC or the City of Toronto<br><a href="mailto:info@ttcmap.ca">Report issues or suggestions</a></h2>
+    <h2>
+        This website is not affiliated with the TTC or the City of Toronto
+    </h2>
+
+    <div class="button-container">
+        <a href="mailto:info@ttcmap.ca">
+            <button id="contact-button" class="button">
+                Report an issue
+            </button>
+        </a>
+        <a href="https://ko-fi.com/ttcmap">
+            <button id="donate-button" class="button">
+                <img src="kofi_symbol.png" style="max-height: 1em;"> Support us
+            </button>
+    </div>
 
     <script>
         (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
@@ -131,7 +145,7 @@
                 hour12: true,
             };
             
-            document.getElementById("subheading").innerHTML = `Map of subway network status - Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)}<br>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a>`;
+            document.getElementById("subheading").innerHTML = `Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)}<br>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a>`;
 
             refreshMap();
         }
