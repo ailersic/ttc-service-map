@@ -77,3 +77,27 @@ const stopwatch = {
     fillOpacity: 1,
     scale: iconScale
 };
+
+const forwardarrow = {
+    path: "M 0 -10 L 4 -10 L 0 -14 L -4 -10 L 0 -10",
+    strokeWeight: 4,
+    strokeOpacity: 1,
+    fillOpacity: 1,
+    scale: iconScale
+};
+
+const reversearrow = {
+    path: "M 0 10 L 4 10 L 0 14 L -4 10 L 0 10",
+    strokeWeight: 4,
+    strokeOpacity: 1,
+    fillOpacity: 1,
+    scale: iconScale
+};
+
+const bothwaysarrow = {
+    path: "",
+    strokeWeight: 4,
+    strokeOpacity: 1,
+    fillOpacity: 1,
+    scale: iconScale
+};

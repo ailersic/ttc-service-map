@@ -10,11 +10,12 @@ class Station {
 }
 
 class ServiceReduction {
-    constructor(startStationIdx, endStationIdx, typeIdx, description) {
+    constructor(startStationIdx, endStationIdx, typeIdx, description, direction) {
         this.startStationIdx = startStationIdx;
         this.endStationIdx = endStationIdx;
         this.typeIdx = typeIdx;
         this.description = description;
+        this.direction = direction;
     }
 }
 
@@ -129,11 +130,42 @@ class Line {
             endStationIdx = temp;
         }
 
+        let direction = "both"; // Default direction is both
+        console.log(`${this.name} - `)
+        if (this.name === "Line 1 - Yonge-University") {
+            if ((startStationIdx + endStationIdx) / 2 <= 21) {
+                if (description.toLowerCase().includes("south")) {
+                    direction = "forward";
+                } else if (description.toLowerCase().includes("north")) {
+                    direction = "reverse";
+                }
+            } else {
+                if (description.toLowerCase().includes("north")) {
+                    direction = "forward";
+                } else if (description.toLowerCase().includes("south")) {
+                    direction = "reverse";
+                }
+            }
+        } else if (this.name === "Line 2 - Bloor-Danforth") {
+            if (description.toLowerCase().includes("east")) {
+                direction = "forward";
+            } else if (description.toLowerCase().includes("west")) {
+                direction = "reverse";
+            }
+        } else if (this.name === "Line 4 - Sheppard") {
+            if (description.toLowerCase().includes("east")) {
+                direction = "forward";
+            } else if (description.toLowerCase().includes("west")) {
+                direction = "reverse";
+            }
+        }
+
         let serviceReduction = new ServiceReduction(
             startStationIdx,
             endStationIdx,
             typeIdx,
-            description
+            description,
+            direction
         );
         this.serviceReductions.push(serviceReduction);
     }
@@ -547,6 +579,14 @@ function addServiceReductions(line) {
         }
         let serviceReductionType = serviceReductionTypes[line.serviceReductions[i].typeIdx];
 
+        let directionIcon = bothwaysarrow;
+        if (line.serviceReductions[i].direction === "forward") {
+            directionIcon = forwardarrow;
+        } else if (line.serviceReductions[i].direction === "reverse") {
+            directionIcon = reversearrow;
+        }
+        console.log(`${line.serviceReductions[i].direction}`)
+
         let serviceReductionPolyLine = new google.maps.Polyline({
             path: stationIdxs.map(idx => ({
                 lat: line.stations[idx].lat,
@@ -557,7 +597,7 @@ function addServiceReductions(line) {
             strokeOpacity: 0.3,
             strokeWeight: 16,
             zIndex: 100,
-            //icons: [{icon: serviceReductionType.icon,offset: '50%',fixedRotation: true}]
+            //icons: [{icon: directionIcon, offset: '50%'}]
         });
 
         // Store the polyline in the global array
@@ -567,6 +607,7 @@ function addServiceReductions(line) {
         const path = serviceReductionPolyLine.getPath().getArray();
         let midLat = path[0].lat();
         let midLng = path[0].lng();
+        let rotAngle = 0;
 
         let totalDistance = 0;
         for (let i = 0; i < path.length - 1; i++) {
@@ -581,9 +622,11 @@ function addServiceReductions(line) {
                 let ratio = (totalDistance / 2 - accumulatedDistance + delta) / delta;
                 midLat = path[i].lat() + ratio * (path[i + 1].lat() - path[i].lat());
                 midLng = path[i].lng() + ratio * (path[i + 1].lng() - path[i].lng());
+                rotAngle = google.maps.geometry.spherical.computeHeading(path[i], path[i + 1]);
                 break;
             }
         }
+        console.log(`Midpoint for service reduction ${i}: lat=${midLat}, lng=${midLng}, angle=${rotAngle}`);
 
         // Create a marker at the midpoint of the polyline
         let serviceReductionMarker = new google.maps.Marker({
@@ -591,6 +634,18 @@ function addServiceReductions(line) {
             map: map,
             zIndex: 100,
             icon: serviceReductionType.icon
+        });
+
+        const scaleRGB = c => c.replace(/\d+/g, n => Math.round(n * 0.85));
+        directionIcon.rotation = rotAngle; // Set the rotation of the direction marker
+        directionIcon.strokeColor = scaleRGB(serviceReductionType.icon.strokeColor); // Set the stroke color of the direction marker
+        directionIcon.fillColor = directionIcon.strokeColor; // Set the fill color of the direction marker
+
+        let directionMarker = new google.maps.Marker({
+            position: { lat: midLat, lng: midLng },
+            map: map,
+            zIndex: 10,
+            icon: directionIcon
         });
 
         let serviceReductionInfoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
@@ -654,5 +709,6 @@ function addServiceReductions(line) {
 
         // Store the marker in the global array
         allReductionMarkers.push(serviceReductionMarker);
+        allReductionMarkers.push(directionMarker);
     }
 }
