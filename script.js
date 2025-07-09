@@ -134,28 +134,28 @@ class Line {
         console.log(`${this.name} - `)
         if (this.name === "Line 1 - Yonge-University") {
             if ((startStationIdx + endStationIdx) / 2 <= 21) {
-                if (description.toLowerCase().includes("south")) {
+                if (description.toLowerCase().includes("south") && !description.toLowerCase().includes("north")) {
                     direction = "forward";
-                } else if (description.toLowerCase().includes("north")) {
+                } else if (description.toLowerCase().includes("north") && !description.toLowerCase().includes("south")) {
                     direction = "reverse";
                 }
             } else {
-                if (description.toLowerCase().includes("north")) {
+                if (description.toLowerCase().includes("north") && !description.toLowerCase().includes("south")) {
                     direction = "forward";
-                } else if (description.toLowerCase().includes("south")) {
+                } else if (description.toLowerCase().includes("south") && !description.toLowerCase().includes("north")) {
                     direction = "reverse";
                 }
             }
         } else if (this.name === "Line 2 - Bloor-Danforth") {
-            if (description.toLowerCase().includes("east")) {
+            if (description.toLowerCase().includes("east") && !description.toLowerCase().includes("west")) {
                 direction = "forward";
-            } else if (description.toLowerCase().includes("west")) {
+            } else if (description.toLowerCase().includes("west") && !description.toLowerCase().includes("east")) {
                 direction = "reverse";
             }
         } else if (this.name === "Line 4 - Sheppard") {
-            if (description.toLowerCase().includes("east")) {
+            if (description.toLowerCase().includes("east") && !description.toLowerCase().includes("west")) {
                 direction = "forward";
-            } else if (description.toLowerCase().includes("west")) {
+            } else if (description.toLowerCase().includes("west") && !description.toLowerCase().includes("east")) {
                 direction = "reverse";
             }
         }
