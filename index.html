@@ -9,6 +9,7 @@
         window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
     <script src="icons.js"></script>
@@ -16,7 +17,7 @@
 
     <h1>TTCMAP.CA</h1>
 
-    <h2 id="subheading">Last updated: Loading...<br>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a></h2>
+    <h2 id="subheading">Last updated: Loading... <button class="small-button refresh-button" onClick="window.location.reload()"><i class="fas fa-rotate-right"></i></button><br>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a></h2>
     
     <div id="map"></div>
 
@@ -180,7 +181,7 @@
                 hour12: true,
             };
             
-            document.getElementById("subheading").innerHTML = `Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)}<br>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a>`;
+            document.getElementById("subheading").innerHTML = `Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)} <button class="small-button refresh-button" onClick="window.location.reload()"><i class="fas fa-rotate-right"></i></button><br>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a>`;
 
             refreshMap();
         }

@@ -105,6 +105,45 @@ div.button-container {
     background-color: rgb(150, 150, 150);
 }
 
+.small-button {
+    border: none;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 1em;
+    font-family: Futura, Trebuchet MS, Arial, sans-serif;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    background-color: white;
+    color: black;
+    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+}
+
+.small-button:hover {
+    background-color: rgb(200, 200, 200);
+}
+
+/* Refresh button */
+.refresh-button i {
+    transition: transform 0.5s ease;
+}
+
+.refresh-button:hover i,
+.refresh-button:focus i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.small-button:active {
+    background-color: rgb(150, 150, 150);
+}
+
  /* The Modal (background) */
 .modal {
     display: none; /* Hidden by default */
