@@ -58,7 +58,12 @@ class Line {
         // If the type is not found, we try to interpret it
         if (typeIdx === -1) {
             if (effectDesc.toLowerCase().includes("closure")) {
-                if (description.toLowerCase().includes("will be")) {
+                if (description.toLowerCase().includes("will be") ||
+                    description.toLowerCase().includes("will start") ||
+                    description.toLowerCase().includes("will end") ||
+                    description.toLowerCase().includes("will close") ||
+                    description.toLowerCase().includes("will open")
+                ) {
                     typeIdx = serviceReductionTypes.findIndex(type => type.name === "Planned disruption");
                 } else {
                     typeIdx = serviceReductionTypes.findIndex(type => type.name === "No service");
