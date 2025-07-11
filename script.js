@@ -50,7 +50,7 @@ class Line {
         description = description.replace(/<a[\s\S]*?\/a>/gi, ""); // Remove <a> tags
         description = description.trim();
 
-        if (effectDesc === null) { effectDesc = "Alert"; } // Default to "Alert" if no effect description is provided
+        if (effectDesc === null) { effectDesc = "Broken"; } // Default to unrecognized string so we can interpret it later or default to "Alert"
 
         // Find type of alert
         let typeIdx = serviceReductionTypes.findIndex(type => type.name.toLowerCase() === effectDesc.toLowerCase());
@@ -73,18 +73,25 @@ class Line {
             if (effectDesc.toLowerCase().includes("regular service")) {
                 typeIdx = serviceReductionTypes.findIndex(type => type.name === "Service restored");
             }
-            // more interpretation logic can be added here
-            // can also check for strings in description
-        }
 
-        // If the type is still not found, default to "Alert"
-        if (typeIdx === -1) {
-            typeIdx = serviceReductionTypes.findIndex(type => type.name === "Alert");
+            if (description.toLowerCase().includes("there will be no")) {
+                typeIdx = serviceReductionTypes.findIndex(type => type.name === "Planned disruption");
+            }
+
+            // more interpretation logic can be added here
+
+            // If the type is still not found, default to "Alert"
+            if (typeIdx === -1) {
+                typeIdx = serviceReductionTypes.findIndex(type => type.name === "Alert");
+            }
         }
 
         // Find the indices of the start and end stations
         let startStationIdx = this.stations.findIndex(station => station.name === startStation);
         let endStationIdx = this.stations.findIndex(station => station.name === endStation);
+        let extraStartStationIdx = -1;
+        let extraEndStationIdx = -1;
+        let extraAlert = false;
 
         // If both stations are not found, we try to find them in the description
         if (startStationIdx === -1 && endStationIdx === -1) {
@@ -109,6 +116,20 @@ class Line {
             } else if (matchingStations.length === 1) {
                 startStationIdx = this.stations.findIndex(station => station.name === matchingStations[0]);
                 endStationIdx = startStationIdx; // If only one station is found, we assume it's both start and end
+            } else if (matchingStations.length === 4) {
+                // assume there are two alerts in the description
+                // sort matchingStations by the order they appear in the description, then group them into pairs
+                extraAlert = true;
+
+                let sortedStations = matchingStations.sort((a, b) => {
+                    return description.indexOf(a) - description.indexOf(b);
+                });
+
+                startStationIdx = this.stations.findIndex(station => station.name === sortedStations[0]);
+                endStationIdx = this.stations.findIndex(station => station.name === sortedStations[1]);
+
+                extraStartStationIdx = this.stations.findIndex(station => station.name === sortedStations[2]);
+                extraEndStationIdx = this.stations.findIndex(station => station.name === sortedStations[3]);
             } else {
                 console.error(`Error: could not find stations in the description. Matching stations: ${matchingStations.join(", ")}`);
                 return;
@@ -135,8 +156,13 @@ class Line {
             endStationIdx = temp;
         }
 
+        if (extraAlert && extraStartStationIdx > extraEndStationIdx) {
+            let temp = extraStartStationIdx;
+            extraStartStationIdx = extraEndStationIdx;
+            extraEndStationIdx = temp;
+        }
+
         let direction = "both"; // Default direction is both
-        console.log(`${this.name} - `)
         if (this.name === "Line 1 - Yonge-University") {
             if ((startStationIdx + endStationIdx) / 2 <= 21) {
                 if (description.toLowerCase().includes("southbound") && !description.toLowerCase().includes("northbound")) {
@@ -159,6 +185,11 @@ class Line {
             }
         }
 
+        console.log(`Adding service reduction from ${this.stations[startStationIdx].name} to ${this.stations[endStationIdx].name} of type ${serviceReductionTypes[typeIdx].name} with description "${description}" and direction "${direction}".`);
+        if (extraAlert) {
+            console.log(`Adding extra service reduction from ${this.stations[extraStartStationIdx].name} to ${this.stations[extraEndStationIdx].name} of type ${serviceReductionTypes[typeIdx].name} with description "${description}" and direction "${direction}".`);
+        }
+
         let serviceReduction = new ServiceReduction(
             startStationIdx,
             endStationIdx,
@@ -167,6 +198,17 @@ class Line {
             direction
         );
         this.serviceReductions.push(serviceReduction);
+
+        if (extraAlert) {
+            let extraServiceReduction = new ServiceReduction(
+                extraStartStationIdx,
+                extraEndStationIdx,
+                typeIdx,
+                description,
+                direction
+            );
+            this.serviceReductions.push(extraServiceReduction);
+        }
     }
     delServiceReduction(serviceReductionIdx) {
         if (serviceReductionIdx >= 0 && serviceReductionIdx < this.serviceReductions.length) {
@@ -584,7 +626,6 @@ function addServiceReductions(line) {
         } else if (line.serviceReductions[i].direction === "reverse") {
             directionIcon = reversearrow;
         }
-        console.log(`${line.serviceReductions[i].direction}`)
 
         let serviceReductionPolyLine = new google.maps.Polyline({
             path: stationIdxs.map(idx => ({
@@ -625,7 +666,6 @@ function addServiceReductions(line) {
                 break;
             }
         }
-        console.log(`Midpoint for service reduction ${i}: lat=${midLat}, lng=${midLng}, angle=${rotAngle}`);
 
         // Create a marker at the midpoint of the polyline
         let serviceReductionMarker = new google.maps.Marker({
