@@ -79,7 +79,7 @@ const stopwatch = {
 };
 
 const forwardarrow = {
-    path: "M 0 -10 L 4 -10 L 0 -14 L -4 -10 L 0 -10",
+    path: "M 0 -11 L 3 -11 L 0 -14 L -3 -11 L 0 -11",
     strokeWeight: 4,
     strokeOpacity: 1,
     fillOpacity: 1,
@@ -87,7 +87,7 @@ const forwardarrow = {
 };
 
 const reversearrow = {
-    path: "M 0 10 L 4 10 L 0 14 L -4 10 L 0 10",
+    path: "M 0 11 L 3 11 L 0 14 L -3 11 L 0 11",
     strokeWeight: 4,
     strokeOpacity: 1,
     fillOpacity: 1,

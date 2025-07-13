@@ -675,7 +675,7 @@ function addServiceReductions(line) {
             icon: serviceReductionType.icon
         });
 
-        const scaleRGB = c => c.replace(/\d+/g, n => Math.round(n * 0.85));
+        const scaleRGB = c => c.replace(/\d+/g, n => Math.round(n * 0.75));
         directionIcon.rotation = rotAngle; // Set the rotation of the direction marker
         directionIcon.strokeColor = scaleRGB(serviceReductionType.icon.strokeColor); // Set the stroke color of the direction marker
         directionIcon.fillColor = directionIcon.strokeColor; // Set the fill color of the direction marker
