@@ -126,10 +126,6 @@ div.button-container {
 }
 
 /* Refresh button */
-.refresh-button i {
-    transition: transform 0.5s ease;
-}
-
 .refresh-button:hover i,
 .refresh-button:focus i {
     animation: spin 1s linear infinite;
