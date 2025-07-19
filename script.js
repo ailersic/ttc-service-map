@@ -27,12 +27,12 @@ class ServiceReductionType {
 }
 
 const serviceReductionTypes = [
-    new ServiceReductionType("Alert", exclamation),
     new ServiceReductionType("Delays", snail),
     new ServiceReductionType("Bypass", noentry),
     new ServiceReductionType("No service", cross),
     new ServiceReductionType("Planned disruption", clock),
-    new ServiceReductionType("Service restored", check)
+    new ServiceReductionType("Service restored", check),
+    new ServiceReductionType("Other alert", exclamation)
 ]
 
 class Line {
@@ -50,7 +50,7 @@ class Line {
         description = description.replace(/<a[\s\S]*?\/a>/gi, ""); // Remove <a> tags
         description = description.trim();
 
-        if (effectDesc === null) { effectDesc = "Broken"; } // Default to unrecognized string so we can interpret it later or default to "Alert"
+        if (effectDesc === null) { effectDesc = "Broken"; } // Default to unrecognized string so we can interpret it later or default to "Other alert"
 
         // Find type of alert
         let typeIdx = serviceReductionTypes.findIndex(type => type.name.toLowerCase() === effectDesc.toLowerCase());
@@ -80,9 +80,9 @@ class Line {
 
             // more interpretation logic can be added here
 
-            // If the type is still not found, default to "Alert"
+            // If the type is still not found, default to "Other alert"
             if (typeIdx === -1) {
-                typeIdx = serviceReductionTypes.findIndex(type => type.name === "Alert");
+                typeIdx = serviceReductionTypes.findIndex(type => type.name === "Other alert");
             }
         }
 
@@ -610,9 +610,9 @@ function addServiceReductions(line) {
                     }
                     else if (line.serviceReductions[i2].typeIdx === restoredIdx) {} // Do nothing, we already set the typeIdx to the other one
                     
-                    // Otherwise, set the combined alert to generic "Alert"
+                    // Otherwise, set the combined alert to generic "Other alert"
                     else {
-                        line.serviceReductions[i1].typeIdx = serviceReductionTypes.findIndex(type => type.name === "Alert");
+                        line.serviceReductions[i1].typeIdx = serviceReductionTypes.findIndex(type => type.name === "Other alert");
                     }
                 }
 
