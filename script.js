@@ -74,9 +74,7 @@ class Line {
                 typeIdx = serviceReductionTypes.findIndex(type => type.name === "Service restored");
             }
 
-            if (description.toLowerCase().includes("there will be no") ||
-                description.toLowerCase().includes("will be replaced")
-            ) {
+            if (description.toLowerCase().includes("there will be no")) {
                 typeIdx = serviceReductionTypes.findIndex(type => type.name === "Planned disruption");
             }
 
