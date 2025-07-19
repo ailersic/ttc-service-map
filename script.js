@@ -589,18 +589,33 @@ function addServiceReductions(line) {
                 // If the service reduction is the same as a previous one, combine them
                 line.serviceReductions[i1].description += `<br> *** <br>${line.serviceReductions[i2].description}`;
 
+                // Combine directions
+                if (line.serviceReductions[i1].direction != line.serviceReductions[i2].direction) {
+                    line.serviceReductions[i1].direction = "both";
+                }
+
+                // If service reduction types differ
                 if (line.serviceReductions[i2].typeIdx != line.serviceReductions[i1].typeIdx) {
-
-                    // If service reduction types differ, check if one is "No service" and set it to that
-                    // Otherwise, set it to "Alert"
                     let noServiceIdx = serviceReductionTypes.findIndex(type => type.name === "No service");
+                    let restoredIdx = serviceReductionTypes.findIndex(type => type.name === "Service restored");
 
+                    // If one of them is "No service", set the combined alert to that
                     if (line.serviceReductions[i2].typeIdx === noServiceIdx || line.serviceReductions[i1].typeIdx === noServiceIdx) {
                         line.serviceReductions[i1].typeIdx = noServiceIdx;
-                    } else {
+                    }
+
+                    // If one of them is "Service restored", set the combined alert to the other one
+                    else if (line.serviceReductions[i1].typeIdx === restoredIdx) {
+                        line.serviceReductions[i1].typeIdx = line.serviceReductions[i2].typeIdx;
+                    }
+                    else if (line.serviceReductions[i2].typeIdx === restoredIdx) {} // Do nothing, we already set the typeIdx to the other one
+                    
+                    // Otherwise, set the combined alert to generic "Alert"
+                    else {
                         line.serviceReductions[i1].typeIdx = serviceReductionTypes.findIndex(type => type.name === "Alert");
                     }
                 }
+
                 // Remove the previous service reduction
                 line.delServiceReduction(i2);
                 i1--; // Adjust index since we removed an item
