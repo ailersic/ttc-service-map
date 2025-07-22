@@ -78,6 +78,16 @@ const stopwatch = {
     scale: iconScale
 };
 
+const accessibility = {
+    path: "M -8 -6 L -8 6 A 2 2 0 0 0 -6 8 L 6 8 A 2 2 0 0 0 8 6 L 8 -6 A 2 2 0 0 0 6 -8 L -6 -8 A 2 2 0 0 0 -8 -6 M -1 -4 A 0.75 0.75 0 0 0 -1 -5.5 A 0.75 0.75 0 0 0 -1 -4 L 0 1 L 3 1 L 4 5 L 3 1 L 0 1 L -0.6 -2 L 3 -2 L -0.6 -2 L -1 -4 A 0.75 0.75 0 0 0 -1 -5.5 A 0.75 0.75 0 0 0 -1 -4 M -2.6 -1.3 A 3.5 3.5 0 0 0 1.6 4.3 A 3.5 3.5 0 0 1 -2.6 -1.3",
+    strokeColor: "rgb(255, 75, 75)",
+    strokeWeight: 4,
+    strokeOpacity: 1,
+    fillColor: "#ffffff",
+    fillOpacity: 1,
+    scale: iconScale
+};
+
 const forwardarrow = {
     path: "M 0 -11 L 3 -11 L 0 -14 L -3 -11 L 0 -11",
     strokeWeight: 4,

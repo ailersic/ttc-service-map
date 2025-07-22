@@ -40,7 +40,7 @@
         </a>
         <a href="https://ko-fi.com/ttcmap">
             <button id="donate-button" class="button">
-                <img src="kofi_symbol.png" style="max-height: 1em;"> Support
+                <img src="kofi_symbol.png" style="max-height: 1em;"> Donate
             </button>
         </a>
     </div>
@@ -88,8 +88,8 @@
             const { Map } = await google.maps.importLibrary("maps");
 
             map = new Map(document.getElementById("map"), {
-                center: { lat: 43.715, lng: -79.408 },
-                zoom: 12,
+                center: { lat: 43.6826990, lng: -79.3909890 }, // Centered on Summerhill station
+                zoom: 13,
                 mapId: "42",
             });
 
@@ -161,7 +161,8 @@
             lines[1].addServiceReduction("Coxwell", "Main Street", "Delays", "Reduced speed eastbound due to poor track condition.");
             lines[1].addServiceReduction("Victoria Park", "Warden", "Delays", "Reduced speed both ways due to poor track condition.");
 
-            //lines[0].addServiceReduction("St Andrew", "St Patrick", "Bypass", "Bypassing Osgoode because a disgruntled lawyer is holding the station hostage.");
+            //lines[0].addServiceReduction("Osgoode", "Osgoode", "Bypass", "Bypassing Osgoode because a disgruntled lawyer is holding the station hostage.");
+            //lines[0].addServiceReduction("Wellesley", "Wellesley", "Accessibility alert", "Broken elevator lel");
             
             lines[2].addServiceReduction("Kennedy", "McCowan", "No service", "Permanently closed.");
 

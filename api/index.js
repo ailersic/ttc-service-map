@@ -17,7 +17,8 @@ app.get('/api/fetch', async (req, res) => {
         const alerts = [];
 
         // Select each alert item
-        console.log(`Found ${jsonData.routes.length} alerts.`);
+        console.log(`Found ${jsonData.routes.length} route alerts, ${jsonData.accessibility.length} accessibility alerts.`);
+
         jsonData.routes.forEach(route => {
             let lineIdx = -1;
 
@@ -45,6 +46,33 @@ app.get('/api/fetch', async (req, res) => {
                 startStation: route.stopStart,
                 endStation: route.stopEnd,
                 effectDesc: route.effectDesc,
+                description: description,
+            });
+        });
+
+        jsonData.accessibility.forEach(access => {
+            let lineIdx = -1;
+
+            let description = access.title;
+            if (access.description.length > access.title.length) {
+                description = access.description;
+            }
+
+            if (access.routeType == "Elevator") {
+                if (access.route.split(",").includes("1")) {lineIdx = 0;}
+                else if (access.route.split(",").includes("2")) {lineIdx = 1;}
+                else if (access.route.split(",").includes("4")) {lineIdx = 3;}
+            }
+
+            else if (access.routeType == "Escalator") { return; }
+
+            let station = access.headerText.split(":")[0].trim();
+
+            alerts.push({
+                lineIdx: lineIdx,
+                startStation: station,
+                endStation: station,
+                effectDesc: "Elevator alert",
                 description: description,
             });
         });

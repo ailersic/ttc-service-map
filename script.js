@@ -31,6 +31,7 @@ const serviceReductionTypes = [
     new ServiceReductionType("Bypass", noentry),
     new ServiceReductionType("No service", cross),
     new ServiceReductionType("Planned disruption", clock),
+    new ServiceReductionType("Elevator alert", accessibility),
     new ServiceReductionType("Service restored", check),
     new ServiceReductionType("Other alert", exclamation)
 ]
@@ -144,8 +145,9 @@ class Line {
             return;
         }
 
-        // If the start and end stations are the same, we expand the range by one station in each direction
-        if (startStationIdx === endStationIdx) {
+        // If the start and end stations are the same and it's not a station-specific elevator alert, we expand the range by one station in each direction
+        let elevatorIdx = serviceReductionTypes.findIndex(type => type.name === "Elevator alert");
+        if (startStationIdx === endStationIdx && typeIdx !== elevatorIdx) {
             startStationIdx = Math.max(0, startStationIdx - 1);
             endStationIdx = Math.min(this.stations.length - 1, endStationIdx + 1);
         }
@@ -163,25 +165,27 @@ class Line {
         }
 
         let direction = "both"; // Default direction is both
-        if (this.name === "Line 1 - Yonge-University") {
-            if ((startStationIdx + endStationIdx) / 2 <= 21) {
-                if (description.toLowerCase().includes("southbound") && !description.toLowerCase().includes("northbound")) {
+        if (typeIdx !== elevatorIdx) {
+            if (this.name === "Line 1 - Yonge-University") {
+                if ((startStationIdx + endStationIdx) / 2 <= 21) {
+                    if (description.toLowerCase().includes("southbound") && !description.toLowerCase().includes("northbound")) {
+                        direction = "forward";
+                    } else if (description.toLowerCase().includes("northbound") && !description.toLowerCase().includes("southbound")) {
+                        direction = "reverse";
+                    }
+                } else {
+                    if (description.toLowerCase().includes("northbound") && !description.toLowerCase().includes("southbound")) {
+                        direction = "forward";
+                    } else if (description.toLowerCase().includes("southbound") && !description.toLowerCase().includes("northbound")) {
+                        direction = "reverse";
+                    }
+                }
+            } else if (this.name === "Line 2 - Bloor-Danforth" || this.name === "Line 4 - Sheppard") {
+                if (description.toLowerCase().includes("eastbound") && !description.toLowerCase().includes("westbound")) {
                     direction = "forward";
-                } else if (description.toLowerCase().includes("northbound") && !description.toLowerCase().includes("southbound")) {
+                } else if (description.toLowerCase().includes("westbound") && !description.toLowerCase().includes("eastbound")) {
                     direction = "reverse";
                 }
-            } else {
-                if (description.toLowerCase().includes("northbound") && !description.toLowerCase().includes("southbound")) {
-                    direction = "forward";
-                } else if (description.toLowerCase().includes("southbound") && !description.toLowerCase().includes("northbound")) {
-                    direction = "reverse";
-                }
-            }
-        } else if (this.name === "Line 2 - Bloor-Danforth" || this.name === "Line 4 - Sheppard") {
-            if (description.toLowerCase().includes("eastbound") && !description.toLowerCase().includes("westbound")) {
-                direction = "forward";
-            } else if (description.toLowerCase().includes("westbound") && !description.toLowerCase().includes("eastbound")) {
-                direction = "reverse";
             }
         }
 
@@ -703,11 +707,21 @@ function addServiceReductions(line) {
         });
 
         let serviceReductionInfoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
+
+        let stationString = "";
+        // If the start and end stations are the same, we show "at <station name>"
+        // Otherwise, we show "from <start station> to <end station>"
+        if (line.serviceReductions[i].startStationIdx === line.serviceReductions[i].endStationIdx) {
+            stationString = `at ${line.stations[line.serviceReductions[i].startStationIdx].name}`;
+        } else {
+            stationString = `from ${line.stations[line.serviceReductions[i].startStationIdx].name} to ${line.stations[line.serviceReductions[i].endStationIdx].name}`;
+        }
+
         serviceReductionInfoWindow.setContent(`
             <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
                 <div style="font-size: 14px; text-align: center;">${line.name}</div>
                 <div style="font-size: 12px; margin-top: 4px; text-align: center;">
-                    ${serviceReductionType.name} from ${line.stations[line.serviceReductions[i].startStationIdx].name} to ${line.stations[line.serviceReductions[i].endStationIdx].name}
+                    ${serviceReductionType.name} ${stationString}
                 </div>
                 <div style="font-size: 11px; color: #666; margin-top: 4px; margin-bottom: 4px; text-align: center;">
                     ${line.serviceReductions[i].description}

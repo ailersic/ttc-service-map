@@ -26,6 +26,7 @@ h2 {
     color: white;
     font-weight: 300;
     flex-shrink: 0;
+    line-height: 1.6;
 }
 
 #legend {
@@ -112,13 +113,12 @@ div.button-container {
     display: inline-block;
     font-size: 1em;
     font-family: Futura, Trebuchet MS, Arial, sans-serif;
-    transition-duration: 0.4s;
     cursor: pointer;
     background-color: white;
     color: black;
     border-radius: 8px;
-    width: 30px;
-    height: 30px;
+    width: 24px;
+    height: 24px;
 }
 
 .small-button:hover {

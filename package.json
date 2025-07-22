@@ -1,7 +1,7 @@
 {
   "name": "ttc-service-map",
-  "version": "1.0.0",
-  "description": "A web application to visualize TTC service reductions on a map.",
+  "version": "2025.07.22.1",
+  "description": "A web application to visualize TTC service disruptions on a map.",
   "main": "api/index.js",
   "author": "Andrew F. Ilersich",
   "license": "GPL-3.0-only",
