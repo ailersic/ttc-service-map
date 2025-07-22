@@ -23,6 +23,7 @@ class ServiceReductionType {
     constructor(name, icon) {
         this.name = name;
         this.icon = icon;
+        this.view = true;
     }
 }
 
@@ -398,7 +399,10 @@ function addLineSegments(line) {
     for (let i = 0; i < line.stations.length; i++) {
         let normalServiceFlag = true;
         for (let j = 0; j < line.serviceReductions.length; j++) {
-            if (i >= line.serviceReductions[j].startStationIdx && i < line.serviceReductions[j].endStationIdx) {
+            if (i >= line.serviceReductions[j].startStationIdx &&
+                i < line.serviceReductions[j].endStationIdx &&
+                serviceReductionTypes[line.serviceReductions[j].typeIdx].view)
+            {
                 normalServiceFlag = false;
             }
         }
@@ -587,6 +591,12 @@ function addServiceReductions(line) {
     while (i1 < line.serviceReductions.length) {
         let i2 = 0;
         while (i2 < i1) {
+            if (!serviceReductionTypes[line.serviceReductions[i1].typeIdx].view ||
+                !serviceReductionTypes[line.serviceReductions[i2].typeIdx].view) {
+                i2++;
+                continue;
+            }
+
             if (line.serviceReductions[i1].startStationIdx === line.serviceReductions[i2].startStationIdx &&
                 line.serviceReductions[i1].endStationIdx === line.serviceReductions[i2].endStationIdx) {
                 
@@ -633,6 +643,10 @@ function addServiceReductions(line) {
     // Create polylines for service reductions
     // These show infoboxes on mouseover with information about the service reduction
     for (let i = 0; i < line.serviceReductions.length; i++) {
+        if (!serviceReductionTypes[line.serviceReductions[i].typeIdx].view) {
+            continue; // Skip service reductions that are not set to be viewed
+        }
+
         const stationIdxs = [];
         for (let j = line.serviceReductions[i].startStationIdx; j <= line.serviceReductions[i].endStationIdx; j++) {
             stationIdxs.push(j);

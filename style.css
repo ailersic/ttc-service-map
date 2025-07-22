@@ -26,7 +26,7 @@ h2 {
     color: white;
     font-weight: 300;
     flex-shrink: 0;
-    line-height: 1.6;
+    line-height: 1.8;
 }
 
 #legend {
@@ -34,7 +34,7 @@ h2 {
     background: #000000;
     padding: 10px;
     margin: 10px;
-    width: 150px;
+    width: 180px;
     max-height: 70%;
     overflow-y: auto;
 }
@@ -44,8 +44,8 @@ h2 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 4px;
-    margin-bottom: 4px;
+    margin-top: 6px;
+    margin-bottom: 6px;
     width: 100%;
     font-size: 2em;
     color: white;
@@ -100,8 +100,9 @@ div.button-container {
 }
 
 .button:hover {
-    background-color: rgb(200, 200, 200);
+    cursor: pointer;
 }
+
 .button:active {
     background-color: rgb(150, 150, 150);
 }
@@ -117,27 +118,37 @@ div.button-container {
     background-color: white;
     color: black;
     border-radius: 8px;
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
 }
 
 .small-button:hover {
-    background-color: rgb(200, 200, 200);
+    cursor: pointer;
+}
+
+.small-button:active {
+    background-color: rgb(150, 150, 150);
+}
+
+.view-button {
+    background-color: black;
+    color: white;
+    font-size: 1.5em;
+}
+
+.view-button:active {
+    background-color: rgb(50, 50, 50);
+    transform: scale(1.1);
 }
 
 /* Refresh button */
-.refresh-button:hover i,
-.refresh-button:focus i {
+.refresh-button:active i {
     animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
     0%   { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
-}
-
-.small-button:active {
-    background-color: rgb(150, 150, 150);
 }
 
  /* The Modal (background) */
@@ -172,10 +183,7 @@ div.button-container {
     font-weight: bold;
 }
 
-.close:hover,
-.close:focus {
-    color: rgb(200, 200, 200);
-    text-decoration: none;
+.close:hover {
     cursor: pointer;
 }
 

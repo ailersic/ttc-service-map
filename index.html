@@ -88,7 +88,7 @@
             const { Map } = await google.maps.importLibrary("maps");
 
             map = new Map(document.getElementById("map"), {
-                center: { lat: 43.6826990, lng: -79.3909890 }, // Centered on Summerhill station
+                center: { lat: 43.6699990, lng: -79.3909390 }, // Centered on Bay station
                 zoom: 13,
                 mapId: "42",
             });
@@ -99,7 +99,7 @@
             
             const header = document.createElement("div");
             header.id = "legend-header";
-            header.innerHTML = `<h3>LEGEND<span>+</span></h3>`;
+            header.innerHTML = `<h3>LEGEND<span><button class="small-button legend-button">+</button></span></h3>`;
             legend.appendChild(header);
 
             const content = document.createElement("div");
@@ -126,19 +126,35 @@
                 //typeDiv.innerHTML = `${svg} <span style="font-size:1.5em; ">${name}</span>`;
                 typeDiv.innerHTML = `<div style="display: flex; align-items: center; gap: 8px; margin: 5px 0;">
                     <div style="flex-shrink: 0;">${svg}</div>
-                    <div style="flex: 1; font-size: 1.5em; word-wrap: break-word;">${name}</div>
+                    <div style="flex: 1; font-size: 1.5em; word-wrap: break-word; width: 80px;">${name}</div>
+                    <button class="small-button view-button"><i class="fa-regular fa-eye"></i></button>
                 </div>`
+                const viewButton = typeDiv.querySelector(".view-button");
+                viewButton.addEventListener("click", () => {
+                    const typeIdx = serviceReductionTypes.findIndex(type => type.name === name);
+                    if (serviceReductionTypes[typeIdx].view) {
+                        serviceReductionTypes[typeIdx].view = false;
+                        viewButton.innerHTML = `<i class="fa-regular fa-eye-slash"></i>`;
+                        refreshMap(); // Refresh the map to hide this type
+                    } else {
+                        serviceReductionTypes[typeIdx].view = true;
+                        viewButton.innerHTML = `<i class="fa-regular fa-eye"></i>`;
+                        refreshMap(); // Refresh the map to show this type
+                    }
+                });
                 content.appendChild(typeDiv);
             }
 
             legend.appendChild(content);
-            legend.addEventListener("click", () => {
+
+            const legendButton = header.querySelector(".legend-button");
+            legendButton.addEventListener("click", () => {
                 if (content.style.display === "none") {
                     content.style.display = "block";
-                    header.innerHTML = `<h3>LEGEND<span>−</span></h3>`;
+                    legendButton.innerHTML = `−`;
                 } else {
                     content.style.display = "none";
-                    header.innerHTML = `<h3>LEGEND<span>+</span></h3>`;
+                    legendButton.innerHTML = `+`;
                 }
             });
 
@@ -148,9 +164,10 @@
             const alertsjson = await response.json();
 
             // Reduced speed zones
-            lines[0].addServiceReduction("Wilson", "Museum", "Delays", "Reduced speed both ways due to poor track condition.");
+            lines[0].addServiceReduction("Wilson", "Glencairn", "Delays", "Reduced speed both ways due to poor track condition.");
+            lines[0].addServiceReduction("Eglinton West", "St George", "Delays", "Reduced speed both ways due to poor track condition.");
             lines[0].addServiceReduction("Bloor-Yonge", "Rosedale", "Delays", "Reduced speed northbound due to poor track condition.");
-            lines[0].addServiceReduction("Summerhill", "Lawrence", "Delays", "Reduced speed southbound due to poor track condition.");
+            lines[0].addServiceReduction("Summerhill", "Lawrence", "Delays", "Reduced speed both ways due to poor track condition.");
             lines[0].addServiceReduction("York Mills", "Sheppard-Yonge", "Delays", "Reduced speed northbound due to poor track condition.");
             
             lines[1].addServiceReduction("Jane", "Old Mill", "Delays", "Reduced speed westbound due to poor track condition.");
@@ -158,8 +175,7 @@
             lines[1].addServiceReduction("St George", "Bathurst", "Delays", "Reduced speed both ways due to poor track condition.");
             lines[1].addServiceReduction("Broadview", "Castle Frank", "Delays", "Reduced speed westbound due to poor track condition.");
             lines[1].addServiceReduction("Donlands", "Greenwood", "Delays", "Reduced speed eastbound due to poor track condition.");
-            lines[1].addServiceReduction("Coxwell", "Main Street", "Delays", "Reduced speed eastbound due to poor track condition.");
-            lines[1].addServiceReduction("Victoria Park", "Warden", "Delays", "Reduced speed both ways due to poor track condition.");
+            lines[1].addServiceReduction("Victoria Park", "Kennedy", "Delays", "Reduced speed both ways due to poor track condition.");
 
             //lines[0].addServiceReduction("Osgoode", "Osgoode", "Bypass", "Bypassing Osgoode because a disgruntled lawyer is holding the station hostage.");
             //lines[0].addServiceReduction("Wellesley", "Wellesley", "Accessibility alert", "Broken elevator lel");
