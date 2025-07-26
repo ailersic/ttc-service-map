@@ -15,7 +15,7 @@ h1 {
     font-size: 2.5em;
     color: white;
     font-weight: 500;
-    margin-top: 20px;
+    margin-top: 10px;
     margin-bottom: 0px;
     flex-shrink: 0;
 }
@@ -27,6 +27,8 @@ h2 {
     font-weight: 500;
     flex-shrink: 0;
     line-height: 1.8;
+    margin-top: 0px;
+    margin-bottom: 0px;
 }
 
 #legend {
@@ -80,8 +82,8 @@ a {
 div.button-container {
     display: flex;
     justify-content: center;
-    margin-top: 10px;
-    margin-bottom: 20px;
+    margin-top: 0px;
+    margin-bottom: 10px;
 }
 
 .button {
