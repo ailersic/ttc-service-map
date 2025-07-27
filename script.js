@@ -510,6 +510,8 @@ function addLineSegments(line) {
         }
     }
 
+    let reducedServiceColour = "rgb(100, 100, 100)"; // Default colour for reduced service segments
+
     // Create polylines for reduced service segments
     // These are dashed lines that do not have infoboxes
     for (let i = 0; i < reducedServiceSegments.length; i++) {
@@ -520,7 +522,7 @@ function addLineSegments(line) {
                     lng: line.stations[idx].lng
                 })),
                 geodesic: true,
-                strokeColor: line.colour,
+                strokeColor: reducedServiceColour,
                 strokeOpacity: 0.0,
                 strokeWeight: 6,
                 zIndex: 1,
@@ -667,8 +669,8 @@ function addServiceReductions(line) {
             })),
             geodesic: true,
             strokeColor: serviceReductionType.icon.strokeColor,
-            strokeOpacity: 0.3,
-            strokeWeight: 16,
+            strokeOpacity: 0.6,
+            strokeWeight: 12,
             zIndex: 100,
             //icons: [{icon: directionIcon, offset: '50%'}]
         });
