@@ -2,7 +2,7 @@ html, body {
     margin: 0;
     padding: 0;
     height: 100%;
-    font-family: Futura, "Jost", Trebuchet MS, Arial, sans-serif;
+    font-family: "Jost", Trebuchet MS, Arial, sans-serif;
     background: #000000;
     box-sizing: border-box;
     color: white;
@@ -32,14 +32,12 @@ h2 {
 }
 
 #legend {
-    font-family: Futura, "Jost", Trebuchet MS, Arial, sans-serif;
+    font-family: "Jost", Trebuchet MS, Arial, sans-serif;
     font-weight: 500;
     background: #000000;
     padding: 10px;
     margin: 10px;
     width: 180px;
-    max-height: 70%;
-    overflow-y: auto;
 }
 
 #legend h3 {
@@ -63,6 +61,28 @@ h2 {
     cursor: pointer;
     display: flex;
     justify-content: space-between;
+}
+
+path.leaflet-interactive:focus {
+    outline: none;
+}
+
+/* Make sure legend is 20px from the bottom of the map */
+#legend {
+    position: absolute;
+    bottom: 10px;
+}
+
+/* tooltips */
+.leaflet-tooltip {
+    font-family: "Jost", Trebuchet MS, Arial, sans-serif;
+    font-weight: 500;
+    padding: 5px;
+    border-radius: 10px;
+    max-width: 200px;
+    width: max-content;
+    white-space: normal;
+    text-align: center;
 }
 
 a {
@@ -93,7 +113,7 @@ div.button-container {
     text-decoration: none;
     display: inline-block;
     font-size: 1em;
-    font-family: Futura, "Jost", Trebuchet MS, Arial, sans-serif;
+    font-family: "Jost", Trebuchet MS, Arial, sans-serif;
     font-weight: 500;
     margin: 4px 2px;
     transition-duration: 0.4s;
@@ -117,7 +137,7 @@ div.button-container {
     text-decoration: none;
     display: inline-block;
     font-size: 1em;
-    font-family: Futura, Trebuchet MS, Arial, sans-serif;
+    font-family: sans-serif;
     font-weight: 500;
     cursor: pointer;
     background-color: white;
@@ -160,7 +180,7 @@ div.button-container {
 .modal {
     display: none; /* Hidden by default */
     position: fixed; /* Stay in place */
-    z-index: 1; /* Sit on top */
+    z-index: 1000; /* Sit on top */
     left: 0;
     top: 0;
     width: 100%; /* Full width */
@@ -186,6 +206,7 @@ div.button-container {
     float: right;
     font-size: 28px;
     font-weight: bold;
+    margin-left: 10px;
 }
 
 .close:hover {

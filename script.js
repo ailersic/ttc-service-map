@@ -338,43 +338,39 @@ var allReductionMarkers = [];
 
 var currentInfoWindow = null;
 
-function refreshMap() {
+function refreshMap(map) {
     // Clear existing markers and polylines
-    allSegmentPolylines.forEach(polyline => polyline.setMap(null));
-    allStationMarkers.forEach(marker => marker.setMap(null));
-    allReductionPolylines.forEach(polyline => polyline.setMap(null));
-    allReductionMarkers.forEach(marker => marker.setMap(null));
-    if (currentInfoWindow !== null && currentInfoWindow.getMap()) { currentInfoWindow.close(); }
+    allSegmentPolylines.forEach(polyline => polyline.remove());
+    allStationMarkers.forEach(marker => marker.remove());
+    allReductionPolylines.forEach(polyline => polyline.remove());
+    allReductionMarkers.forEach(marker => marker.remove());
 
     allSegmentPolylines = [];
     allStationMarkers = [];
     allReductionPolylines = [];
     allReductionMarkers = [];
-    currentInfoWindow = null;
 
     // Re-render all lines
     renderLines();
 
-    allSegmentPolylines.forEach(polyline => polyline.setMap(map));
-    allStationMarkers.forEach(marker => marker.setMap(map));
-    allReductionPolylines.forEach(polyline => polyline.setMap(map));
-    allReductionMarkers.forEach(marker => marker.setMap(map));
-
     // Connect the two Spadinas
-    let spadinaTunnel = new google.maps.Polyline({
-        path: [
-            { lat: lines[0].stations[14].lat, lng: lines[0].stations[14].lng }, // Line 1 Spadina
-            { lat: lines[1].stations[14].lat, lng: lines[1].stations[14].lng }  // Line 2 Spadina
-        ],
-        geodesic: true,
-        strokeColor: "#000000",
-        strokeOpacity: 1.0,
-        strokeWeight: 6,
+    let spadinaTunnel = L.polyline([
+        [lines[0].stations[14].lat, lines[0].stations[14].lng], // Line 1 Spadina
+        [lines[1].stations[14].lat, lines[1].stations[14].lng]  // Line 2 Spadina
+    ], {
+        color: "#000000",
+        weight: 6,
+        opacity: 1.0,
         zIndex: 1
     });
 
-    spadinaTunnel.setMap(map);
+    spadinaTunnel.addTo(map);
     allSegmentPolylines.push(spadinaTunnel);
+
+    allSegmentPolylines.forEach(polyline => polyline.addTo(map));
+    allReductionPolylines.forEach(polyline => polyline.addTo(map));
+    allStationMarkers.forEach(marker => marker.addTo(map));
+    allReductionMarkers.forEach(marker => marker.addTo(map));
 }
 
 function renderLines() {
@@ -434,22 +430,25 @@ function addLineSegments(line) {
     // These show infoboxes on mouseover
     for (let i = 0; i < normalServiceSegments.length; i++) {
         if (normalServiceSegments[i].length > 1) {
-            let transitPolyLine = new google.maps.Polyline({
-                path: normalServiceSegments[i].map(idx => ({
-                    lat: line.stations[idx].lat,
-                    lng: line.stations[idx].lng
-                })),
-                geodesic: true,
-                strokeColor: line.colour,
-                strokeOpacity: 1.0,
-                strokeWeight: 6,
-                zIndex: 1
+            let transitPolyLine = L.polyline(normalServiceSegments[i].map(idx => [
+                line.stations[idx].lat,
+                line.stations[idx].lng
+            ]), {
+                color: line.colour,
+                weight: 6,
+                opacity: 1.0
             });
 
             let startStationName = line.stations[normalServiceSegments[i][0]].name;
             let endStationName = line.stations[normalServiceSegments[i][normalServiceSegments[i].length - 1]].name;
-
-            const lineInfoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
+            
+            // Create a tooltip for the polyline
+            const lineInfoWindow = L.tooltip({
+                direction: 'top',
+                sticky: true,
+                className: 'line-tooltip',
+                offset: [0, 0]
+            });
             lineInfoWindow.setContent(`
                 <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
                     <div style="font-size: 14px; text-align: center;">${line.name}</div>
@@ -458,52 +457,7 @@ function addLineSegments(line) {
                     </div>
                 </div>
             `);
-            
-            // If on mobile device
-            if (isMobile) {
-                // Toggle the info window on click event
-                transitPolyLine.addListener('click', (event) => {
-                    if (lineInfoWindow.getMap()) {
-                        lineInfoWindow.close();
-                        currentInfoWindow = null;
-                    }
-                    else {
-                        if (currentInfoWindow !== null) { currentInfoWindow.close();}
-                        lineInfoWindow.setPosition(event.latLng);
-                        lineInfoWindow.open(map);
-                        currentInfoWindow = lineInfoWindow;
-
-                        // After the info window opens, close it if clicked on
-                        currentInfoWindow.addListener('domready', () => {
-                            const iwOuter = document.querySelector('.gm-style-iw-c');
-                            if (iwOuter) {
-                                iwOuter.addEventListener('click', (e) => {
-                                    currentInfoWindow.close();
-                                    currentInfoWindow = null;
-                                    e.stopPropagation();
-                                });
-                            }
-                        });
-                    }
-                });
-
-                // If the user clicks anywhere else, close the info window
-                map.addListener('click', () => {
-                    currentInfoWindow.close();
-                    currentInfoWindow = null;
-                });
-            }
-
-            // If on computer
-            else {
-                transitPolyLine.addListener('mouseover', (event) => {
-                    lineInfoWindow.setPosition(event.latLng);
-                    lineInfoWindow.open(map);
-                });
-                transitPolyLine.addListener('mouseout', () => {
-                    lineInfoWindow.close();
-                });
-            }
+            transitPolyLine.bindTooltip(lineInfoWindow);
 
             // Store the polyline in the global array
             allSegmentPolylines.push(transitPolyLine);
@@ -516,21 +470,14 @@ function addLineSegments(line) {
     // These are dashed lines that do not have infoboxes
     for (let i = 0; i < reducedServiceSegments.length; i++) {
         if (reducedServiceSegments[i].length > 1) {
-            let transitPolyLine = new google.maps.Polyline({
-                path: reducedServiceSegments[i].map(idx => ({
-                    lat: line.stations[idx].lat,
-                    lng: line.stations[idx].lng
-                })),
-                geodesic: true,
-                strokeColor: reducedServiceColour,
-                strokeOpacity: 0.0,
-                strokeWeight: 6,
-                zIndex: 1,
-                icons: [{
-                    icon: dash,
-                    offset: '5px',
-                    repeat: '15px',
-                }]
+            let transitPolyLine = L.polyline(reducedServiceSegments[i].map(idx => [
+                line.stations[idx].lat,
+                line.stations[idx].lng
+            ]), {
+                color: reducedServiceColour,
+                weight: 6,
+                opacity: 1.0,
+                dashArray: '5, 15' // Create a dashed line
             });
 
             // Store the polyline in the global array
@@ -539,51 +486,51 @@ function addLineSegments(line) {
     }
 }
 
-function createStationHandler(infoWindow, station) {
-    return function(event) {
-        infoWindow.setContent(`
+function addStationMarkers(line) {
+    line.stations.forEach(station => {
+        let stationMarker = L.circleMarker([station.lat, station.lng], {
+            radius: 4,
+            color: '#000000',
+            fillColor: '#FFFFFF',
+            fillOpacity: 1,
+            weight: 2,
+            opacity: 1,
+            zIndexOffset: 400
+        });
+
+        // Create an info window for the station marker
+        const stationInfoWindow = L.tooltip({
+            direction: 'top',
+            sticky: false,
+            className: 'station-tooltip',
+            offset: [0, 0]
+        });
+        stationInfoWindow.setContent(`
             <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
                 <div style="font-size: 14px; text-align: center;">${station.name}</div>
             </div>
         `);
-        infoWindow.setPosition(event.latLng);
-        infoWindow.open(map);
-    }
-}
-
-function addStationMarkers(line) {
-    line.stations.forEach(station => {
-        // Create a circle marker for each station
-        let stationMarker = new google.maps.Marker({
-            position: { lat: station.lat, lng: station.lng },
-            map: map,
-            zIndex: 1,
-            icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 3,
-                fillColor: '#FFFFFF',
-                fillOpacity: 1,
-                strokeColor: '#000000',
-                strokeWeight: 2,
-                strokeOpacity: 1
-            }
-        });
-
-        // Create an info window for the station
-        //const infoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
-        //const stationHandler = createStationHandler(infoWindow, station);
-
-        // Add event listeners for the marker
-        //stationMarker.addListener('mouseover', stationHandler);
-        //stationMarker.addListener('click', stationHandler);
-
-        // Close the info window on mouseout
-        //stationMarker.addListener('mouseout', () => { infoWindow.close(); });
-        //map.addListener('click', () => { infoWindow.close(); });
+        stationMarker.bindTooltip(stationInfoWindow);
 
         // Store the marker in the global array
         allStationMarkers.push(stationMarker);
     });
+}
+
+function getHeading(latlng1, latlng2) {
+    const toRad = deg => deg * Math.PI / 180;
+    const toDeg = rad => rad * 180 / Math.PI;
+
+    const lat1 = toRad(latlng1.lat);
+    const lat2 = toRad(latlng2.lat);
+    const deltaLng = toRad(latlng2.lng - latlng1.lng);
+
+    const y = Math.sin(deltaLng) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) -
+                Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
+
+    const angle = Math.atan2(y, x);
+    return (toDeg(angle) + 360) % 360;  // normalize to 0-360
 }
 
 function addServiceReductions(line) {
@@ -662,67 +609,42 @@ function addServiceReductions(line) {
             directionIcon = reversearrow;
         }
 
-        let serviceReductionPolyLine = new google.maps.Polyline({
-            path: stationIdxs.map(idx => ({
-                lat: line.stations[idx].lat,
-                lng: line.stations[idx].lng
-            })),
-            geodesic: true,
-            strokeColor: serviceReductionType.icon.strokeColor,
-            strokeOpacity: 0.6,
-            strokeWeight: 12,
-            zIndex: 100,
-            //icons: [{icon: directionIcon, offset: '50%'}]
+        let serviceReductionPolyLine = L.polyline(stationIdxs.map(idx => [
+            line.stations[idx].lat,
+            line.stations[idx].lng
+        ]), {
+            color: serviceReductionType.icon.strokeColor,
+            weight: 12,
+            opacity: 0.5,
+            zIndexOffset: 100,
         });
 
         // Store the polyline in the global array
         allReductionPolylines.push(serviceReductionPolyLine);
 
         // get midpoint of the polyline for the marker
-        const path = serviceReductionPolyLine.getPath().getArray();
-        let midLat = path[0].lat();
-        let midLng = path[0].lng();
+        const path = serviceReductionPolyLine.getLatLngs();
+        let midLat = path[0].lat;
+        let midLng = path[0].lng;
         let rotAngle = 0;
 
         let totalDistance = 0;
         for (let i = 0; i < path.length - 1; i++) {
-            totalDistance += google.maps.geometry.spherical.computeDistanceBetween(path[i], path[i + 1]);
+            totalDistance += L.latLng(path[i]).distanceTo(L.latLng(path[i + 1]));
         }
         let accumulatedDistance = 0;
         for (let i = 0; i < path.length - 1; i++) {
-            delta = google.maps.geometry.spherical.computeDistanceBetween(path[i], path[i + 1]);
+            delta = L.latLng(path[i]).distanceTo(L.latLng(path[i + 1]));
             accumulatedDistance += delta;
             if (accumulatedDistance >= totalDistance / 2) {
                 // We found the midpoint
                 let ratio = (totalDistance / 2 - accumulatedDistance + delta) / delta;
-                midLat = path[i].lat() + ratio * (path[i + 1].lat() - path[i].lat());
-                midLng = path[i].lng() + ratio * (path[i + 1].lng() - path[i].lng());
-                rotAngle = google.maps.geometry.spherical.computeHeading(path[i], path[i + 1]);
+                midLat = path[i].lat + ratio * (path[i + 1].lat - path[i].lat);
+                midLng = path[i].lng + ratio * (path[i + 1].lng - path[i].lng);
+                rotAngle = getHeading(path[i], path[i + 1]); // Get the heading between the two points
                 break;
             }
         }
-
-        // Create a marker at the midpoint of the polyline
-        let serviceReductionMarker = new google.maps.Marker({
-            position: { lat: midLat, lng: midLng },
-            map: map,
-            zIndex: 100,
-            icon: serviceReductionType.icon
-        });
-
-        const scaleRGB = c => c.replace(/\d+/g, n => Math.round(n * 0.75));
-        directionIcon.rotation = rotAngle; // Set the rotation of the direction marker
-        directionIcon.strokeColor = scaleRGB(serviceReductionType.icon.strokeColor); // Set the stroke color of the direction marker
-        directionIcon.fillColor = directionIcon.strokeColor; // Set the fill color of the direction marker
-
-        let directionMarker = new google.maps.Marker({
-            position: { lat: midLat, lng: midLng },
-            map: map,
-            zIndex: 10,
-            icon: directionIcon
-        });
-
-        let serviceReductionInfoWindow = new google.maps.InfoWindow({ maxWidth: 200 });
 
         let stationString = "";
         // If the start and end stations are the same, we show "at <station name>"
@@ -733,63 +655,76 @@ function addServiceReductions(line) {
             stationString = `from ${line.stations[line.serviceReductions[i].startStationIdx].name} to ${line.stations[line.serviceReductions[i].endStationIdx].name}`;
         }
 
+        // Create a marker at the midpoint of the polyline
+        const icon = serviceReductionType.icon;
+        const serviceReductionIcon = L.divIcon({
+            className: 'my-custom-svg-icon', // Optional: for CSS styling
+            html: `<svg width="${24*icon.scale}" height="${24*icon.scale}" viewBox="${-12*icon.scale} ${-12*icon.scale} ${24*icon.scale} ${24*icon.scale}" xmlns="http://www.w3.org/2000/svg">
+                <g transform="scale(${icon.scale})">
+                <path d="${icon.path}" 
+                stroke="${icon.strokeColor}" 
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="${icon.strokeWeight / icon.scale}" 
+                fill="${icon.fillColor}"/>
+                </g>
+                </svg>`,
+            iconSize: [48, 48], // Set the size of your SVG
+            iconAnchor: [24, 24], // Point of the icon corresponding to marker's location
+            tooltipAnchor: [0, -18] // Point from which the tooltip should open relative to the iconAnchor
+        });
+
+        // Bind the info window to the service reduction marker
+        let serviceReductionInfoWindow = L.tooltip({
+            direction: 'top',
+            sticky: false,
+            className: 'service-reduction-tooltip',
+            offset: [0, 0]
+        });
+
         serviceReductionInfoWindow.setContent(`
-            <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
-                <div style="font-size: 14px; text-align: center;">${line.name}</div>
+            <div style="color: black; text-align: center; margin-right: 0px; margin-left: 0px;">
+                <div style="font-size: 14px; font-weight: bold; text-align: center;">${line.name}</div>
                 <div style="font-size: 12px; margin-top: 4px; text-align: center;">
                     ${serviceReductionType.name} ${stationString}
                 </div>
-                <div style="font-size: 11px; color: #666; margin-top: 4px; margin-bottom: 4px; text-align: center;">
+                <div style="font-size: 12px; color: #666; margin-top: 4px; margin-bottom: 4px; text-align: center;">
                     ${line.serviceReductions[i].description}
                 </div>
             </div>
         `);
 
-        // If on mobile device
-        if (isMobile) {
-            // Toggle the info window on click event
-            serviceReductionMarker.addListener('click', (event) => {
-                if (serviceReductionInfoWindow.getMap()) {
-                    serviceReductionInfoWindow.close();
-                    currentInfoWindow = null;
-                }
-                else {
-                    if (currentInfoWindow !== null) { currentInfoWindow.close();}
-                    serviceReductionInfoWindow.setPosition(event.latLng);
-                    serviceReductionInfoWindow.open(map);
-                    currentInfoWindow = serviceReductionInfoWindow;
+        let serviceReductionMarker = L.marker([midLat, midLng], {
+            icon: serviceReductionIcon,
+            zIndexOffset: 1000
+        });
+        serviceReductionMarker.bindTooltip(serviceReductionInfoWindow);
 
-                    // After the info window opens, close it if clicked on
-                    currentInfoWindow.addListener('domready', () => {
-                        const iwOuter = document.querySelector('.gm-style-iw-c');
-                        if (iwOuter) {
-                            iwOuter.addEventListener('click', (e) => {
-                                currentInfoWindow.close();
-                                currentInfoWindow = null;
-                                e.stopPropagation();
-                            });
-                        }
-                    });
-                }
-            });
+        const scaleRGB = c => c.replace(/\d+/g, n => Math.round(n * 0.75));
+        directionIcon.rotation = rotAngle; // Set the rotation of the direction marker
+        directionIcon.strokeColor = scaleRGB(serviceReductionType.icon.strokeColor); // Set the stroke color of the direction marker
+        directionIcon.fillColor = directionIcon.strokeColor; // Set the fill color of the direction marker
 
-            // If the user clicks anywhere else, close the info window
-            map.addListener('click', () => {
-                currentInfoWindow.close();
-                currentInfoWindow = null;
-            });
-        }
-
-        // If on computer
-        else {
-            serviceReductionMarker.addListener('mouseover', (event) => {
-                serviceReductionInfoWindow.setPosition(event.latLng);
-                serviceReductionInfoWindow.open(map);
-            });
-            serviceReductionMarker.addListener('mouseout', () => {
-                serviceReductionInfoWindow.close();
-            });
-        }
+        let directionMarkerIcon = L.divIcon({
+            className: 'my-custom-svg-icon',
+            html: `<svg width="${32*directionIcon.scale}" height="${32*directionIcon.scale}" viewBox="${-16*directionIcon.scale} ${-16*directionIcon.scale} ${32*directionIcon.scale} ${32*directionIcon.scale}" xmlns="http://www.w3.org/2000/svg">
+                <g transform="scale(${directionIcon.scale})">
+                <path d="${directionIcon.path}"
+                transform="rotate(${rotAngle}, 0, 0)"
+                stroke="${directionIcon.strokeColor}" 
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="${directionIcon.strokeWeight / directionIcon.scale}" 
+                fill="${directionIcon.fillColor}"/>
+                </g>
+                </svg>`,
+            iconSize: [64, 64], // Set the size of your SVG
+            iconAnchor: [32, 32], // Point of the icon corresponding to marker's location
+        });
+        let directionMarker = L.marker([midLat, midLng], {
+            icon: directionMarkerIcon,
+            zIndexOffset: 200
+        });
 
         // Store the marker in the global array
         allReductionMarkers.push(serviceReductionMarker);

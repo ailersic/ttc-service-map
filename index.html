@@ -8,13 +8,25 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css"/>
     <script>
         window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="canonical" href="https://www.ttcmap.ca/">
+
+    <!-- Leaflet CSS and JS (for the map) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script type="text/javascript" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- MapLibre GL JS (still required to handle the rendering) -->
+    <script type="text/javascript" src="//unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.js"></script>
+    <link href="//unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.css" rel="stylesheet" />
+
+    <!-- Mapbox GL Leaflet -->
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.0/leaflet-maplibre-gl.js"></script>
+
+    <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
     <script src="icons.js"></script>
@@ -78,23 +90,33 @@
     </script>
 
     <script>
-        (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
-            key: "AIzaSyAb5I1R7e5z5bwjG_TLXKsaKd_jf6HaNf4",
-            v: "weekly",
-            libraries: "geometry",
-            // Use the 'v' parameter to indicate the version to use (weekly, beta, alpha, etc.).
-            // Add other bootstrap parameters as needed, using camel case.
-        });
-
         let map;
 
         async function initMap() {
-            const { Map } = await google.maps.importLibrary("maps");
+            var map = L.map('map').setView([43.6699990, -79.3909390], 13);
 
-            map = new Map(document.getElementById("map"), {
-                center: { lat: 43.6699990, lng: -79.3909390 }, // Centered on Bay station
-                zoom: 13,
-                mapId: "42",
+            L.maplibreGL({
+                style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=AxOSCbUNCcrHKkBtMTxc',  // Style URL; see our documentation for more options
+                attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
+            }).addTo(map);
+
+            const icon = serviceReductionTypes[0].icon;
+
+            const customSvgIcon = L.divIcon({
+                className: 'my-custom-svg-icon', // Optional: for CSS styling
+                html: `<svg width="${24*icon.scale}" height="${24*icon.scale}" viewBox="${-12*icon.scale} ${-12*icon.scale} ${24*icon.scale} ${24*icon.scale}" xmlns="http://www.w3.org/2000/svg">
+                    <g transform="scale(${icon.scale})">
+                    <path d="${icon.path}" 
+                    stroke="${icon.strokeColor}" 
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="${icon.strokeWeight / icon.scale}" 
+                    fill="${icon.fillColor}"/>
+                    </g>
+                    </svg>`,
+                iconSize: [48, 48], // Set the size of your SVG
+                iconAnchor: [24, 24], // Point of the icon corresponding to marker's location
+                tooltipAnchor: [0, -18] // Point from which the tooltip should open relative to the iconAnchor
             });
 
             // Create legend with service reduction types
@@ -139,16 +161,19 @@
                     if (serviceReductionTypes[typeIdx].view) {
                         serviceReductionTypes[typeIdx].view = false;
                         viewButton.innerHTML = `<i class="fa-regular fa-eye-slash"></i>`;
-                        refreshMap(); // Refresh the map to hide this type
+                        refreshMap(map); // Refresh the map to hide this type
                     } else {
                         serviceReductionTypes[typeIdx].view = true;
                         viewButton.innerHTML = `<i class="fa-regular fa-eye"></i>`;
-                        refreshMap(); // Refresh the map to show this type
+                        refreshMap(map); // Refresh the map to show this type
                     }
                 });
                 content.appendChild(typeDiv);
             }
 
+            const mapHeight = map.getContainer().clientHeight;
+            content.style.maxHeight = `${mapHeight * 0.6}px`; // Set max height to 60% of the map height
+            content.style.overflowY = "auto"; // Enable scrolling if content exceeds max height
             legend.appendChild(content);
 
             const legendButton = header.querySelector(".legend-button");
@@ -162,7 +187,25 @@
                 }
             });
 
-            map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
+            // Add the legend to the map
+            const legendControl = L.control({ position: 'bottomleft' });
+            legendControl.onAdd = function () {
+                // Prevent map dragging when interacting with the legend
+                L.DomEvent.disableClickPropagation(legend);
+                L.DomEvent.disableScrollPropagation(legend);
+
+                // Crucial for mobile: prevent touch from propagating to the map
+                legend.addEventListener('touchstart', function(e) {
+                    e.stopPropagation();
+                }, { passive: true });
+
+                legend.addEventListener('touchmove', function(e) {
+                    e.stopPropagation();
+                }, { passive: true });
+
+                return legend;
+            };
+            legendControl.addTo(map);
 
             const response = await fetch('/api/fetch');
             const alertsjson = await response.json();
@@ -206,7 +249,7 @@
             
             document.getElementById("subheading").innerHTML = `Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)} <button class="small-button refresh-button" onClick="window.location.reload()"><i class="fas fa-rotate-right"></i></button><br>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a>`;
 
-            refreshMap();
+            refreshMap(map);
         }
 
         initMap();
