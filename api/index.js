@@ -22,6 +22,20 @@ app.get('/api/fetch', async (req, res) => {
         jsonData.routes.forEach(route => {
             let lineIdx = -1;
 
+            // if route.title is null and route.description is not null, use route.description
+            if (!route.title && route.description) {
+                route.title = route.description;
+            }
+            // if route.description is null and route.title is not null, use route.title
+            else if (!route.description && route.title) {
+                route.description = route.title;
+            }
+            // if both are null, skip this route
+            else if (!route.title && !route.description) {
+                console.log("Skipping route alert with no title or description.");
+                return;
+            }
+
             let description = route.title;
             if (route.description.length > route.title.length) {
                 description = route.description;
@@ -52,6 +66,20 @@ app.get('/api/fetch', async (req, res) => {
 
         jsonData.accessibility.forEach(access => {
             let lineIdx = -1;
+
+            // if access.title is null and access.description is not null, use access.description
+            if (!access.title && access.description) {
+                access.title = access.description;
+            }
+            // if access.description is null and access.title is not null, use access.title
+            else if (!access.description && access.title) {
+                access.description = access.title;
+            }
+            // if both are null, skip this accessibility alert
+            else if (!access.title && !access.description) {
+                console.log("Skipping accessibility alert with no title or description.");
+                return;
+            }
 
             let description = access.title;
             if (access.description.length > access.title.length) {
