@@ -93,7 +93,12 @@
         let map;
 
         async function initMap() {
-            var map = L.map('map').setView([43.6699990, -79.3909390], 13);
+            var map = L.map('map', {
+                maxBounds: [[43.201, -80.161], [44.182, -78.717]], // Toronto area bounds
+                maxBoundsViscosity: 1.0, // Prevents panning outside bounds
+                minZoom: 12, // Minimum zoom level
+                maxZoom: 17, // Maximum zoom level
+            }).setView([43.6699990, -79.3909390], 13);
 
             L.maplibreGL({
                 style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=AxOSCbUNCcrHKkBtMTxc',  // Style URL; see our documentation for more options

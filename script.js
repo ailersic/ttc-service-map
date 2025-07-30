@@ -489,11 +489,11 @@ function addLineSegments(line) {
 function addStationMarkers(line) {
     line.stations.forEach(station => {
         let stationMarker = L.circleMarker([station.lat, station.lng], {
-            radius: 4,
+            radius: 6,
             color: '#000000',
             fillColor: '#FFFFFF',
             fillOpacity: 1,
-            weight: 2,
+            weight: 4,
             opacity: 1,
             zIndexOffset: 400
         });
