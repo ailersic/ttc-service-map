@@ -26,6 +26,10 @@
     <!-- Mapbox GL Leaflet -->
     <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.0/leaflet-maplibre-gl.js"></script>
 
+    <!-- Protomaps Leaflet -->
+    <script src="https://unpkg.com/pmtiles@4.3.0/dist/pmtiles.js"></script>
+    <script src="https://unpkg.com/protomaps-leaflet@5.0.1/dist/protomaps-leaflet.js"></script>
+
     <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
@@ -99,11 +103,13 @@
                 minZoom: 12, // Minimum zoom level
                 maxZoom: 17, // Maximum zoom level
             }).setView([43.6699990, -79.3909390], 13);
-
-            L.maplibreGL({
-                style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=AxOSCbUNCcrHKkBtMTxc',  // Style URL; see our documentation for more options
-                attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
-            }).addTo(map);
+            
+            // connect to pmtiles hosted on cloudflare
+            var layer = protomapsL.leafletLayer({
+                url:'https://tiles.ttcmap.ca/toronto.pmtiles',
+                flavor: 'light',
+            });
+            layer.addTo(map);
 
             const icon = serviceReductionTypes[0].icon;
 
@@ -217,17 +223,17 @@
 
             // Reduced speed zones
             lines[0].addServiceReduction("Wilson", "Glencairn", "Delays", "Reduced speed both ways due to poor track condition.");
-            lines[0].addServiceReduction("Eglinton West", "St George", "Delays", "Reduced speed both ways due to poor track condition.");
+            lines[0].addServiceReduction("Eglinton West", "Dupont", "Delays", "Reduced speed both ways due to poor track condition.");
+            lines[0].addServiceReduction("Spadina", "St George", "Delays", "Reduced speed southbound due to poor track condition.");
             lines[0].addServiceReduction("Bloor-Yonge", "Rosedale", "Delays", "Reduced speed northbound due to poor track condition.");
-            lines[0].addServiceReduction("Summerhill", "Lawrence", "Delays", "Reduced speed both ways due to poor track condition.");
-            lines[0].addServiceReduction("York Mills", "Sheppard-Yonge", "Delays", "Reduced speed northbound due to poor track condition.");
+            lines[0].addServiceReduction("Summerhill", "Eglinton", "Delays", "Reduced speed southbound due to poor track condition.");
             
             lines[1].addServiceReduction("Jane", "Old Mill", "Delays", "Reduced speed westbound due to poor track condition.");
-            lines[1].addServiceReduction("Keele", "Lansdowne", "Delays", "Reduced speed eastbound due to poor track condition.");
+            lines[1].addServiceReduction("Dundas West", "Lansdowne", "Delays", "Reduced speed eastbound due to poor track condition.");
             lines[1].addServiceReduction("St George", "Bathurst", "Delays", "Reduced speed both ways due to poor track condition.");
             lines[1].addServiceReduction("Broadview", "Castle Frank", "Delays", "Reduced speed westbound due to poor track condition.");
             lines[1].addServiceReduction("Donlands", "Greenwood", "Delays", "Reduced speed eastbound due to poor track condition.");
-            lines[1].addServiceReduction("Victoria Park", "Kennedy", "Delays", "Reduced speed both ways due to poor track condition.");
+            lines[1].addServiceReduction("Victoria Park", "Warden", "Delays", "Reduced speed westbound due to poor track condition.");
 
             //lines[0].addServiceReduction("Osgoode", "Osgoode", "Bypass", "Bypassing Osgoode because a disgruntled lawyer is holding the station hostage.");
             //lines[0].addServiceReduction("Wellesley", "Wellesley", "Accessibility alert", "Broken elevator lel");
