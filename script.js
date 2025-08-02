@@ -34,7 +34,8 @@ const serviceReductionTypes = [
     new ServiceReductionType("Planned disruption", clock),
     new ServiceReductionType("Elevator alert", accessibility),
     new ServiceReductionType("Service restored", check),
-    new ServiceReductionType("Other alert", exclamation)
+    new ServiceReductionType("Other alert", exclamation),
+    new ServiceReductionType("Multiple alerts", multiple)
 ]
 
 class Line {
@@ -573,9 +574,9 @@ function addServiceReductions(line) {
                     }
                     else if (line.serviceReductions[i2].typeIdx === restoredIdx) {} // Do nothing, we already set the typeIdx to the other one
                     
-                    // Otherwise, set the combined alert to generic "Other alert"
+                    // Otherwise, set the combined alert to "Multiple alerts"
                     else {
-                        line.serviceReductions[i1].typeIdx = serviceReductionTypes.findIndex(type => type.name === "Other alert");
+                        line.serviceReductions[i1].typeIdx = serviceReductionTypes.findIndex(type => type.name === "Multiple alerts");
                     }
                 }
 

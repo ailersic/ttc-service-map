@@ -42,6 +42,16 @@ const clock = {
 
 const exclamation = {
     path: "M 0,0 m -8,0 a 8,8 0 1,0 16,0 a 8,8 0 1,0 -16,0 M 0,1 L 0,-4.5 M 0,4.5 L 0,4.6",
+    strokeColor: "rgb(200, 100, 0)",
+    strokeWeight: 4,
+    strokeOpacity: 1,
+    fillColor: "#ffffff",
+    fillOpacity: 1,
+    scale: iconScale
+};
+
+const multiple = {
+    path: "M 0 0 m -8 0 a 8 8 0 1 0 16 0 a 8 8 0 1 0 -16 0 M -3.5 0.5 L -3.5 -3.5 M -3.5 3.5 L -3.5 3.6 M 0 0.5 L 0 -3.5 M 0 3.5 L 0 3.6 M 3.5 0.5 L 3.5 -3.5 M 3.5 3.5 L 3.5 3.6",
     strokeColor: "rgb(255, 75, 75)",
     strokeWeight: 4,
     strokeOpacity: 1,
@@ -59,14 +69,6 @@ const snail = {
     fillOpacity: 1,
     scale: iconScale
 }
-
-const dash = {
-    path: "M 0,0 L 0,5",
-    strokeWeight: 4,
-    strokeOpacity: 1,
-    fillOpacity: 1,
-    scale: 1
-};
 
 const stopwatch = {
     path: "M 0,0 m -8,0 a 8,8 0 1,0 16,0 a 8,8 0 1,0 -16,0 M 0,0 L 0,-5 M 0,0 L 2,3 M 0,-8 L 0,-11 L -3,-11 L 3,-11 L 0,-11",
