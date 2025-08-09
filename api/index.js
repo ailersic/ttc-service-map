@@ -12,13 +12,52 @@ app.get('/api/fetch', async (req, res) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     
     try {
-        const response = await fetch('https://alerts.ttc.ca/api/alerts/live-alerts');
-        const jsonData = await response.json();
-        const alerts = [];
-
-        // Select each alert item
+        const liveAlertResponse = await fetch('https://alerts.ttc.ca/api/alerts/live-alerts');
+        const jsonData = await liveAlertResponse.json();
         console.log(`Found ${jsonData.routes.length} route alerts, ${jsonData.accessibility.length} accessibility alerts.`);
 
+        const slowZoneResponse = await fetch('https://www.ttc.ca/riding-the-ttc/Updates/Reduced-Speed-Zones');
+        const slowZoneText = await slowZoneResponse.text();
+        const slowZoneTables = slowZoneText.match(/<table[\s\S]*?<\/table>/g) || [];
+        console.log(`Found ${slowZoneTables.length} slow zone tables.`);
+
+        const alerts = [];
+        
+        // Process slow zone tables
+        for (let i = 0; i < slowZoneTables.length; i++) {
+            const table = slowZoneTables[i];
+            const rows = table.match(/<tr[\s\S]*?<\/tr>/g) || [];
+            for (let j = 1; j < rows.length; j++) { // Skip the header row
+                const row = rows[j];
+                const cells = row.match(/<td[\s\S]*?<\/td>/g) || [];
+                const descCell = cells[0] || '';
+                const causeCell = cells[6] || '';
+                const trimmedDesc = descCell.replace(/<\/?td[^>]*>/g, '').trim().replace(/\&nbsp;/g, '').replace(' (x2)', '');
+                const trimmedCause = causeCell.replace(/<\/?td[^>]*>/g, '').trim();
+
+                let stopStart = trimmedDesc.split(' to ')[0].trim();
+                const firstSpaceIndex = stopStart.indexOf(' ');
+                stopStart = stopStart.substring(firstSpaceIndex + 1).trim();
+                const stopEnd = trimmedDesc.split(' to ')[1].trim();
+
+                const description = 'Reduced speed ' +
+                                    trimmedDesc.charAt(0).toLowerCase() +
+                                    trimmedDesc.slice(1) +
+                                    ' due to ' +
+                                    trimmedCause.toLowerCase();
+                console.log(`Slow zone alert found: ${description}`);
+
+                alerts.push({
+                    lineIdx: i, // Assuming each table corresponds to a line index
+                    startStation: stopStart,
+                    endStation: stopEnd,
+                    effectDesc: "Delays",
+                    description: description,
+                });
+            }
+        }
+
+        // Select each alert item
         jsonData.routes.forEach(route => {
             let lineIdx = -1;
 

@@ -535,9 +535,49 @@ function getHeading(latlng1, latlng2) {
 }
 
 function addServiceReductions(line) {
-    // Check if any service reductions cover the same stations, and combine them if they do
-    // This is done to avoid having multiple service reductions for the same segment
+    // Check if any service reductions are adjacent, and combine them if they are
     let i1 = 0;
+    while (i1 < line.serviceReductions.length) {
+        let i2 = 0;
+        while (i2 < i1) {
+            if (!serviceReductionTypes[line.serviceReductions[i1].typeIdx].view ||
+                !serviceReductionTypes[line.serviceReductions[i2].typeIdx].view) {
+                i2++;
+                continue;
+            }
+
+            if ((line.serviceReductions[i1].startStationIdx === line.serviceReductions[i2].endStationIdx ||
+                 line.serviceReductions[i1].endStationIdx === line.serviceReductions[i2].startStationIdx) &&
+                (line.serviceReductions[i1].typeIdx === line.serviceReductions[i2].typeIdx)) {
+                
+                // If the service reduction is adjacent to a previous one and the same type, combine them
+                if (line.serviceReductions[i1].startStationIdx === line.serviceReductions[i2].endStationIdx) {
+                    line.serviceReductions[i1].startStationIdx = line.serviceReductions[i2].startStationIdx;
+                }
+                else if (line.serviceReductions[i1].endStationIdx === line.serviceReductions[i2].startStationIdx) {
+                    line.serviceReductions[i1].endStationIdx = line.serviceReductions[i2].endStationIdx;
+                }
+
+                // Combine descriptions
+                line.serviceReductions[i1].description += `<hr>${line.serviceReductions[i2].description}`;
+
+                // Combine directions
+                if (line.serviceReductions[i1].direction != line.serviceReductions[i2].direction) {
+                    line.serviceReductions[i1].direction = "both";
+                }
+
+                // Remove the previous service reduction
+                line.delServiceReduction(i2);
+                i1 = 0; // Adjust index since we removed an item
+                break; // Exit the loop since we modified the array
+            }
+            i2++;
+        }
+        i1++;
+    }
+
+    // Check if any service reductions cover the same stations, and combine them if they do
+    i1 = 0;
     while (i1 < line.serviceReductions.length) {
         let i2 = 0;
         while (i2 < i1) {
@@ -551,7 +591,7 @@ function addServiceReductions(line) {
                 line.serviceReductions[i1].endStationIdx === line.serviceReductions[i2].endStationIdx) {
                 
                 // If the service reduction is the same as a previous one, combine them
-                line.serviceReductions[i1].description += `<br> *** <br>${line.serviceReductions[i2].description}`;
+                line.serviceReductions[i1].description += `<hr>${line.serviceReductions[i2].description}`;
 
                 // Combine directions
                 if (line.serviceReductions[i1].direction != line.serviceReductions[i2].direction) {
@@ -582,7 +622,48 @@ function addServiceReductions(line) {
 
                 // Remove the previous service reduction
                 line.delServiceReduction(i2);
-                i1--; // Adjust index since we removed an item
+                i1 = 0; // Adjust index since we removed an item
+                break; // Exit the loop since we modified the array
+            }
+            i2++;
+        }
+        i1++;
+    }
+
+    // Check if any service reductions are entirely inside a previous one, and combine them if they are
+    i1 = 0;
+    while (i1 < line.serviceReductions.length) {
+        let i2 = 0;
+        while (i2 < i1) {
+            if (!serviceReductionTypes[line.serviceReductions[i1].typeIdx].view ||
+                !serviceReductionTypes[line.serviceReductions[i2].typeIdx].view) {
+                i2++;
+                continue;
+            }
+            console.log(`Checking if service reduction ${line.serviceReductions[i1].description} is inside ${line.serviceReductions[i2].description} for line ${line.name}.`);
+            console.log(`Start station: ${line.serviceReductions[i1].startStationIdx}, End station: ${line.serviceReductions[i1].endStationIdx}`);
+            console.log(`Start station: ${line.serviceReductions[i2].startStationIdx}, End station: ${line.serviceReductions[i2].endStationIdx}`);
+            console.log("...");
+
+            if ((line.serviceReductions[i1].startStationIdx <= line.serviceReductions[i2].startStationIdx &&
+                line.serviceReductions[i1].endStationIdx >= line.serviceReductions[i2].endStationIdx) &&
+                (line.serviceReductions[i1].typeIdx === line.serviceReductions[i2].typeIdx)) {
+                console.log(`Combining service reduction ${line.serviceReductions[i1].description} with ${line.serviceReductions[i2].description} for line ${line.name}.`);
+                console.log(`Start station: ${line.serviceReductions[i1].startStationIdx}, End station: ${line.serviceReductions[i1].endStationIdx}`);
+                console.log(`Start station: ${line.serviceReductions[i2].startStationIdx}, End station: ${line.serviceReductions[i2].endStationIdx}`);
+                
+                // If the service reduction is entirely inside a previous one and the same type, combine them
+                // Combine descriptions
+                line.serviceReductions[i1].description += `<hr>${line.serviceReductions[i2].description}`;
+
+                // Combine directions
+                if (line.serviceReductions[i1].direction != line.serviceReductions[i2].direction) {
+                    line.serviceReductions[i1].direction = "both";
+                }
+
+                // Remove the previous service reduction
+                line.delServiceReduction(i2);
+                i1 = 0; // Adjust index since we removed an item
                 break; // Exit the loop since we modified the array
             }
             i2++;
