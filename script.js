@@ -609,10 +609,10 @@ function addServiceReductions(line) {
                     }
 
                     // If one of them is "Service restored", set the combined alert to the other one
-                    else if (line.serviceReductions[i1].typeIdx === restoredIdx) {
-                        line.serviceReductions[i1].typeIdx = line.serviceReductions[i2].typeIdx;
-                    }
-                    else if (line.serviceReductions[i2].typeIdx === restoredIdx) {} // Do nothing, we already set the typeIdx to the other one
+                    //else if (line.serviceReductions[i1].typeIdx === restoredIdx) {
+                    //    line.serviceReductions[i1].typeIdx = line.serviceReductions[i2].typeIdx;
+                    //}
+                    //else if (line.serviceReductions[i2].typeIdx === restoredIdx) {} // Do nothing, we already set the typeIdx to the other one
                     
                     // Otherwise, set the combined alert to "Multiple alerts"
                     else {
