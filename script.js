@@ -701,8 +701,19 @@ function addServiceReductions(line) {
             zIndexOffset: 100,
         });
 
+        let serviceReductionHighlightPolyLine = L.polyline(stationIdxs.map(idx => [
+            line.stations[idx].lat,
+            line.stations[idx].lng
+        ]), {
+            color: "rgba(0, 255, 255, 0.5)",
+            weight: 20,
+            opacity: 0,
+            zIndexOffset: 1000,
+        });
+
         // Store the polyline in the global array
         allReductionPolylines.push(serviceReductionPolyLine);
+        allReductionPolylines.push(serviceReductionHighlightPolyLine);
 
         // get midpoint of the polyline for the marker
         const path = serviceReductionPolyLine.getLatLngs();
@@ -781,6 +792,13 @@ function addServiceReductions(line) {
             zIndexOffset: 1000
         });
         serviceReductionMarker.bindTooltip(serviceReductionInfoWindow);
+
+        serviceReductionMarker.on('tooltipopen', function() {
+            serviceReductionHighlightPolyLine.setStyle({opacity: 1});
+        });
+        serviceReductionMarker.on('tooltipclose', function() {
+            serviceReductionHighlightPolyLine.setStyle({opacity: 0});
+        });
 
         const scaleRGB = c => c.replace(/\d+/g, n => Math.round(n * 0.75));
         directionIcon.rotation = rotAngle; // Set the rotation of the direction marker
