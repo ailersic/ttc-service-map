@@ -643,18 +643,11 @@ function addServiceReductions(line) {
                 i2++;
                 continue;
             }
-            console.log(`Checking if service reduction ${line.serviceReductions[i1].description} is inside ${line.serviceReductions[i2].description} for line ${line.name}.`);
-            console.log(`Start station: ${line.serviceReductions[i1].startStationIdx}, End station: ${line.serviceReductions[i1].endStationIdx}`);
-            console.log(`Start station: ${line.serviceReductions[i2].startStationIdx}, End station: ${line.serviceReductions[i2].endStationIdx}`);
-            console.log("...");
 
             if ((line.serviceReductions[i1].startStationIdx <= line.serviceReductions[i2].startStationIdx &&
                 line.serviceReductions[i1].endStationIdx >= line.serviceReductions[i2].endStationIdx) &&
                 (line.serviceReductions[i1].typeIdx === line.serviceReductions[i2].typeIdx)) {
-                console.log(`Combining service reduction ${line.serviceReductions[i1].description} with ${line.serviceReductions[i2].description} for line ${line.name}.`);
-                console.log(`Start station: ${line.serviceReductions[i1].startStationIdx}, End station: ${line.serviceReductions[i1].endStationIdx}`);
-                console.log(`Start station: ${line.serviceReductions[i2].startStationIdx}, End station: ${line.serviceReductions[i2].endStationIdx}`);
-                
+
                 // If the service reduction is entirely inside a previous one and the same type, combine them
                 // Combine descriptions
                 line.serviceReductions[i1].description += `<hr>${line.serviceReductions[i2].description}`;
