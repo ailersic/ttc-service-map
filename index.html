@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="300">
     <title>TTCmap.ca - TTC Network Service Map</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -111,25 +110,6 @@
             });
             layer.addTo(map);
 
-            const icon = serviceReductionTypes[0].icon;
-
-            const customSvgIcon = L.divIcon({
-                className: 'my-custom-svg-icon', // Optional: for CSS styling
-                html: `<svg width="${24*icon.scale}" height="${24*icon.scale}" viewBox="${-12*icon.scale} ${-12*icon.scale} ${24*icon.scale} ${24*icon.scale}" xmlns="http://www.w3.org/2000/svg">
-                    <g transform="scale(${icon.scale})">
-                    <path d="${icon.path}" 
-                    stroke="${icon.strokeColor}" 
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="${icon.strokeWeight / icon.scale}" 
-                    fill="${icon.fillColor}"/>
-                    </g>
-                    </svg>`,
-                iconSize: [48, 48], // Set the size of your SVG
-                iconAnchor: [24, 24], // Point of the icon corresponding to marker's location
-                tooltipAnchor: [0, -18] // Point from which the tooltip should open relative to the iconAnchor
-            });
-
             // Create legend with service reduction types
             const legend = document.createElement("div");
             legend.id = "legend";
@@ -163,8 +143,8 @@
                 //typeDiv.innerHTML = `${svg} <span style="font-size:1.5em; ">${name}</span>`;
                 typeDiv.innerHTML = `<div style="display: flex; align-items: center; gap: 8px; margin: 5px 0;">
                     <div style="flex-shrink: 0;">${svg}</div>
-                    <div style="flex: 1; font-size: 1.5em; word-wrap: break-word; width: 80px;">${name}</div>
-                    <button class="small-button view-button"><i class="fa-regular fa-eye"></i></button>
+                    <div style="flex: 1; font-size: 1.3em; word-wrap: break-word; width: 70px;">${name}</div>
+                    <button class="small-button view-button" style="margin-right: 10px;"><i class="fa-regular fa-eye"></i></button>
                 </div>`
                 const viewButton = typeDiv.querySelector(".view-button");
                 viewButton.addEventListener("click", () => {
@@ -218,35 +198,43 @@
             };
             legendControl.addTo(map);
 
-            const response = await fetch('/api/fetch');
-            const alertsjson = await response.json();
+            async function fetchAndPlotAlerts() {
+                const response = await fetch('/api/fetch');
+                const alertsjson = await response.json();
 
-            //lines[0].addServiceReduction("Osgoode", "Osgoode", "Bypass", "Bypassing Osgoode because a disgruntled lawyer is holding the station hostage.");
-            //lines[0].addServiceReduction("Wellesley", "Wellesley", "Accessibility alert", "Broken elevator lel");
-            
-            lines[2].addServiceReduction("Kennedy", "McCowan", "No service", "Permanently closed.");
+                // Clear existing service reductions
+                lines.forEach(line => line.clearServiceReductions());
 
-            alertsjson.alerts.forEach(alert => {
-                if (alert.lineIdx < 0 || alert.lineIdx >= lines.length || alert.lineIdx === null) {
-                    console.error(`Invalid line index ${alert.lineIdx} for alert:`, alert);
-                } else {
-                    lines[alert.lineIdx].addServiceReduction(alert.startStation, alert.endStation, alert.effectDesc, alert.description);
-                }
-            });
+                //lines[0].addServiceReduction("Osgoode", "Osgoode", "Bypass", "Bypassing Osgoode because a disgruntled lawyer is holding the station hostage.");
+                //lines[0].addServiceReduction("Wellesley", "Wellesley", "Accessibility alert", "Broken elevator lel");
+                
+                lines[2].addServiceReduction("Kennedy", "McCowan", "No service", "Permanently closed.");
 
-            const lastUpdatedDate = new Date(alertsjson.lastUpdated);
-            const options = {
-                timeZone: 'UTC',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true,
-            };
-            
-            document.getElementById("subheading").innerHTML = `Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)} <button class="small-button refresh-button" onClick="window.location.reload()"><i class="fas fa-rotate-right"></i></button><br>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a>`;
+                alertsjson.alerts.forEach(alert => {
+                    if (alert.lineIdx < 0 || alert.lineIdx >= lines.length || alert.lineIdx === null) {
+                        console.error(`Invalid line index ${alert.lineIdx} for alert:`, alert);
+                    } else {
+                        lines[alert.lineIdx].addServiceReduction(alert.startStation, alert.endStation, alert.effectDesc, alert.description);
+                    }
+                });
 
-            refreshMap(map);
+                const lastUpdatedDate = new Date(alertsjson.lastUpdated);
+                const options = {
+                    timeZone: 'UTC',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                };
+                
+                document.getElementById("subheading").innerHTML = `Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)} <button class="small-button refresh-button" onClick="window.location.reload()"><i class="fas fa-rotate-right"></i></button><br>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a>`;
+
+                refreshMap(map);
+            }
+
+            fetchAndPlotAlerts(); // Initial fetch and plot
+            const interval = setInterval(fetchAndPlotAlerts, 300000); // Refresh every 5 minutes
         }
 
         initMap();

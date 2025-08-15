@@ -31,7 +31,7 @@ const serviceReductionTypes = [
     new ServiceReductionType("Delays", snail),
     new ServiceReductionType("Bypass", noentry),
     new ServiceReductionType("No service", cross),
-    new ServiceReductionType("Planned disruption", clock),
+    new ServiceReductionType("Planned alert", clock),
     new ServiceReductionType("Elevator alert", accessibility),
     new ServiceReductionType("Service restored", check),
     new ServiceReductionType("Other alert", exclamation),
@@ -67,7 +67,7 @@ class Line {
                     description.toLowerCase().includes("will close") ||
                     description.toLowerCase().includes("will open")
                 ) {
-                    typeIdx = serviceReductionTypes.findIndex(type => type.name === "Planned disruption");
+                    typeIdx = serviceReductionTypes.findIndex(type => type.name === "Planned alert");
                 } else {
                     typeIdx = serviceReductionTypes.findIndex(type => type.name === "No service");
                 }
@@ -78,7 +78,7 @@ class Line {
             }
 
             if (description.toLowerCase().includes("there will be no")) {
-                typeIdx = serviceReductionTypes.findIndex(type => type.name === "Planned disruption");
+                typeIdx = serviceReductionTypes.findIndex(type => type.name === "Planned alert");
             }
 
             // more interpretation logic can be added here
@@ -222,6 +222,9 @@ class Line {
         } else {
             console.error(`Invalid service reduction index: ${serviceReductionIdx} when length is ${this.serviceReductions.length}.`);
         }
+    }
+    clearServiceReductions() {
+        this.serviceReductions = [];
     }
 }
 
