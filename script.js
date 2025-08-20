@@ -538,7 +538,7 @@ function getHeading(latlng1, latlng2) {
 }
 
 function addServiceReductions(line) {
-    // Check if any service reductions are adjacent, and combine them if they are
+    // Check if any service reductions of the same type overlap, and combine them if they are
     let i1 = 0;
     while (i1 < line.serviceReductions.length) {
         let i2 = 0;
@@ -549,17 +549,15 @@ function addServiceReductions(line) {
                 continue;
             }
 
-            if ((line.serviceReductions[i1].startStationIdx === line.serviceReductions[i2].endStationIdx ||
-                 line.serviceReductions[i1].endStationIdx === line.serviceReductions[i2].startStationIdx) &&
+            if (((line.serviceReductions[i1].startStationIdx >= line.serviceReductions[i2].startStationIdx &&
+                  line.serviceReductions[i1].startStationIdx <= line.serviceReductions[i2].endStationIdx) ||
+                 (line.serviceReductions[i1].endStationIdx >= line.serviceReductions[i2].startStationIdx &&
+                  line.serviceReductions[i1].endStationIdx <= line.serviceReductions[i2].endStationIdx)) &&
                 (line.serviceReductions[i1].typeIdx === line.serviceReductions[i2].typeIdx)) {
                 
                 // If the service reduction is adjacent to a previous one and the same type, combine them
-                if (line.serviceReductions[i1].startStationIdx === line.serviceReductions[i2].endStationIdx) {
-                    line.serviceReductions[i1].startStationIdx = line.serviceReductions[i2].startStationIdx;
-                }
-                else if (line.serviceReductions[i1].endStationIdx === line.serviceReductions[i2].startStationIdx) {
-                    line.serviceReductions[i1].endStationIdx = line.serviceReductions[i2].endStationIdx;
-                }
+                line.serviceReductions[i1].startStationIdx = Math.min(line.serviceReductions[i1].startStationIdx, line.serviceReductions[i2].startStationIdx);
+                line.serviceReductions[i1].endStationIdx = Math.max(line.serviceReductions[i1].endStationIdx, line.serviceReductions[i2].endStationIdx);
 
                 // Combine descriptions
                 line.serviceReductions[i1].description += `<hr>${line.serviceReductions[i2].description}`;
@@ -621,40 +619,6 @@ function addServiceReductions(line) {
                     else {
                         line.serviceReductions[i1].typeIdx = serviceReductionTypes.findIndex(type => type.name === "Multiple alerts");
                     }
-                }
-
-                // Remove the previous service reduction
-                line.delServiceReduction(i2);
-                i1 = 0; // Adjust index since we removed an item
-                break; // Exit the loop since we modified the array
-            }
-            i2++;
-        }
-        i1++;
-    }
-
-    // Check if any service reductions are entirely inside a previous one, and combine them if they are
-    i1 = 0;
-    while (i1 < line.serviceReductions.length) {
-        let i2 = 0;
-        while (i2 < i1) {
-            if (!serviceReductionTypes[line.serviceReductions[i1].typeIdx].view ||
-                !serviceReductionTypes[line.serviceReductions[i2].typeIdx].view) {
-                i2++;
-                continue;
-            }
-
-            if ((line.serviceReductions[i1].startStationIdx <= line.serviceReductions[i2].startStationIdx &&
-                line.serviceReductions[i1].endStationIdx >= line.serviceReductions[i2].endStationIdx) &&
-                (line.serviceReductions[i1].typeIdx === line.serviceReductions[i2].typeIdx)) {
-
-                // If the service reduction is entirely inside a previous one and the same type, combine them
-                // Combine descriptions
-                line.serviceReductions[i1].description += `<hr>${line.serviceReductions[i2].description}`;
-
-                // Combine directions
-                if (line.serviceReductions[i1].direction != line.serviceReductions[i2].direction) {
-                    line.serviceReductions[i1].direction = "both";
                 }
 
                 // Remove the previous service reduction
