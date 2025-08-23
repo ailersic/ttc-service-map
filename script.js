@@ -89,6 +89,10 @@ class Line {
             }
         }
 
+        // If station name is "Vaughan Metropolitan Centre", change it to "Vaughan"
+        if (startStation === "Vaughan Metropolitan Centre") { startStation = "Vaughan"; }
+        if (endStation === "Vaughan Metropolitan Centre") { endStation = "Vaughan"; }
+
         // Find the indices of the start and end stations
         let startStationIdx = this.stations.findIndex(station => station.name === startStation);
         let endStationIdx = this.stations.findIndex(station => station.name === endStation);
@@ -134,7 +138,7 @@ class Line {
                 extraStartStationIdx = this.stations.findIndex(station => station.name === sortedStations[2]);
                 extraEndStationIdx = this.stations.findIndex(station => station.name === sortedStations[3]);
             } else {
-                console.error(`Error: could not find stations in the description. Matching stations: ${matchingStations.join(", ")}`);
+                console.error(`Error: could not find stations in the description. Description: "${description}"`);
                 return;
             }
         } else if (startStationIdx === -1 || endStationIdx === -1) {
