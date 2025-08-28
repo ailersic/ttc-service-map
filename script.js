@@ -93,6 +93,30 @@ class Line {
         if (startStation === "Vaughan Metropolitan Centre") { startStation = "Vaughan"; }
         if (endStation === "Vaughan Metropolitan Centre") { endStation = "Vaughan"; }
 
+        // If station name is "Sheppard", change it to "Sheppard-Yonge"
+        if (startStation === "Sheppard") { startStation = "Sheppard-Yonge"; }
+        if (endStation === "Sheppard") { endStation = "Sheppard-Yonge"; }
+
+        // If station name is "Bloor", change it to "Bloor-Yonge"
+        if (startStation === "Bloor") { startStation = "Bloor-Yonge"; }
+        if (endStation === "Bloor") { endStation = "Bloor-Yonge"; }
+
+        // If station name is "Yonge", change it to "Bloor-Yonge" if Line 2, or "Sheppard-Yonge" if Line 4
+        if (startStation === "Yonge") {
+            if (this.name === "Line 2 - Bloor-Danforth") {
+                startStation = "Bloor-Yonge";
+            } else if (this.name === "Line 4 - Sheppard") {
+                startStation = "Sheppard-Yonge";
+            }
+        }
+        if (endStation === "Yonge") {
+            if (this.name === "Line 2 - Bloor-Danforth") {
+                endStation = "Bloor-Yonge";
+            } else if (this.name === "Line 4 - Sheppard") {
+                endStation = "Sheppard-Yonge";
+            }
+        }
+
         // Find the indices of the start and end stations
         let startStationIdx = this.stations.findIndex(station => station.name === startStation);
         let endStationIdx = this.stations.findIndex(station => station.name === endStation);
