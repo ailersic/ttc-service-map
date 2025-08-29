@@ -117,6 +117,10 @@ class Line {
             }
         }
 
+        // Catch typos in station names
+        if (startStation === "Sheppard Wes") { startStation = "Sheppard West"; }
+        if (endStation === "Sheppard Wes") { endStation = "Sheppard West"; }
+
         // Find the indices of the start and end stations
         let startStationIdx = this.stations.findIndex(station => station.name === startStation);
         let endStationIdx = this.stations.findIndex(station => station.name === endStation);
