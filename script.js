@@ -581,10 +581,15 @@ function addServiceReductions(line) {
                 continue;
             }
 
-            if (((line.serviceReductions[i1].startStationIdx >= line.serviceReductions[i2].startStationIdx &&
-                  line.serviceReductions[i1].startStationIdx <= line.serviceReductions[i2].endStationIdx) ||
-                 (line.serviceReductions[i1].endStationIdx >= line.serviceReductions[i2].startStationIdx &&
-                  line.serviceReductions[i1].endStationIdx <= line.serviceReductions[i2].endStationIdx)) &&
+            let i1Start = line.serviceReductions[i1].startStationIdx;
+            let i1End = line.serviceReductions[i1].endStationIdx;
+            let i2Start = line.serviceReductions[i2].startStationIdx;
+            let i2End = line.serviceReductions[i2].endStationIdx;
+
+            if (((i1Start >= i2Start && i1Start <= i2End) || // i1 starts inside i2
+                 (i1End >= i2Start && i1End <= i2End) || // i1 ends inside i2
+                 (i2Start >= i1Start && i2Start <= i1End) || // i2 starts inside i1
+                 (i2End >= i1Start && i2End <= i1End)) && // i2 ends inside i1
                 (line.serviceReductions[i1].typeIdx === line.serviceReductions[i2].typeIdx)) {
                 
                 // If the service reduction is adjacent to a previous one and the same type, combine them
