@@ -12,16 +12,16 @@ app.get('/api/fetch', async (req, res) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     
     try {
+        const alerts = [];
+
         const liveAlertResponse = await fetch('https://alerts.ttc.ca/api/alerts/live-alerts');
         const jsonData = await liveAlertResponse.json();
         console.log(`Found ${jsonData.routes.length} route alerts, ${jsonData.accessibility.length} accessibility alerts.`);
 
-        const slowZoneResponse = await fetch('https://www.ttc.ca/riding-the-ttc/Updates/Reduced-Speed-Zones');
+        /*const slowZoneResponse = await fetch('https://www.ttc.ca/riding-the-ttc/Updates/Reduced-Speed-Zones');
         const slowZoneText = await slowZoneResponse.text();
         const slowZoneTables = slowZoneText.match(/<table[\s\S]*?<\/table>/g) || [];
         console.log(`Found ${slowZoneTables.length} slow zone tables.`);
-
-        const alerts = [];
         
         // Process slow zone tables
         for (let i = 0; i < slowZoneTables.length; i++) {
@@ -47,15 +47,19 @@ app.get('/api/fetch', async (req, res) => {
                                     trimmedCause.toLowerCase();
                 console.log(`Slow zone alert found: ${description}`);
 
+                let lineIdx = -1;
+                if (i == 0 || i == 1) {lineIdx = 0;} // Line 1
+                else if (i == 2 || i == 3) {lineIdx = 1;} // Line 2
+
                 alerts.push({
-                    lineIdx: i, // Assuming each table corresponds to a line index
+                    lineIdx: lineIdx, // Assuming each table corresponds to a line index
                     startStation: stopStart,
                     endStation: stopEnd,
                     effectDesc: "Delays",
                     description: description,
                 });
             }
-        }
+        }*/
 
         // Select each alert item
         jsonData.routes.forEach(route => {

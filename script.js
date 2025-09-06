@@ -77,6 +77,10 @@ class Line {
                 typeIdx = serviceReductionTypes.findIndex(type => type.name === "Service restored");
             }
 
+            if (effectDesc.toLowerCase().includes("reduced speed zone")) {
+                typeIdx = serviceReductionTypes.findIndex(type => type.name === "Delays");
+            }
+
             if (description.toLowerCase().includes("there will be no")) {
                 typeIdx = serviceReductionTypes.findIndex(type => type.name === "Planned alert");
             }
