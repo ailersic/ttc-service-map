@@ -354,7 +354,7 @@ var lines = [
             new Station("Lawrence East", 43.750492758336705, -79.27022397820112),
             new Station("Ellesmere", 43.76684906706332, -79.27622767390194),
             new Station("Midland", 43.77042753260233, -79.27198857241383),
-            new Station("Scarborough Town Centre", 43.77439342976872, -79.25795440901479),
+            new Station("Scarborough Centre", 43.77439342976872, -79.25795440901479),
             new Station("McCowan", 43.77467540310604, -79.2522365349571)
         ]
     ),
