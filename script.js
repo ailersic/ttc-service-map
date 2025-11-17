@@ -93,6 +93,14 @@ class Line {
             }
         }
 
+        // If station name is "Eglinton West", change it to "Cedarvale"
+        if (startStation === "Eglinton West") { startStation = "Cedarvale (formerly Eglinton West)"; }
+        if (endStation === "Eglinton West") { endStation = "Cedarvale (formerly Eglinton West)"; }
+
+        // If station name is "Dundas", change it to "TMU"
+        if (startStation === "Dundas") { startStation = "TMU (formerly Dundas)"; }
+        if (endStation === "Dundas") { endStation = "TMU (formerly Dundas)"; }
+
         // If station name is "Vaughan Metropolitan Centre", change it to "Vaughan"
         if (startStation === "Vaughan Metropolitan Centre") { startStation = "Vaughan"; }
         if (endStation === "Vaughan Metropolitan Centre") { endStation = "Vaughan"; }
@@ -120,10 +128,6 @@ class Line {
                 endStation = "Sheppard-Yonge";
             }
         }
-
-        // Catch typos in station names
-        if (startStation === "Sheppard Wes") { startStation = "Sheppard West"; }
-        if (endStation === "Sheppard Wes") { endStation = "Sheppard West"; }
 
         // Find the indices of the start and end stations
         let startStationIdx = this.stations.findIndex(station => station.name === startStation);
@@ -280,7 +284,7 @@ var lines = [
             new Station("Yorkdale", 43.7245980, -79.4474920),
             new Station("Lawrence West", 43.7152660, -79.4439145),
             new Station("Glencairn", 43.7085980, -79.4405415),
-            new Station("Eglinton West", 43.6999980, -79.4364910),
+            new Station("Cedarvale (formerly Eglinton West)", 43.6999980, -79.4364910),
             new Station("St Clair West", 43.6845480, -79.4156400),
             new Station("Dupont", 43.6743490, -79.4068895),
             new Station("Spadina", 43.6696490, -79.4049890),
@@ -293,7 +297,7 @@ var lines = [
             new Station("Union", 43.6456990, -79.3805880),
             new Station("King", 43.6490490, -79.3778880),
             new Station("Queen", 43.6527490, -79.3793880),
-            new Station("Dundas", 43.6565490, -79.3809880),
+            new Station("TMU (formerly Dundas)", 43.6565490, -79.3809880),
             new Station("College", 43.6607990, -79.3828880),
             new Station("Wellesley", 43.6655490, -79.3836380),
             new Station("Bloor-Yonge", 43.6705465, -79.3856535),

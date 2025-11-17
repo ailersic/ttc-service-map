@@ -64,24 +64,34 @@ app.get('/api/fetch', async (req, res) => {
         // Select each alert item
         jsonData.routes.forEach(route => {
             let lineIdx = -1;
+            let description = "";
 
+            // if route.headerText is not null, use it
+            if (route.headerText) {
+                if (route.headerText.includes(": "))
+                    description = route.headerText.split(": ")[1];
+                else
+                    description = route.headerText;
+            }
             // if route.title is null and route.description is not null, use route.description
-            if (!route.title && route.description) {
-                route.title = route.description;
+            else if (!route.title && route.description) {
+                description = route.description;
             }
             // if route.description is null and route.title is not null, use route.title
             else if (!route.description && route.title) {
-                route.description = route.title;
+                description = route.title;
             }
-            // if both are null, skip this route
-            else if (!route.title && !route.description) {
-                console.log("Skipping route alert with no title or description.");
+            // if both are not null, use the longer one
+            else if (route.title && route.description) {
+                if (route.description.length > route.title.length)
+                    description = route.description;
+                else
+                    description = route.title;
+            }
+            // if everything is null, skip this route
+            else {
+                console.log("Skipping route alert with no description.");
                 return;
-            }
-
-            let description = route.title;
-            if (route.description.length > route.title.length) {
-                description = route.description;
             }
 
             if (route.routeType == "Subway") {
