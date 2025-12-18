@@ -93,13 +93,21 @@ class Line {
             }
         }
 
-        // If station name is "Eglinton West", change it to "Cedarvale"
+        // If station name is "Eglinton West", change it to "Cedarvale (...)"
         if (startStation === "Eglinton West") { startStation = "Cedarvale (formerly Eglinton West)"; }
         if (endStation === "Eglinton West") { endStation = "Cedarvale (formerly Eglinton West)"; }
 
-        // If station name is "Dundas", change it to "TMU"
+        // If station name is "Cedarvale", change it to "Cedarvale (...)"
+        if (startStation === "Cedarvale") { startStation = "Cedarvale (formerly Eglinton West)"; }
+        if (endStation === "Cedarvale") { endStation = "Cedarvale (formerly Eglinton West)"; }
+
+        // If station name is "Dundas", change it to "TMU (...)"
         if (startStation === "Dundas") { startStation = "TMU (formerly Dundas)"; }
         if (endStation === "Dundas") { endStation = "TMU (formerly Dundas)"; }
+
+        // If station name is "TMU", change it to "TMU (...)"
+        if (startStation === "TMU") { startStation = "TMU (formerly Dundas)"; }
+        if (endStation === "TMU") { endStation = "TMU (formerly Dundas)"; }
 
         // If station name is "Vaughan Metropolitan Centre", change it to "Vaughan"
         if (startStation === "Vaughan Metropolitan Centre") { startStation = "Vaughan"; }
