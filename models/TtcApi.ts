@@ -7,12 +7,86 @@ import { RouteType } from '../prisma/generated/client.ts';
 import { pipeline } from 'stream/promises';
 import { Writable } from 'stream';
 
+export type SubwayPlatformCollection = Awaited<ReturnType<TtcApi['getSubwayPlatforms']>>;
+export type SubwayRouteCollection = Awaited<ReturnType<TtcApi['getSubwayRoutes']>>;
+
 export default class TtcApi {
     private readonly baseUrl = 'https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action';
 
     private loadGtfsStaticPromise: Promise<void> | null = null;
 
     constructor() { }
+
+    async getSubwayPlatforms() {
+        return prisma.platform.findMany({
+            where: {
+                trip_stops: {
+                    some: {
+                        trip: {
+                            route: {
+                                type: RouteType.SubwayMetro,
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: {
+                id: 'asc',
+            },
+            omit: {
+                parent_station_id: true,
+            },
+        }).then(result => {
+            const dict: {
+                [k in string]: Omit<typeof result[0], 'id'>;
+            } = {};
+            result.forEach(({ id, ...rest }) => {
+                dict[id] = rest;
+            });
+            return dict;
+        });
+    }
+
+    async getSubwayRoutes() {
+        return prisma.route.findMany({
+            where: {
+                type: RouteType.SubwayMetro,
+            },
+            select: {
+                short_name: true,
+                long_name: true,
+                color: true,
+                trips: {
+                    select: {
+                        headsign: true,
+                        direction: true,
+                        trip_stops: {
+                            select: {
+                                platform_id: true,
+                            },
+                            orderBy: {
+                                sequence: 'asc',
+                            },
+                        },
+                    },
+                    distinct: 'direction',
+                    orderBy: {
+                        trip_stops: {
+                            _count: 'desc',
+                        },
+                    },
+                },
+            },
+        }).then(result => {
+            return result.map(r => ({
+                ...r,
+                trips: r.trips.map(t => ({
+                    ...t,
+                    trip_stops: t.trip_stops.map(({ platform_id }) => platform_id),
+                })),
+            }));
+        });
+    }
 
     loadGtfsStatic() {
         return this.loadGtfsStaticPromise = this._loadGtfsStatic().then(() => { this.loadGtfsStaticPromise = null });
@@ -94,11 +168,12 @@ export default class TtcApi {
                     await this._consumeCsv(file, async (routes: Gtfs.Route[]) => {
                         console.log('GTFS routes:', routes.length);
                         await prisma.route.createMany({
-                            data: routes.map(({ route_id, route_long_name, route_short_name, route_type }): RouteCreateManyInput => ({
+                            data: routes.map(({ route_id, route_long_name, route_short_name, route_type, route_color }): RouteCreateManyInput => ({
                                 id: route_id,
                                 long_name: route_long_name,
                                 short_name: route_short_name,
                                 type: this._mapGtfsRouteTypeToApi(route_type),
+                                color: route_color || this._getDefaultRouteColor(route_id),
                             })),
                         });
                     });
@@ -107,6 +182,7 @@ export default class TtcApi {
                     // TODO
                     break;
                 case 'stops.txt':
+                    // TODO: infer stations from platform names
                     await this._consumeCsv(file, async (stops: Gtfs.Stop[]) => {
                         console.log('GTFS stops:', stops.length);
                         ['', ...Object.values(Gtfs.LocationType).filter(lt => !isNaN(Number(lt)))]
@@ -174,7 +250,7 @@ export default class TtcApi {
         }
         console.log('done');
     }
-
+    
     private async _consumeCsv(file: unzipper.File, store: (rows: {}[]) => Promise<void>) {
         console.log(`${file.path} (${(file.uncompressedSize / 1024 / 1024).toFixed(1)} MB)`);
         const parser = parse();
@@ -224,6 +300,16 @@ export default class TtcApi {
                 return RouteType.Bus;
             default:
                 throw new Error(`Route Type not supported: ${Gtfs.RouteType[routeType]}`);
+        }
+    }
+
+    private _getDefaultRouteColor(id: string): string {
+        switch (id) {
+            case '1': return '#f8c300';
+            case '2': return '#00923f';
+            case '4': return '#a21a68';
+            case '6': return '#969594';
+            default: return '#da251d';
         }
     }
 };

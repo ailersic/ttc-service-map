@@ -96,6 +96,8 @@
         let map;
 
         async function initMap() {
+            await loadSubway();
+
             var map = L.map('map', {
                 maxBounds: [[43.201, -80.161], [44.182, -78.717]], // Toronto area bounds
                 maxBoundsViscosity: 1.0, // Prevents panning outside bounds

@@ -5,6 +5,9 @@ import TtcApi from '../models/TtcApi.ts';
 const app = express();
 const PORT = 3000;
 
+const ttcApi = new TtcApi();
+await ttcApi.loadGtfsStatic();
+
 // Serve static files
 app.use(express.static('.'));
 
@@ -173,11 +176,15 @@ app.get('/api/fetch', async (req, res) => {
 });
 
 app.get('/api/subway/routes', async (req, res) => {
+    res.json(await ttcApi.getSubwayRoutes());
+});
+
+app.get('/api/subway/stations', async (req, res) => {
     // TODO
 });
 
 app.get('/api/subway/platforms', async (req, res) => {
-    // TODO
+    res.json(await ttcApi.getSubwayPlatforms());
 });
 
 app.get('/api/streetcar/routes', async (req, res) => {
@@ -190,9 +197,6 @@ app.get('/api/streetcar/platforms', async (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
-
-    const ttcApi = new TtcApi();
-    ttcApi.loadGtfsStatic();
 });
 
 // module.exports = app; // Export the app for testing purposes

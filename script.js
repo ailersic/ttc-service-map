@@ -1,5 +1,5 @@
-const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                 ('ontouchstart' in window);
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    ('ontouchstart' in window);
 
 class Station {
     constructor(name, lat, lng) {
@@ -375,6 +375,23 @@ var lines = [
     )
 ];
 
+
+/**
+ * @typedef {Object} Subway
+ * @property {import("./models/TtcApi.ts").SubwayPlatformCollection} platforms
+ * @property {import("./models/TtcApi.ts").SubwayRouteCollection} routes
+ */
+/** @type {Subway} */
+const subway = {
+    platforms: {},
+    routes: [],
+};
+
+async function loadSubway() {
+    subway.platforms = await fetch('/api/subway/platforms').then(res => res.json());
+    subway.routes = await fetch('/api/subway/routes').then(res => res.json());
+}
+
 var allSegmentPolylines = [];
 var allReductionPolylines = [];
 var allStationMarkers = [];
@@ -436,17 +453,29 @@ function addLineSegments(line) {
     let isegRed = 0;
     let lastStationNormal = true;
 
+    subway.routes.forEach(({ trips, color }) => trips.forEach(({ trip_stops }) => {
+        const transitPolyLine = L.polyline(trip_stops.map(id => {
+            const { latitude, longitude } = subway.platforms[id];
+            return [latitude, longitude];
+        }), {
+            color,
+            weight: 6,
+            opacity: 1,
+        });
+        allSegmentPolylines.push(transitPolyLine);
+    }));
+
+    
     for (let i = 0; i < line.stations.length; i++) {
         let normalServiceFlag = true;
         for (let j = 0; j < line.serviceReductions.length; j++) {
             if (i >= line.serviceReductions[j].startStationIdx &&
                 i < line.serviceReductions[j].endStationIdx &&
-                serviceReductionTypes[line.serviceReductions[j].typeIdx].view)
-            {
+                serviceReductionTypes[line.serviceReductions[j].typeIdx].view) {
                 normalServiceFlag = false;
             }
         }
-        
+
         if (lastStationNormal == normalServiceFlag) {
             if (normalServiceFlag) {
                 normalServiceSegments[iseg].push(i);
@@ -470,6 +499,7 @@ function addLineSegments(line) {
         lastStationNormal = normalServiceFlag;
     }
 
+    /*
     // Create polylines for normal service segments
     // These show infoboxes on mouseover
     for (let i = 0; i < normalServiceSegments.length; i++) {
@@ -485,7 +515,7 @@ function addLineSegments(line) {
 
             let startStationName = line.stations[normalServiceSegments[i][0]].name;
             let endStationName = line.stations[normalServiceSegments[i][normalServiceSegments[i].length - 1]].name;
-            
+
             // Create a tooltip for the polyline
             const lineInfoWindow = L.tooltip({
                 direction: 'top',
@@ -507,6 +537,7 @@ function addLineSegments(line) {
             allSegmentPolylines.push(transitPolyLine);
         }
     }
+    */
 
     let reducedServiceColour = "rgb(100, 100, 100)"; // Default colour for reduced service segments
 
@@ -531,11 +562,11 @@ function addLineSegments(line) {
 }
 
 function addStationMarkers(line) {
-    line.stations.forEach(station => {
-        let stationMarker = L.circleMarker([station.lat, station.lng], {
+    Object.values(subway.platforms).forEach(({ latitude, longitude, name }) => {
+        const stationMarker = L.circleMarker([latitude, longitude], {
             radius: 6,
-            color: '#000000',
-            fillColor: '#FFFFFF',
+            color: '#000',
+            fillColor: '#fff',
             fillOpacity: 1,
             weight: 4,
             opacity: 1,
@@ -551,7 +582,7 @@ function addStationMarkers(line) {
         });
         stationInfoWindow.setContent(`
             <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
-                <div style="font-size: 14px; text-align: center;">${station.name}</div>
+                <div style="font-size: 14px; text-align: center;">${name}</div>
             </div>
         `);
         stationMarker.bindTooltip(stationInfoWindow);
@@ -571,7 +602,7 @@ function getHeading(latlng1, latlng2) {
 
     const y = Math.sin(deltaLng) * Math.cos(lat2);
     const x = Math.cos(lat1) * Math.sin(lat2) -
-                Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
+        Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
 
     const angle = Math.atan2(y, x);
     return (toDeg(angle) + 360) % 360;  // normalize to 0-360
@@ -595,11 +626,11 @@ function addServiceReductions(line) {
             let i2End = line.serviceReductions[i2].endStationIdx;
 
             if (((i1Start >= i2Start && i1Start <= i2End) || // i1 starts inside i2
-                 (i1End >= i2Start && i1End <= i2End) || // i1 ends inside i2
-                 (i2Start >= i1Start && i2Start <= i1End) || // i2 starts inside i1
-                 (i2End >= i1Start && i2End <= i1End)) && // i2 ends inside i1
+                (i1End >= i2Start && i1End <= i2End) || // i1 ends inside i2
+                (i2Start >= i1Start && i2Start <= i1End) || // i2 starts inside i1
+                (i2End >= i1Start && i2End <= i1End)) && // i2 ends inside i1
                 (line.serviceReductions[i1].typeIdx === line.serviceReductions[i2].typeIdx)) {
-                
+
                 // If the service reduction is adjacent to a previous one and the same type, combine them
                 line.serviceReductions[i1].startStationIdx = Math.min(line.serviceReductions[i1].startStationIdx, line.serviceReductions[i2].startStationIdx);
                 line.serviceReductions[i1].endStationIdx = Math.max(line.serviceReductions[i1].endStationIdx, line.serviceReductions[i2].endStationIdx);
@@ -635,7 +666,7 @@ function addServiceReductions(line) {
 
             if (line.serviceReductions[i1].startStationIdx === line.serviceReductions[i2].startStationIdx &&
                 line.serviceReductions[i1].endStationIdx === line.serviceReductions[i2].endStationIdx) {
-                
+
                 // If the service reduction is the same as a previous one, combine them
                 line.serviceReductions[i1].description += `<hr>${line.serviceReductions[i2].description}`;
 
@@ -659,7 +690,7 @@ function addServiceReductions(line) {
                     //    line.serviceReductions[i1].typeIdx = line.serviceReductions[i2].typeIdx;
                     //}
                     //else if (line.serviceReductions[i2].typeIdx === restoredIdx) {} // Do nothing, we already set the typeIdx to the other one
-                    
+
                     // Otherwise, set the combined alert to "Multiple alerts"
                     else {
                         line.serviceReductions[i1].typeIdx = serviceReductionTypes.findIndex(type => type.name === "Multiple alerts");
@@ -757,7 +788,7 @@ function addServiceReductions(line) {
         const icon = serviceReductionType.icon;
         const serviceReductionIcon = L.divIcon({
             className: 'my-custom-svg-icon', // Optional: for CSS styling
-            html: `<svg width="${24*icon.scale}" height="${24*icon.scale}" viewBox="${-12*icon.scale} ${-12*icon.scale} ${24*icon.scale} ${24*icon.scale}" xmlns="http://www.w3.org/2000/svg">
+            html: `<svg width="${24 * icon.scale}" height="${24 * icon.scale}" viewBox="${-12 * icon.scale} ${-12 * icon.scale} ${24 * icon.scale} ${24 * icon.scale}" xmlns="http://www.w3.org/2000/svg">
                 <g transform="scale(${icon.scale})">
                 <path d="${icon.path}" 
                 stroke="${icon.strokeColor}" 
@@ -798,11 +829,11 @@ function addServiceReductions(line) {
         });
         serviceReductionMarker.bindTooltip(serviceReductionInfoWindow);
 
-        serviceReductionMarker.on('tooltipopen', function() {
-            serviceReductionHighlightPolyLine.setStyle({opacity: 1});
+        serviceReductionMarker.on('tooltipopen', function () {
+            serviceReductionHighlightPolyLine.setStyle({ opacity: 1 });
         });
-        serviceReductionMarker.on('tooltipclose', function() {
-            serviceReductionHighlightPolyLine.setStyle({opacity: 0});
+        serviceReductionMarker.on('tooltipclose', function () {
+            serviceReductionHighlightPolyLine.setStyle({ opacity: 0 });
         });
 
         const scaleRGB = c => c.replace(/\d+/g, n => Math.round(n * 0.75));
@@ -812,7 +843,7 @@ function addServiceReductions(line) {
 
         let directionMarkerIcon = L.divIcon({
             className: 'my-custom-svg-icon',
-            html: `<svg width="${32*directionIcon.scale}" height="${32*directionIcon.scale}" viewBox="${-16*directionIcon.scale} ${-16*directionIcon.scale} ${32*directionIcon.scale} ${32*directionIcon.scale}" xmlns="http://www.w3.org/2000/svg">
+            html: `<svg width="${32 * directionIcon.scale}" height="${32 * directionIcon.scale}" viewBox="${-16 * directionIcon.scale} ${-16 * directionIcon.scale} ${32 * directionIcon.scale} ${32 * directionIcon.scale}" xmlns="http://www.w3.org/2000/svg">
                 <g transform="scale(${directionIcon.scale})">
                 <path d="${directionIcon.path}"
                 transform="rotate(${rotAngle}, 0, 0)"
