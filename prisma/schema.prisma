@@ -1,0 +1,99 @@
+generator client {
+    provider = "prisma-client"
+    output   = "./generated"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+model Agency {
+    id            String   @id
+    name          String
+    url           String
+    lastUpdatedAt DateTime @default(now())
+}
+
+model Station {
+    id        String  @id
+    name      String
+    code      String?
+    latitude  Float
+    longitude Float
+
+    platforms Platform[]
+}
+
+model Platform {
+    id        String  @id
+    name      String
+    code      String?
+    latitude  Float
+    longitude Float
+
+    parent_station    Station? @relation(fields: [parent_station_id], references: [id])
+    parent_station_id String?
+
+    trip_stops TripStop[]
+}
+
+enum RouteType {
+    TramStreetcarLightRail
+    SubwayMetro
+    Rail
+    Bus
+}
+
+model Route {
+    id         String    @id
+    short_name String
+    long_name  String
+    type       RouteType
+    color      String?
+    text_color String?
+    sort_order Int?
+
+    trips Trip[]
+}
+
+model Service {
+    id String @id
+
+    trips Trip[]
+}
+
+model Shape {
+    id String @id
+
+    trips Trip[]
+}
+
+model Trip {
+    id         String  @id
+    headsign   String?
+    short_name String?
+    direction  Int?
+
+    route    Route  @relation(fields: [route_id], references: [id])
+    route_id String
+
+    service    Service @relation(fields: [service_id], references: [id])
+    service_id String
+
+    shape    Shape?  @relation(fields: [shape_id], references: [id])
+    shape_id String?
+
+    trip_stops TripStop[]
+}
+
+model TripStop {
+    sequence Int
+
+    platform    Platform @relation(fields: [platform_id], references: [id])
+    platform_id String
+
+    trip    Trip   @relation(fields: [trip_id], references: [id])
+    trip_id String
+
+    @@id([trip_id, sequence])
+}

@@ -1,7 +1,9 @@
-const express = require('express');
-const path = require('path');
+import express from 'express';
+// import path from 'path';
+import TtcApi from '../models/TtcApi.ts';
+
 const app = express();
-//const PORT = 3000;
+const PORT = 3000;
 
 // Serve static files
 app.use(express.static('.'));
@@ -10,7 +12,7 @@ app.use(express.static('.'));
 app.get('/api/fetch', async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
-    
+
     try {
         const alerts = [];
 
@@ -95,9 +97,9 @@ app.get('/api/fetch', async (req, res) => {
             }
 
             if (route.routeType == "Subway") {
-                if (route.route == "1") {lineIdx = 0;}
-                else if (route.route == "2") {lineIdx = 1;}
-                else if (route.route == "4") {lineIdx = 3;}
+                if (route.route == "1") { lineIdx = 0; }
+                else if (route.route == "2") { lineIdx = 1; }
+                else if (route.route == "4") { lineIdx = 3; }
                 else {
                     if (description.includes("Line 1")) { lineIdx = 0; }
                     else if (description.includes("Line 2")) { lineIdx = 1; }
@@ -140,9 +142,9 @@ app.get('/api/fetch', async (req, res) => {
             }
 
             if (access.routeType == "Elevator") {
-                if (access.route.split(",").includes("1")) {lineIdx = 0;}
-                else if (access.route.split(",").includes("2")) {lineIdx = 1;}
-                else if (access.route.split(",").includes("4")) {lineIdx = 3;}
+                if (access.route.split(",").includes("1")) { lineIdx = 0; }
+                else if (access.route.split(",").includes("2")) { lineIdx = 1; }
+                else if (access.route.split(",").includes("4")) { lineIdx = 3; }
             }
 
             else if (access.routeType == "Escalator") { return; }
@@ -157,10 +159,10 @@ app.get('/api/fetch', async (req, res) => {
                 description: description,
             });
         });
-        
+
         console.log(`Scraping complete. Found ${alerts.length} relevant alerts.`);
         res.json({ alerts, lastUpdated: jsonData.lastUpdated });
-      
+
     } catch (error) {
         console.error('Scraping error:', error);
         res.status(500).json({
@@ -170,8 +172,27 @@ app.get('/api/fetch', async (req, res) => {
     }
 });
 
-//app.listen(PORT, () => {
-//    console.log(`Server running at http://localhost:${PORT}`);
-//});
+app.get('/api/subway/routes', async (req, res) => {
+    // TODO
+});
 
-module.exports = app; // Export the app for testing purposes
+app.get('/api/subway/platforms', async (req, res) => {
+    // TODO
+});
+
+app.get('/api/streetcar/routes', async (req, res) => {
+    // TODO
+});
+
+app.get('/api/streetcar/platforms', async (req, res) => {
+    // TODO
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+
+    const ttcApi = new TtcApi();
+    ttcApi.loadGtfsStatic();
+});
+
+// module.exports = app; // Export the app for testing purposes
