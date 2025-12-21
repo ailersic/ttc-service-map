@@ -6,7 +6,7 @@ const app = express();
 const PORT = 3000;
 
 const ttcApi = new TtcApi();
-await ttcApi.loadGtfsSchedule(true);
+await ttcApi.loadGtfsSchedule();
 
 // Serve static files
 app.use(express.static('.'));
