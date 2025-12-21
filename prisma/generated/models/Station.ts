@@ -39,7 +39,6 @@ export type StationSumAggregateOutputType = {
 export type StationMinAggregateOutputType = {
   id: string | null
   name: string | null
-  code: string | null
   latitude: number | null
   longitude: number | null
 }
@@ -47,7 +46,6 @@ export type StationMinAggregateOutputType = {
 export type StationMaxAggregateOutputType = {
   id: string | null
   name: string | null
-  code: string | null
   latitude: number | null
   longitude: number | null
 }
@@ -55,7 +53,6 @@ export type StationMaxAggregateOutputType = {
 export type StationCountAggregateOutputType = {
   id: number
   name: number
-  code: number
   latitude: number
   longitude: number
   _all: number
@@ -75,7 +72,6 @@ export type StationSumAggregateInputType = {
 export type StationMinAggregateInputType = {
   id?: true
   name?: true
-  code?: true
   latitude?: true
   longitude?: true
 }
@@ -83,7 +79,6 @@ export type StationMinAggregateInputType = {
 export type StationMaxAggregateInputType = {
   id?: true
   name?: true
-  code?: true
   latitude?: true
   longitude?: true
 }
@@ -91,7 +86,6 @@ export type StationMaxAggregateInputType = {
 export type StationCountAggregateInputType = {
   id?: true
   name?: true
-  code?: true
   latitude?: true
   longitude?: true
   _all?: true
@@ -186,7 +180,6 @@ export type StationGroupByArgs<ExtArgs extends runtime.Types.Extensions.Internal
 export type StationGroupByOutputType = {
   id: string
   name: string
-  code: string | null
   latitude: number
   longitude: number
   _count: StationCountAggregateOutputType | null
@@ -217,7 +210,6 @@ export type StationWhereInput = {
   NOT?: Prisma.StationWhereInput | Prisma.StationWhereInput[]
   id?: Prisma.StringFilter<"Station"> | string
   name?: Prisma.StringFilter<"Station"> | string
-  code?: Prisma.StringNullableFilter<"Station"> | string | null
   latitude?: Prisma.FloatFilter<"Station"> | number
   longitude?: Prisma.FloatFilter<"Station"> | number
   platforms?: Prisma.PlatformListRelationFilter
@@ -226,7 +218,6 @@ export type StationWhereInput = {
 export type StationOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  code?: Prisma.SortOrderInput | Prisma.SortOrder
   latitude?: Prisma.SortOrder
   longitude?: Prisma.SortOrder
   platforms?: Prisma.PlatformOrderByRelationAggregateInput
@@ -238,7 +229,6 @@ export type StationWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.StationWhereInput[]
   NOT?: Prisma.StationWhereInput | Prisma.StationWhereInput[]
   name?: Prisma.StringFilter<"Station"> | string
-  code?: Prisma.StringNullableFilter<"Station"> | string | null
   latitude?: Prisma.FloatFilter<"Station"> | number
   longitude?: Prisma.FloatFilter<"Station"> | number
   platforms?: Prisma.PlatformListRelationFilter
@@ -247,7 +237,6 @@ export type StationWhereUniqueInput = Prisma.AtLeast<{
 export type StationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  code?: Prisma.SortOrderInput | Prisma.SortOrder
   latitude?: Prisma.SortOrder
   longitude?: Prisma.SortOrder
   _count?: Prisma.StationCountOrderByAggregateInput
@@ -263,7 +252,6 @@ export type StationScalarWhereWithAggregatesInput = {
   NOT?: Prisma.StationScalarWhereWithAggregatesInput | Prisma.StationScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Station"> | string
   name?: Prisma.StringWithAggregatesFilter<"Station"> | string
-  code?: Prisma.StringNullableWithAggregatesFilter<"Station"> | string | null
   latitude?: Prisma.FloatWithAggregatesFilter<"Station"> | number
   longitude?: Prisma.FloatWithAggregatesFilter<"Station"> | number
 }
@@ -271,7 +259,6 @@ export type StationScalarWhereWithAggregatesInput = {
 export type StationCreateInput = {
   id: string
   name: string
-  code?: string | null
   latitude: number
   longitude: number
   platforms?: Prisma.PlatformCreateNestedManyWithoutParent_stationInput
@@ -280,7 +267,6 @@ export type StationCreateInput = {
 export type StationUncheckedCreateInput = {
   id: string
   name: string
-  code?: string | null
   latitude: number
   longitude: number
   platforms?: Prisma.PlatformUncheckedCreateNestedManyWithoutParent_stationInput
@@ -289,7 +275,6 @@ export type StationUncheckedCreateInput = {
 export type StationUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.FloatFieldUpdateOperationsInput | number
   longitude?: Prisma.FloatFieldUpdateOperationsInput | number
   platforms?: Prisma.PlatformUpdateManyWithoutParent_stationNestedInput
@@ -298,7 +283,6 @@ export type StationUpdateInput = {
 export type StationUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.FloatFieldUpdateOperationsInput | number
   longitude?: Prisma.FloatFieldUpdateOperationsInput | number
   platforms?: Prisma.PlatformUncheckedUpdateManyWithoutParent_stationNestedInput
@@ -307,7 +291,6 @@ export type StationUncheckedUpdateInput = {
 export type StationCreateManyInput = {
   id: string
   name: string
-  code?: string | null
   latitude: number
   longitude: number
 }
@@ -315,7 +298,6 @@ export type StationCreateManyInput = {
 export type StationUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.FloatFieldUpdateOperationsInput | number
   longitude?: Prisma.FloatFieldUpdateOperationsInput | number
 }
@@ -323,7 +305,6 @@ export type StationUpdateManyMutationInput = {
 export type StationUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.FloatFieldUpdateOperationsInput | number
   longitude?: Prisma.FloatFieldUpdateOperationsInput | number
 }
@@ -331,7 +312,6 @@ export type StationUncheckedUpdateManyInput = {
 export type StationCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  code?: Prisma.SortOrder
   latitude?: Prisma.SortOrder
   longitude?: Prisma.SortOrder
 }
@@ -344,7 +324,6 @@ export type StationAvgOrderByAggregateInput = {
 export type StationMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  code?: Prisma.SortOrder
   latitude?: Prisma.SortOrder
   longitude?: Prisma.SortOrder
 }
@@ -352,7 +331,6 @@ export type StationMaxOrderByAggregateInput = {
 export type StationMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  code?: Prisma.SortOrder
   latitude?: Prisma.SortOrder
   longitude?: Prisma.SortOrder
 }
@@ -365,10 +343,6 @@ export type StationSumOrderByAggregateInput = {
 export type StationNullableScalarRelationFilter = {
   is?: Prisma.StationWhereInput | null
   isNot?: Prisma.StationWhereInput | null
-}
-
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
 }
 
 export type FloatFieldUpdateOperationsInput = {
@@ -398,7 +372,6 @@ export type StationUpdateOneWithoutPlatformsNestedInput = {
 export type StationCreateWithoutPlatformsInput = {
   id: string
   name: string
-  code?: string | null
   latitude: number
   longitude: number
 }
@@ -406,7 +379,6 @@ export type StationCreateWithoutPlatformsInput = {
 export type StationUncheckedCreateWithoutPlatformsInput = {
   id: string
   name: string
-  code?: string | null
   latitude: number
   longitude: number
 }
@@ -430,7 +402,6 @@ export type StationUpdateToOneWithWhereWithoutPlatformsInput = {
 export type StationUpdateWithoutPlatformsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.FloatFieldUpdateOperationsInput | number
   longitude?: Prisma.FloatFieldUpdateOperationsInput | number
 }
@@ -438,7 +409,6 @@ export type StationUpdateWithoutPlatformsInput = {
 export type StationUncheckedUpdateWithoutPlatformsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.FloatFieldUpdateOperationsInput | number
   longitude?: Prisma.FloatFieldUpdateOperationsInput | number
 }
@@ -477,7 +447,6 @@ export type StationCountOutputTypeCountPlatformsArgs<ExtArgs extends runtime.Typ
 export type StationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
-  code?: boolean
   latitude?: boolean
   longitude?: boolean
   platforms?: boolean | Prisma.Station$platformsArgs<ExtArgs>
@@ -487,7 +456,6 @@ export type StationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
 export type StationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
-  code?: boolean
   latitude?: boolean
   longitude?: boolean
 }, ExtArgs["result"]["station"]>
@@ -495,7 +463,6 @@ export type StationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
 export type StationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
-  code?: boolean
   latitude?: boolean
   longitude?: boolean
 }, ExtArgs["result"]["station"]>
@@ -503,12 +470,11 @@ export type StationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
 export type StationSelectScalar = {
   id?: boolean
   name?: boolean
-  code?: boolean
   latitude?: boolean
   longitude?: boolean
 }
 
-export type StationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "code" | "latitude" | "longitude", ExtArgs["result"]["station"]>
+export type StationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "latitude" | "longitude", ExtArgs["result"]["station"]>
 export type StationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   platforms?: boolean | Prisma.Station$platformsArgs<ExtArgs>
   _count?: boolean | Prisma.StationCountOutputTypeDefaultArgs<ExtArgs>
@@ -524,7 +490,6 @@ export type $StationPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     name: string
-    code: string | null
     latitude: number
     longitude: number
   }, ExtArgs["result"]["station"]>
@@ -953,7 +918,6 @@ export interface Prisma__StationClient<T, Null = never, ExtArgs extends runtime.
 export interface StationFieldRefs {
   readonly id: Prisma.FieldRef<"Station", 'String'>
   readonly name: Prisma.FieldRef<"Station", 'String'>
-  readonly code: Prisma.FieldRef<"Station", 'String'>
   readonly latitude: Prisma.FieldRef<"Station", 'Float'>
   readonly longitude: Prisma.FieldRef<"Station", 'Float'>
 }

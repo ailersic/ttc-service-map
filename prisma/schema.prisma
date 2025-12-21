@@ -15,9 +15,8 @@ model Agency {
 }
 
 model Station {
-    id        String  @id
+    id        String @id
     name      String
-    code      String?
     latitude  Float
     longitude Float
 
@@ -33,6 +32,7 @@ model Platform {
 
     parent_station    Station? @relation(fields: [parent_station_id], references: [id])
     parent_station_id String?
+    @@index([parent_station_id])
 
     trip_stops TripStop[]
 }
@@ -65,7 +65,21 @@ model Service {
 model Shape {
     id String @id
 
-    trips Trip[]
+    shapePoints ShapePoint[]
+    trips       Trip[]
+}
+
+model ShapePoint {
+    latitude      Float
+    longitude     Float
+    sequence      Int
+    dist_traveled Float?
+
+    shape    Shape  @relation(fields: [shape_id], references: [id])
+    shape_id String
+    @@index([shape_id])
+
+    @@unique([shape_id, sequence])
 }
 
 model Trip {
@@ -76,12 +90,15 @@ model Trip {
 
     route    Route  @relation(fields: [route_id], references: [id])
     route_id String
+    @@index([route_id])
 
     service    Service @relation(fields: [service_id], references: [id])
     service_id String
+    @@index([service_id])
 
     shape    Shape?  @relation(fields: [shape_id], references: [id])
     shape_id String?
+    @@index([shape_id])
 
     trip_stops TripStop[]
 }
@@ -94,6 +111,7 @@ model TripStop {
 
     trip    Trip   @relation(fields: [trip_id], references: [id])
     trip_id String
+    @@index([trip_id])
 
     @@id([trip_id, sequence])
 }

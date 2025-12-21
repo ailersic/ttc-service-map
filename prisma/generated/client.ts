@@ -70,6 +70,11 @@ export type Service = Prisma.ServiceModel
  */
 export type Shape = Prisma.ShapeModel
 /**
+ * Model ShapePoint
+ * 
+ */
+export type ShapePoint = Prisma.ShapePointModel
+/**
  * Model Trip
  * 
  */

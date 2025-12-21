@@ -443,6 +443,10 @@ export type PlatformUncheckedUpdateManyWithoutParent_stationNestedInput = {
   deleteMany?: Prisma.PlatformScalarWhereInput | Prisma.PlatformScalarWhereInput[]
 }
 
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
+}
+
 export type PlatformCreateNestedOneWithoutTrip_stopsInput = {
   create?: Prisma.XOR<Prisma.PlatformCreateWithoutTrip_stopsInput, Prisma.PlatformUncheckedCreateWithoutTrip_stopsInput>
   connectOrCreate?: Prisma.PlatformCreateOrConnectWithoutTrip_stopsInput

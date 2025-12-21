@@ -409,14 +409,6 @@ export type TripStopUncheckedUpdateManyWithoutTripNestedInput = {
   deleteMany?: Prisma.TripStopScalarWhereInput | Prisma.TripStopScalarWhereInput[]
 }
 
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type TripStopCreateWithoutPlatformInput = {
   sequence: number
   trip: Prisma.TripCreateNestedOneWithoutTrip_stopsInput

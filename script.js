@@ -377,19 +377,37 @@ var lines = [
 
 
 /**
- * @typedef {Object} Subway
+ * @typedef {Object} SubwayInfo
  * @property {import("./models/TtcApi.ts").SubwayPlatformCollection} platforms
+ * @property {import("./models/TtcApi.ts").SubwayStationCollection} stations
  * @property {import("./models/TtcApi.ts").SubwayRouteCollection} routes
  */
-/** @type {Subway} */
+/** @type {SubwayInfo} */
 const subway = {
     platforms: {},
+    stations: {},
     routes: [],
 };
 
 async function loadSubway() {
     subway.platforms = await fetch('/api/subway/platforms').then(res => res.json());
+    subway.stations = await fetch('/api/subway/stations').then(res => res.json());
     subway.routes = await fetch('/api/subway/routes').then(res => res.json());
+}
+
+/**
+ * @typedef {Object} AlertInfo
+ * @property {import("./models/TtcApi.ts").AlertCollection} fromApi
+ * @property {{ [k in string]: Pick<Alert, 'id' | 'header' | 'effect' | 'description'>[] }} perStation
+ */
+/** @type {AlertInfo} */
+const alerts = {
+    fromApi: {},
+    perStation: {},
+};
+
+async function loadAlerts() {
+    alerts.fromApi = await fetch('/api/alerts').then(res => res.json());
 }
 
 var allSegmentPolylines = [];
@@ -429,9 +447,9 @@ function refreshMap(map) {
     allSegmentPolylines.push(spadinaTunnel);
 
     allSegmentPolylines.forEach(polyline => polyline.addTo(map));
-    allReductionPolylines.forEach(polyline => polyline.addTo(map));
+    // allReductionPolylines.forEach(polyline => polyline.addTo(map));
     allStationMarkers.forEach(marker => marker.addTo(map));
-    allReductionMarkers.forEach(marker => marker.addTo(map));
+    // allReductionMarkers.forEach(marker => marker.addTo(map));
 }
 
 function renderLines() {
@@ -455,17 +473,104 @@ function addLineSegments(line) {
 
     subway.routes.forEach(({ trips, color }) => trips.forEach(({ trip_stops }) => {
         const transitPolyLine = L.polyline(trip_stops.map(id => {
-            const { latitude, longitude } = subway.platforms[id];
+            const platform = subway.platforms[id];
+            if (platform.parent_station_id) {
+                const { latitude, longitude } = subway.stations[platform.parent_station_id];
+                return [latitude, longitude];
+            }
+            const { latitude, longitude } = platform;
             return [latitude, longitude];
         }), {
             color,
             weight: 6,
             opacity: 1,
+            zIndex: 10000,
         });
         allSegmentPolylines.push(transitPolyLine);
     }));
 
-    
+    console.warn('got', alerts.fromApi.alerts.length, 'alerts from api');
+    alerts.fromApi.alerts.forEach(({ id, effect, criteria, header, description }) =>
+        criteria.forEach(({ direction, platform_id, route_id, route_type }) => {
+            // We currently only pay attention to alerts with:
+            // - a defined platform with a parent station
+            if (platform_id === undefined) return;
+            const platform = subway.platforms[platform_id];
+            if (platform === undefined || platform.parent_station_id === null) return;
+            const station_id = platform.parent_station_id;
+            const station = subway.stations[station_id];
+            if (station === undefined) return;
+            // const route = subway.routes.find(({ id }) => id === route_id);
+            // if (route === undefined) return;
+            switch (effect) {
+                case 'AccessibilityIssue':
+                    // TODO
+                    break;
+                case 'AdditionalService':
+                    // TODO
+                    break;
+                case 'Detour':
+                    // TODO
+                    break;
+                case 'ModifiedService':
+                    // TODO
+                    break;
+                case 'NoService':
+                    // TODO
+                    break;
+                case 'ReducedService':
+                    // TODO
+                    break;
+                case 'SignificantDelay':
+                    const newAlert = { id, effect, header, description };
+                    if (station_id in alerts.perStation) {
+                        if (alerts.perStation[station_id].some(({ id: existing_id }) => existing_id === id)) {
+                            return;
+                        }
+                        alerts.perStation[station_id].push(newAlert);
+                    } else {
+                        alerts.perStation[station_id] = [newAlert];
+                    }
+                    console.warn('add alert to station:', subway.stations[station_id].name);
+                    break;
+                default:
+                    console.warn('Unsupported Alert.Effect:', effect);
+                    return;
+            }
+        }
+    ));
+
+    subway.routes.forEach(({ trips: [trip] }) => {
+        /** @type {{ [k in string]: [number, number][] }} */
+        const pointsPerAlert = {};
+        trip.trip_stops.forEach(platformId => {
+            /** @type {string} */
+            const stationId = subway.platforms[platformId].parent_station_id;
+            const station = subway.stations[stationId];
+            const stationAlerts = alerts.perStation[stationId];
+            console.warn(stationId && station.name || subway.platforms[platformId].name, stationAlerts && stationAlerts.length);
+            if (!stationAlerts) return;
+            const point = [station.latitude, station.longitude];
+            stationAlerts.forEach(({ id }) => {
+                if (id in pointsPerAlert) {
+                    pointsPerAlert[id].push(point);
+                } else {
+                    pointsPerAlert[id] = [point];
+                }
+            });
+        });
+        Object.values(pointsPerAlert).forEach(points => {
+            allSegmentPolylines.push(L.polyline(points, {
+                color: 'rgba(100, 100, 100, 1)',
+                weight: 6,
+                opacity: 1.0,
+                dashArray: '5, 15', // Create a dashed line
+                zIndex: 20000,
+            }));
+        });
+    });
+
+    /*
     for (let i = 0; i < line.stations.length; i++) {
         let normalServiceFlag = true;
         for (let j = 0; j < line.serviceReductions.length; j++) {
@@ -499,7 +604,6 @@ function addLineSegments(line) {
         lastStationNormal = normalServiceFlag;
     }
 
-    /*
     // Create polylines for normal service segments
     // These show infoboxes on mouseover
     for (let i = 0; i < normalServiceSegments.length; i++) {
@@ -537,7 +641,6 @@ function addLineSegments(line) {
             allSegmentPolylines.push(transitPolyLine);
         }
     }
-    */
 
     let reducedServiceColour = "rgb(100, 100, 100)"; // Default colour for reduced service segments
 
@@ -559,10 +662,11 @@ function addLineSegments(line) {
             allSegmentPolylines.push(transitPolyLine);
         }
     }
+    */
 }
 
 function addStationMarkers(line) {
-    Object.values(subway.platforms).forEach(({ latitude, longitude, name }) => {
+    Object.values(subway.stations).forEach(({ latitude, longitude, name }) => {
         const stationMarker = L.circleMarker([latitude, longitude], {
             radius: 6,
             color: '#000',

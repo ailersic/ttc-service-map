@@ -150,11 +150,13 @@ export type ShapeWhereInput = {
   OR?: Prisma.ShapeWhereInput[]
   NOT?: Prisma.ShapeWhereInput | Prisma.ShapeWhereInput[]
   id?: Prisma.StringFilter<"Shape"> | string
+  shapePoints?: Prisma.ShapePointListRelationFilter
   trips?: Prisma.TripListRelationFilter
 }
 
 export type ShapeOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  shapePoints?: Prisma.ShapePointOrderByRelationAggregateInput
   trips?: Prisma.TripOrderByRelationAggregateInput
 }
 
@@ -163,6 +165,7 @@ export type ShapeWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.ShapeWhereInput | Prisma.ShapeWhereInput[]
   OR?: Prisma.ShapeWhereInput[]
   NOT?: Prisma.ShapeWhereInput | Prisma.ShapeWhereInput[]
+  shapePoints?: Prisma.ShapePointListRelationFilter
   trips?: Prisma.TripListRelationFilter
 }, "id">
 
@@ -182,21 +185,25 @@ export type ShapeScalarWhereWithAggregatesInput = {
 
 export type ShapeCreateInput = {
   id: string
+  shapePoints?: Prisma.ShapePointCreateNestedManyWithoutShapeInput
   trips?: Prisma.TripCreateNestedManyWithoutShapeInput
 }
 
 export type ShapeUncheckedCreateInput = {
   id: string
+  shapePoints?: Prisma.ShapePointUncheckedCreateNestedManyWithoutShapeInput
   trips?: Prisma.TripUncheckedCreateNestedManyWithoutShapeInput
 }
 
 export type ShapeUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  shapePoints?: Prisma.ShapePointUpdateManyWithoutShapeNestedInput
   trips?: Prisma.TripUpdateManyWithoutShapeNestedInput
 }
 
 export type ShapeUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  shapePoints?: Prisma.ShapePointUncheckedUpdateManyWithoutShapeNestedInput
   trips?: Prisma.TripUncheckedUpdateManyWithoutShapeNestedInput
 }
 
@@ -224,9 +231,28 @@ export type ShapeMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
 }
 
+export type ShapeScalarRelationFilter = {
+  is?: Prisma.ShapeWhereInput
+  isNot?: Prisma.ShapeWhereInput
+}
+
 export type ShapeNullableScalarRelationFilter = {
   is?: Prisma.ShapeWhereInput | null
   isNot?: Prisma.ShapeWhereInput | null
+}
+
+export type ShapeCreateNestedOneWithoutShapePointsInput = {
+  create?: Prisma.XOR<Prisma.ShapeCreateWithoutShapePointsInput, Prisma.ShapeUncheckedCreateWithoutShapePointsInput>
+  connectOrCreate?: Prisma.ShapeCreateOrConnectWithoutShapePointsInput
+  connect?: Prisma.ShapeWhereUniqueInput
+}
+
+export type ShapeUpdateOneRequiredWithoutShapePointsNestedInput = {
+  create?: Prisma.XOR<Prisma.ShapeCreateWithoutShapePointsInput, Prisma.ShapeUncheckedCreateWithoutShapePointsInput>
+  connectOrCreate?: Prisma.ShapeCreateOrConnectWithoutShapePointsInput
+  upsert?: Prisma.ShapeUpsertWithoutShapePointsInput
+  connect?: Prisma.ShapeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ShapeUpdateToOneWithWhereWithoutShapePointsInput, Prisma.ShapeUpdateWithoutShapePointsInput>, Prisma.ShapeUncheckedUpdateWithoutShapePointsInput>
 }
 
 export type ShapeCreateNestedOneWithoutTripsInput = {
@@ -245,12 +271,50 @@ export type ShapeUpdateOneWithoutTripsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ShapeUpdateToOneWithWhereWithoutTripsInput, Prisma.ShapeUpdateWithoutTripsInput>, Prisma.ShapeUncheckedUpdateWithoutTripsInput>
 }
 
+export type ShapeCreateWithoutShapePointsInput = {
+  id: string
+  trips?: Prisma.TripCreateNestedManyWithoutShapeInput
+}
+
+export type ShapeUncheckedCreateWithoutShapePointsInput = {
+  id: string
+  trips?: Prisma.TripUncheckedCreateNestedManyWithoutShapeInput
+}
+
+export type ShapeCreateOrConnectWithoutShapePointsInput = {
+  where: Prisma.ShapeWhereUniqueInput
+  create: Prisma.XOR<Prisma.ShapeCreateWithoutShapePointsInput, Prisma.ShapeUncheckedCreateWithoutShapePointsInput>
+}
+
+export type ShapeUpsertWithoutShapePointsInput = {
+  update: Prisma.XOR<Prisma.ShapeUpdateWithoutShapePointsInput, Prisma.ShapeUncheckedUpdateWithoutShapePointsInput>
+  create: Prisma.XOR<Prisma.ShapeCreateWithoutShapePointsInput, Prisma.ShapeUncheckedCreateWithoutShapePointsInput>
+  where?: Prisma.ShapeWhereInput
+}
+
+export type ShapeUpdateToOneWithWhereWithoutShapePointsInput = {
+  where?: Prisma.ShapeWhereInput
+  data: Prisma.XOR<Prisma.ShapeUpdateWithoutShapePointsInput, Prisma.ShapeUncheckedUpdateWithoutShapePointsInput>
+}
+
+export type ShapeUpdateWithoutShapePointsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  trips?: Prisma.TripUpdateManyWithoutShapeNestedInput
+}
+
+export type ShapeUncheckedUpdateWithoutShapePointsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  trips?: Prisma.TripUncheckedUpdateManyWithoutShapeNestedInput
+}
+
 export type ShapeCreateWithoutTripsInput = {
   id: string
+  shapePoints?: Prisma.ShapePointCreateNestedManyWithoutShapeInput
 }
 
 export type ShapeUncheckedCreateWithoutTripsInput = {
   id: string
+  shapePoints?: Prisma.ShapePointUncheckedCreateNestedManyWithoutShapeInput
 }
 
 export type ShapeCreateOrConnectWithoutTripsInput = {
@@ -271,10 +335,12 @@ export type ShapeUpdateToOneWithWhereWithoutTripsInput = {
 
 export type ShapeUpdateWithoutTripsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  shapePoints?: Prisma.ShapePointUpdateManyWithoutShapeNestedInput
 }
 
 export type ShapeUncheckedUpdateWithoutTripsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  shapePoints?: Prisma.ShapePointUncheckedUpdateManyWithoutShapeNestedInput
 }
 
 
@@ -283,10 +349,12 @@ export type ShapeUncheckedUpdateWithoutTripsInput = {
  */
 
 export type ShapeCountOutputType = {
+  shapePoints: number
   trips: number
 }
 
 export type ShapeCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  shapePoints?: boolean | ShapeCountOutputTypeCountShapePointsArgs
   trips?: boolean | ShapeCountOutputTypeCountTripsArgs
 }
 
@@ -303,6 +371,13 @@ export type ShapeCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extens
 /**
  * ShapeCountOutputType without action
  */
+export type ShapeCountOutputTypeCountShapePointsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ShapePointWhereInput
+}
+
+/**
+ * ShapeCountOutputType without action
+ */
 export type ShapeCountOutputTypeCountTripsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.TripWhereInput
 }
@@ -310,6 +385,7 @@ export type ShapeCountOutputTypeCountTripsArgs<ExtArgs extends runtime.Types.Ext
 
 export type ShapeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  shapePoints?: boolean | Prisma.Shape$shapePointsArgs<ExtArgs>
   trips?: boolean | Prisma.Shape$tripsArgs<ExtArgs>
   _count?: boolean | Prisma.ShapeCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["shape"]>
@@ -328,6 +404,7 @@ export type ShapeSelectScalar = {
 
 export type ShapeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id", ExtArgs["result"]["shape"]>
 export type ShapeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  shapePoints?: boolean | Prisma.Shape$shapePointsArgs<ExtArgs>
   trips?: boolean | Prisma.Shape$tripsArgs<ExtArgs>
   _count?: boolean | Prisma.ShapeCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -337,6 +414,7 @@ export type ShapeIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
 export type $ShapePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Shape"
   objects: {
+    shapePoints: Prisma.$ShapePointPayload<ExtArgs>[]
     trips: Prisma.$TripPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -735,6 +813,7 @@ readonly fields: ShapeFieldRefs;
  */
 export interface Prisma__ShapeClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  shapePoints<T extends Prisma.Shape$shapePointsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Shape$shapePointsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShapePointPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   trips<T extends Prisma.Shape$tripsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Shape$tripsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TripPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1151,6 +1230,30 @@ export type ShapeDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Limit how many Shapes to delete.
    */
   limit?: number
+}
+
+/**
+ * Shape.shapePoints
+ */
+export type Shape$shapePointsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ShapePoint
+   */
+  select?: Prisma.ShapePointSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ShapePoint
+   */
+  omit?: Prisma.ShapePointOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ShapePointInclude<ExtArgs> | null
+  where?: Prisma.ShapePointWhereInput
+  orderBy?: Prisma.ShapePointOrderByWithRelationInput | Prisma.ShapePointOrderByWithRelationInput[]
+  cursor?: Prisma.ShapePointWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ShapePointScalarFieldEnum | Prisma.ShapePointScalarFieldEnum[]
 }
 
 /**

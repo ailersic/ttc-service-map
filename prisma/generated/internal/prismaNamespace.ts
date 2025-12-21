@@ -390,6 +390,7 @@ export const ModelName = {
   Route: 'Route',
   Service: 'Service',
   Shape: 'Shape',
+  ShapePoint: 'ShapePoint',
   Trip: 'Trip',
   TripStop: 'TripStop'
 } as const
@@ -407,7 +408,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "agency" | "station" | "platform" | "route" | "service" | "shape" | "trip" | "tripStop"
+    modelProps: "agency" | "station" | "platform" | "route" | "service" | "shape" | "shapePoint" | "trip" | "tripStop"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -855,6 +856,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ShapePoint: {
+      payload: Prisma.$ShapePointPayload<ExtArgs>
+      fields: Prisma.ShapePointFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ShapePointFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePointPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ShapePointFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePointPayload>
+        }
+        findFirst: {
+          args: Prisma.ShapePointFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePointPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ShapePointFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePointPayload>
+        }
+        findMany: {
+          args: Prisma.ShapePointFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePointPayload>[]
+        }
+        create: {
+          args: Prisma.ShapePointCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePointPayload>
+        }
+        createMany: {
+          args: Prisma.ShapePointCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ShapePointCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePointPayload>[]
+        }
+        delete: {
+          args: Prisma.ShapePointDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePointPayload>
+        }
+        update: {
+          args: Prisma.ShapePointUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePointPayload>
+        }
+        deleteMany: {
+          args: Prisma.ShapePointDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ShapePointUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ShapePointUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePointPayload>[]
+        }
+        upsert: {
+          args: Prisma.ShapePointUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShapePointPayload>
+        }
+        aggregate: {
+          args: Prisma.ShapePointAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateShapePoint>
+        }
+        groupBy: {
+          args: Prisma.ShapePointGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ShapePointGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ShapePointCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ShapePointCountAggregateOutputType> | number
+        }
+      }
+    }
     Trip: {
       payload: Prisma.$TripPayload<ExtArgs>
       fields: Prisma.TripFieldRefs
@@ -1055,7 +1130,6 @@ export type AgencyScalarFieldEnum = (typeof AgencyScalarFieldEnum)[keyof typeof 
 export const StationScalarFieldEnum = {
   id: 'id',
   name: 'name',
-  code: 'code',
   latitude: 'latitude',
   longitude: 'longitude'
 } as const
@@ -1100,6 +1174,17 @@ export const ShapeScalarFieldEnum = {
 } as const
 
 export type ShapeScalarFieldEnum = (typeof ShapeScalarFieldEnum)[keyof typeof ShapeScalarFieldEnum]
+
+
+export const ShapePointScalarFieldEnum = {
+  latitude: 'latitude',
+  longitude: 'longitude',
+  sequence: 'sequence',
+  dist_traveled: 'dist_traveled',
+  shape_id: 'shape_id'
+} as const
+
+export type ShapePointScalarFieldEnum = (typeof ShapePointScalarFieldEnum)[keyof typeof ShapePointScalarFieldEnum]
 
 
 export const TripScalarFieldEnum = {
@@ -1324,6 +1409,7 @@ export type GlobalOmitConfig = {
   route?: Prisma.RouteOmit
   service?: Prisma.ServiceOmit
   shape?: Prisma.ShapeOmit
+  shapePoint?: Prisma.ShapePointOmit
   trip?: Prisma.TripOmit
   tripStop?: Prisma.TripStopOmit
 }

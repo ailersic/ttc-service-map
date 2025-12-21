@@ -2,10 +2,19 @@
 CREATE TYPE "RouteType" AS ENUM ('TramStreetcarLightRail', 'SubwayMetro', 'Rail', 'Bus');
 
 -- CreateTable
+CREATE TABLE "Agency" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "lastUpdatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Agency_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Station" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "code" TEXT,
     "latitude" DOUBLE PRECISION NOT NULL,
     "longitude" DOUBLE PRECISION NOT NULL,
 
@@ -52,6 +61,15 @@ CREATE TABLE "Shape" (
 );
 
 -- CreateTable
+CREATE TABLE "ShapePoint" (
+    "latitude" DOUBLE PRECISION NOT NULL,
+    "longitude" DOUBLE PRECISION NOT NULL,
+    "sequence" INTEGER NOT NULL,
+    "dist_traveled" DOUBLE PRECISION,
+    "shape_id" TEXT NOT NULL
+);
+
+-- CreateTable
 CREATE TABLE "Trip" (
     "id" TEXT NOT NULL,
     "headsign" TEXT,
@@ -67,15 +85,20 @@ CREATE TABLE "Trip" (
 -- CreateTable
 CREATE TABLE "TripStop" (
     "sequence" INTEGER NOT NULL,
-    "headsign" TEXT,
     "platform_id" TEXT NOT NULL,
     "trip_id" TEXT NOT NULL,
 
     CONSTRAINT "TripStop_pkey" PRIMARY KEY ("trip_id","sequence")
 );
 
+-- CreateIndex
+CREATE UNIQUE INDEX "ShapePoint_shape_id_sequence_key" ON "ShapePoint"("shape_id", "sequence");
+
 -- AddForeignKey
 ALTER TABLE "Platform" ADD CONSTRAINT "Platform_parent_station_id_fkey" FOREIGN KEY ("parent_station_id") REFERENCES "Station"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ShapePoint" ADD CONSTRAINT "ShapePoint_shape_id_fkey" FOREIGN KEY ("shape_id") REFERENCES "Shape"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Trip" ADD CONSTRAINT "Trip_route_id_fkey" FOREIGN KEY ("route_id") REFERENCES "Route"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

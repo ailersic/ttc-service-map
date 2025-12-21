@@ -6,7 +6,7 @@ const app = express();
 const PORT = 3000;
 
 const ttcApi = new TtcApi();
-await ttcApi.loadGtfsStatic();
+await ttcApi.loadGtfsSchedule(true);
 
 // Serve static files
 app.use(express.static('.'));
@@ -180,7 +180,7 @@ app.get('/api/subway/routes', async (req, res) => {
 });
 
 app.get('/api/subway/stations', async (req, res) => {
-    // TODO
+    res.json(await ttcApi.getSubwayStations());
 });
 
 app.get('/api/subway/platforms', async (req, res) => {
@@ -193,6 +193,10 @@ app.get('/api/streetcar/routes', async (req, res) => {
 
 app.get('/api/streetcar/platforms', async (req, res) => {
     // TODO
+});
+
+app.get('/api/alerts', async (req, res) => {
+    res.json(await ttcApi.getAlerts());
 });
 
 app.listen(PORT, () => {

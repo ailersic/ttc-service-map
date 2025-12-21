@@ -57,6 +57,7 @@ export const ModelName = {
   Route: 'Route',
   Service: 'Service',
   Shape: 'Shape',
+  ShapePoint: 'ShapePoint',
   Trip: 'Trip',
   TripStop: 'TripStop'
 } as const
@@ -90,7 +91,6 @@ export type AgencyScalarFieldEnum = (typeof AgencyScalarFieldEnum)[keyof typeof 
 export const StationScalarFieldEnum = {
   id: 'id',
   name: 'name',
-  code: 'code',
   latitude: 'latitude',
   longitude: 'longitude'
 } as const
@@ -135,6 +135,17 @@ export const ShapeScalarFieldEnum = {
 } as const
 
 export type ShapeScalarFieldEnum = (typeof ShapeScalarFieldEnum)[keyof typeof ShapeScalarFieldEnum]
+
+
+export const ShapePointScalarFieldEnum = {
+  latitude: 'latitude',
+  longitude: 'longitude',
+  sequence: 'sequence',
+  dist_traveled: 'dist_traveled',
+  shape_id: 'shape_id'
+} as const
+
+export type ShapePointScalarFieldEnum = (typeof ShapePointScalarFieldEnum)[keyof typeof ShapePointScalarFieldEnum]
 
 
 export const TripScalarFieldEnum = {
