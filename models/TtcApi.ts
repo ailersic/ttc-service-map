@@ -7,6 +7,7 @@ import {
     RouteCreateManyInput,
     ServiceCreateManyInput,
     ShapePointCreateManyInput,
+    StationAnchorCreateManyInput,
     StationCreateManyInput,
     TripCreateManyInput,
     TripStopCreateManyInput,
@@ -15,6 +16,7 @@ import { Platform, RouteType } from '../prisma/generated/client.ts';
 import { pipeline } from 'stream/promises';
 import { Writable } from 'stream';
 import protobufjs from 'protobufjs';
+import geometry from '../utils/geometry.ts';
 
 export type Direction = 0 | 1;
 
@@ -116,7 +118,7 @@ export default class TtcApi {
 
     async getSubwayStations() {
         return prisma.station.findMany({
-            orderBy: {
+                        orderBy: {
                 id: 'asc',
             },
         }).then(result => {
@@ -133,7 +135,8 @@ export default class TtcApi {
     async getSubwayRoutes() {
         return prisma.route.findMany({
             where: {
-                type: RouteType.SubwayMetro,
+                // type: RouteType.SubwayMetro,
+                id: { in: ['1', '2', '4', '5', '6'] },
             },
             select: {
                 id: true,
@@ -142,13 +145,28 @@ export default class TtcApi {
                 color: true,
                 route_stops: {
                     select: {
-                        direction: true,
-                        sequence: true,
-                        platform_id: true,
+                        platform: {
+                            select: {
+                                id: true,
+                                parent_station: {
+                                    select: {
+                                        anchors: {
+                                            select: {
+                                                interpolationFactor: true,
+                                                shape_id: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
                     },
+                    where: { direction: 0 },
+                    orderBy: { sequence: 'asc' },
                 },
                 shape: {
                     select: {
+                        id: true,
                         shape_points: {
                             select: {
                                 latitude: true,
@@ -162,13 +180,24 @@ export default class TtcApi {
         }).then(result => {
             return result.map(({ id, short_name, long_name, color, route_stops, shape }) => ({
                 id, short_name, long_name, color,
-                stops: route_stops
-                    .sort((a, b) => a.sequence - b.sequence)
-                    .reduce((stops, { direction, platform_id }) => {
-                        stops[direction].push(platform_id);
-                        return stops;
-                    }, [[], []] as string[][]),
-                shape: shape && shape.shape_points,
+                stops: route_stops.map(({ platform }) => platform.id),
+                segments: route_stops.reduce((segments, { platform }, i, a) => {
+                    const thisAnchor = platform.parent_station?.anchors
+                        .find(({ shape_id }) => shape_id === shape?.id)?.interpolationFactor!;
+                    if (i > 0) {
+                        const prevAnchor = a[i - 1].platform.parent_station?.anchors
+                            .find(({ shape_id }) => shape_id === shape?.id)?.interpolationFactor!;
+                        segments.push(
+                            geometry.slicePolyLine(
+                                shape!.shape_points.map(({ latitude, longitude }) => [longitude, latitude]),
+                                prevAnchor,
+                                thisAnchor,
+                            ).map(([longitude, latitude]) => ({ latitude, longitude }))
+                        );
+                    }
+                    return segments;
+                }, [] as { latitude: number, longitude: number }[][]),
+                shape: shape?.shape_points,
             }));
         });
     }
@@ -183,6 +212,7 @@ export default class TtcApi {
 
     async regenerateStations() {
         await prisma.platform.updateMany({ data: { parent_station_id: { set: null } } });
+        await prisma.stationAnchor.deleteMany();
         await prisma.station.deleteMany();
         await this._generateStations();
     }
@@ -206,7 +236,7 @@ export default class TtcApi {
         const feed = await feedRes.body!.getReader().read().then(result => Buffer.from(result.value!));
         const feedMessage = this.gtfsRealtime!.decode(feed).toJSON() as Gtfs.Realtime.FeedMessage;
         const result = {
-            timestamp: Number(feedMessage.header.timestamp),
+            timestamp: Number(feedMessage.header.timestamp) * 1000, // seconds to ms
             alerts: (await Promise.all(
                 feedMessage.entity
                     .map(async ({ id, alert }) => {
@@ -277,7 +307,18 @@ export default class TtcApi {
         console.log('records:', dir.numberOfRecords);
         console.log(dir.files.map(file => file.path));
         // It's faster to just wipe the db and recreate everything
-        const tables: (keyof typeof prisma)[] = ['tripStop', 'trip', 'service', 'routeStop', 'route', 'shapePoint', 'shape', 'platform', 'station'];
+        const tables: (keyof typeof prisma)[] = [
+            'tripStop',
+            'trip',
+            'service',
+            'routeStop',
+            'route',
+            'stationAnchor',
+            'shapePoint',
+            'shape',
+            'platform',
+            'station',
+        ];
         for (let k of tables) {
             console.log('delete', k);
             // @ts-expect-error -- signatures of deleteMany on each table don't match, but they all have no-arg signatures
@@ -473,7 +514,6 @@ export default class TtcApi {
                                             select: {
                                                 latitude: true,
                                                 longitude: true,
-                                                dist_traveled: true,
                                             },
                                             orderBy: { sequence: 'asc' },
                                         },
@@ -485,7 +525,8 @@ export default class TtcApi {
                     where: {
                         route: {
                             shape_id: { not: null },
-                            type: { in: [RouteType.SubwayMetro, RouteType.TramStreetcarLightRail] },
+                            // type: { in: [RouteType.SubwayMetro, RouteType.TramStreetcarLightRail] },
+                            id: { in: ['1', '2', '4', '5', '6'] },
                         },
                     },
                 },
@@ -516,7 +557,6 @@ export default class TtcApi {
                 children: (typeof stationPlatforms[0])[];
             };
         } = {};
-        console.log('platforms:', stationPlatforms.map(({ name }) => name));
         stationPlatforms.forEach(p => {
             // Special handling for York University Station (see above)
             let stationName = (p.name.match(/(.*Station)/i) || p.name.match(/(York University)/))![1];
@@ -543,14 +583,8 @@ export default class TtcApi {
                 };
             }
         });
-        const stations = Object.entries(stationMap).map(([id, { name, children }]) => {
-            const pointsPerShape: {
-                [k in string]: {
-                    latitude: number;
-                    longitude: number;
-                    dist_traveled: number | null;
-                }[];
-            } = {};
+        const anchors: StationAnchorCreateManyInput[] = [];
+        const stations = Object.entries(stationMap).map(([station_id, { name, children }]) => {
             const average = { latitude: 0, longitude: 0 };
             children.forEach(p => {
                 average.latitude += p.latitude / children.length;
@@ -566,48 +600,43 @@ export default class TtcApi {
                     }
                 }),
             );
-            console.log('found', Object.keys(shapes).length, 'shapes for', name, '-', Object.keys(shapes));
-            const far = {
-                latitude: Infinity,
-                longitude: Infinity,
-                sqrDist: Infinity,
-            };
+            const interpolationFactorsPerShape: {
+                [k in string]: number;
+            } = {};
+            // console.log('\nfound', Object.keys(shapes).length, 'shapes for', name, '-', Object.keys(shapes));
             const current = { ...average };
             const delta = { latitude: Infinity, longitude: Infinity };
             // Converge onto nearest intersection of shapes
-            // console.log(0, current);
-            for (
-                let it = 0;
-                it < 100 && (delta.latitude > 1e-7 || delta.longitude > 1e-7);
-                it++
-            ) {
+            let it = 0;
+            for (; it < 100 && (delta.latitude > 1e-8 || delta.longitude > 1e-8); it++) {
                 const avgOnShapes = Object.values(shapes)
                     .reduce((avg, shape) => {
-                        // TODO: try lerp between closest and second closest
-                        const closestOnShape = shape.shape_points
-                            .reduce((closest, { latitude, longitude }) => {
-                                const sqrDist = Math.pow(latitude - current.latitude, 2) + Math.pow(longitude - current.longitude, 2);
-                                if (sqrDist < closest.sqrDist) {
-                                    closest.sqrDist = sqrDist;
-                                    closest.latitude = latitude;
-                                    closest.longitude = longitude;
-                                }
-                                return closest;
-                            }, { ...far });
-                        // console.log(Math.sqrt(closestOnShape.sqrDist));
-                        avg.latitude += closestOnShape.latitude / Object.keys(shapes).length;
-                        avg.longitude += closestOnShape.longitude / Object.keys(shapes).length;
+                        const {
+                            point: [closestLongitude, closestLatitude],
+                            t: interpolationFactor,
+                        } = geometry.snapToPolyLine(
+                            [current.longitude, current.latitude],
+                            shape.shape_points.map(({ latitude, longitude }) => [longitude, latitude]),
+                        )!;
+                        interpolationFactorsPerShape[shape.id] = interpolationFactor;
+                        avg.latitude += closestLatitude / Object.keys(shapes).length;
+                        avg.longitude += closestLongitude / Object.keys(shapes).length;
                         return avg;
                     }, { latitude: 0, longitude: 0 });
                 delta.latitude = Math.abs(avgOnShapes.latitude - current.latitude);
                 delta.longitude = Math.abs(avgOnShapes.longitude - current.longitude);
-                // console.log('delta:', delta);
                 current.latitude = avgOnShapes.latitude;
                 current.longitude = avgOnShapes.longitude;
-                // console.log(it + 1, current);
             }
+            anchors.push(...Object.entries(interpolationFactorsPerShape).map(([shape_id, interpolationFactor]) => ({
+                interpolationFactor,
+                shape_id,
+                station_id,
+            })));
+            // const absDelta = Math.sqrt(delta.latitude * delta.latitude + delta.longitude * delta.longitude);
+            // console.log('converged within', Number(absDelta.toExponential(0)), 'after', it, 'iterations');
             const { latitude, longitude } = current;
-            return { id, name, latitude, longitude };
+            return { id: station_id, name, latitude, longitude };
         });
         stations.forEach(s => {
             const { latitude, longitude } = s;
@@ -615,6 +644,7 @@ export default class TtcApi {
             s.longitude = Math.round(longitude * 1e6) / 1e6;
         });
         await prisma.station.createMany({ data: stations });
+        await prisma.stationAnchor.createMany({ data: anchors });
         await Promise.all(stations.map(({ id: station_id }) => prisma.platform.updateMany({
             where: { id: { in: stationMap[station_id].children.map(({ id }) => id) } },
             data: { parent_station_id: { set: station_id } },

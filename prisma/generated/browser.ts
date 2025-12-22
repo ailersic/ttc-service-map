@@ -28,6 +28,11 @@ export type Agency = Prisma.AgencyModel
  */
 export type Station = Prisma.StationModel
 /**
+ * Model StationAnchor
+ * 
+ */
+export type StationAnchor = Prisma.StationAnchorModel
+/**
  * Model Platform
  * 
  */

@@ -7,7 +7,6 @@ const PORT = 3000;
 
 const ttcApi = new TtcApi();
 await ttcApi.loadGtfs();
-// await ttcApi.regenerateStations();
 
 // Serve static files
 app.use(express.static('.'));

@@ -21,6 +21,21 @@ model Station {
     longitude Float
 
     platforms Platform[]
+    anchors StationAnchor[]
+}
+
+model StationAnchor {
+    interpolationFactor Float
+
+    station    Station  @relation(fields: [station_id], references: [id])
+    station_id String
+
+    shape    Shape  @relation(fields: [shape_id], references: [id])
+    shape_id String
+
+    @@id([station_id, shape_id])
+    @@index([station_id])
+    @@index([shape_id])
 }
 
 model Platform {
@@ -89,8 +104,10 @@ model Shape {
     id String @id
 
     shape_points ShapePoint[]
-    trips       Trip[]
-    routes      Route[]
+    trips        Trip[]
+    routes       Route[]
+
+    stationAnchors StationAnchor[]
 }
 
 model ShapePoint {

@@ -53,6 +53,7 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   Agency: 'Agency',
   Station: 'Station',
+  StationAnchor: 'StationAnchor',
   Platform: 'Platform',
   Route: 'Route',
   RouteStop: 'RouteStop',
@@ -97,6 +98,15 @@ export const StationScalarFieldEnum = {
 } as const
 
 export type StationScalarFieldEnum = (typeof StationScalarFieldEnum)[keyof typeof StationScalarFieldEnum]
+
+
+export const StationAnchorScalarFieldEnum = {
+  interpolationFactor: 'interpolationFactor',
+  station_id: 'station_id',
+  shape_id: 'shape_id'
+} as const
+
+export type StationAnchorScalarFieldEnum = (typeof StationAnchorScalarFieldEnum)[keyof typeof StationAnchorScalarFieldEnum]
 
 
 export const PlatformScalarFieldEnum = {

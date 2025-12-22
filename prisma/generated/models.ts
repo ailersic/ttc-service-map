@@ -10,6 +10,7 @@
  */
 export type * from './models/Agency.ts'
 export type * from './models/Station.ts'
+export type * from './models/StationAnchor.ts'
 export type * from './models/Platform.ts'
 export type * from './models/Route.ts'
 export type * from './models/RouteStop.ts'

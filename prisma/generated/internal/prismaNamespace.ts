@@ -386,6 +386,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   Agency: 'Agency',
   Station: 'Station',
+  StationAnchor: 'StationAnchor',
   Platform: 'Platform',
   Route: 'Route',
   RouteStop: 'RouteStop',
@@ -409,7 +410,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "agency" | "station" | "platform" | "route" | "routeStop" | "service" | "shape" | "shapePoint" | "trip" | "tripStop"
+    modelProps: "agency" | "station" | "stationAnchor" | "platform" | "route" | "routeStop" | "service" | "shape" | "shapePoint" | "trip" | "tripStop"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -558,6 +559,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.StationCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.StationCountAggregateOutputType> | number
+        }
+      }
+    }
+    StationAnchor: {
+      payload: Prisma.$StationAnchorPayload<ExtArgs>
+      fields: Prisma.StationAnchorFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.StationAnchorFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StationAnchorPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.StationAnchorFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StationAnchorPayload>
+        }
+        findFirst: {
+          args: Prisma.StationAnchorFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StationAnchorPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.StationAnchorFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StationAnchorPayload>
+        }
+        findMany: {
+          args: Prisma.StationAnchorFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StationAnchorPayload>[]
+        }
+        create: {
+          args: Prisma.StationAnchorCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StationAnchorPayload>
+        }
+        createMany: {
+          args: Prisma.StationAnchorCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.StationAnchorCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StationAnchorPayload>[]
+        }
+        delete: {
+          args: Prisma.StationAnchorDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StationAnchorPayload>
+        }
+        update: {
+          args: Prisma.StationAnchorUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StationAnchorPayload>
+        }
+        deleteMany: {
+          args: Prisma.StationAnchorDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.StationAnchorUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.StationAnchorUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StationAnchorPayload>[]
+        }
+        upsert: {
+          args: Prisma.StationAnchorUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StationAnchorPayload>
+        }
+        aggregate: {
+          args: Prisma.StationAnchorAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateStationAnchor>
+        }
+        groupBy: {
+          args: Prisma.StationAnchorGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.StationAnchorGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.StationAnchorCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.StationAnchorCountAggregateOutputType> | number
         }
       }
     }
@@ -1212,6 +1287,15 @@ export const StationScalarFieldEnum = {
 export type StationScalarFieldEnum = (typeof StationScalarFieldEnum)[keyof typeof StationScalarFieldEnum]
 
 
+export const StationAnchorScalarFieldEnum = {
+  interpolationFactor: 'interpolationFactor',
+  station_id: 'station_id',
+  shape_id: 'shape_id'
+} as const
+
+export type StationAnchorScalarFieldEnum = (typeof StationAnchorScalarFieldEnum)[keyof typeof StationAnchorScalarFieldEnum]
+
+
 export const PlatformScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -1492,6 +1576,7 @@ export type PrismaClientOptions = ({
 export type GlobalOmitConfig = {
   agency?: Prisma.AgencyOmit
   station?: Prisma.StationOmit
+  stationAnchor?: Prisma.StationAnchorOmit
   platform?: Prisma.PlatformOmit
   route?: Prisma.RouteOmit
   routeStop?: Prisma.RouteStopOmit
