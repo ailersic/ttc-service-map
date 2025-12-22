@@ -202,8 +202,9 @@
             legendControl.addTo(map);
 
             async function fetchAndPlotAlerts() {
-                const response = await fetch('/api/fetch');
-                const alertsjson = await response.json();
+                // const response = await fetch('/api/fetch');
+                // const alertsjson = await response.json();
+                await loadAlerts();
 
                 // Clear existing service reductions
                 lines.forEach(line => line.clearServiceReductions());
@@ -213,15 +214,16 @@
                 
                 lines[2].addServiceReduction("Kennedy", "McCowan", "No service", "Permanently closed.");
 
-                alertsjson.alerts.forEach(alert => {
-                    if (alert.lineIdx < 0 || alert.lineIdx >= lines.length || alert.lineIdx === null) {
-                        console.error(`Invalid line index ${alert.lineIdx} for alert:`, alert);
-                    } else {
-                        lines[alert.lineIdx].addServiceReduction(alert.startStation, alert.endStation, alert.effectDesc, alert.description);
-                    }
-                });
+                // alertsjson.alerts.forEach(alert => {
+                //     if (alert.lineIdx < 0 || alert.lineIdx >= lines.length || alert.lineIdx === null) {
+                //         console.error(`Invalid line index ${alert.lineIdx} for alert:`, alert);
+                //     } else {
+                //         lines[alert.lineIdx].addServiceReduction(alert.startStation, alert.endStation, alert.effectDesc, alert.description);
+                //     }
+                // });
 
-                const lastUpdatedDate = new Date(alertsjson.lastUpdated);
+                // const lastUpdatedDate = new Date(alertsjson.lastUpdated);
+                const lastUpdatedDate = new Date(alerts.fromApi.timestamp);
                 const options = {
                     timeZone: 'UTC',
                     month: 'short',

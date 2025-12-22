@@ -8,10 +8,10 @@ datasource db {
 }
 
 model Agency {
-    id            String   @id
-    name          String
-    url           String
-    lastUpdatedAt DateTime @default(now())
+    id           String   @id
+    name         String
+    url          String
+    last_updated DateTime @default(now())
 }
 
 model Station {
@@ -32,9 +32,11 @@ model Platform {
 
     parent_station    Station? @relation(fields: [parent_station_id], references: [id])
     parent_station_id String?
-    @@index([parent_station_id])
 
-    trip_stops TripStop[]
+    trip_stops  TripStop[]
+    route_stops RouteStop[]
+
+    @@index([parent_station_id])
 }
 
 enum RouteType {
@@ -53,7 +55,28 @@ model Route {
     text_color String?
     sort_order Int?
 
-    trips Trip[]
+    shape    Shape?  @relation(fields: [shape_id], references: [id])
+    shape_id String?
+
+    trips       Trip[]
+    route_stops RouteStop[]
+
+    @@index([shape_id])
+}
+
+model RouteStop {
+    direction Int
+    sequence  Int
+
+    route    Route  @relation(fields: [route_id], references: [id])
+    route_id String
+
+    platform    Platform @relation(fields: [platform_id], references: [id])
+    platform_id String
+
+    @@id([route_id, direction, sequence])
+    @@index([route_id])
+    @@index([platform_id])
 }
 
 model Service {
@@ -65,8 +88,9 @@ model Service {
 model Shape {
     id String @id
 
-    shapePoints ShapePoint[]
+    shape_points ShapePoint[]
     trips       Trip[]
+    routes      Route[]
 }
 
 model ShapePoint {
@@ -77,9 +101,9 @@ model ShapePoint {
 
     shape    Shape  @relation(fields: [shape_id], references: [id])
     shape_id String
-    @@index([shape_id])
 
-    @@unique([shape_id, sequence])
+    @@id([shape_id, sequence])
+    @@index([shape_id])
 }
 
 model Trip {
@@ -90,28 +114,30 @@ model Trip {
 
     route    Route  @relation(fields: [route_id], references: [id])
     route_id String
-    @@index([route_id])
 
     service    Service @relation(fields: [service_id], references: [id])
     service_id String
-    @@index([service_id])
 
     shape    Shape?  @relation(fields: [shape_id], references: [id])
     shape_id String?
-    @@index([shape_id])
 
     trip_stops TripStop[]
+
+    @@index([route_id])
+    @@index([service_id])
+    @@index([shape_id])
 }
 
 model TripStop {
-    sequence Int
+    sequence             Int
+    distance_along_shape Float
 
     platform    Platform @relation(fields: [platform_id], references: [id])
     platform_id String
 
     trip    Trip   @relation(fields: [trip_id], references: [id])
     trip_id String
-    @@index([trip_id])
 
     @@id([trip_id, sequence])
+    @@index([trip_id])
 }

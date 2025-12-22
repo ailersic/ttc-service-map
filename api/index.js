@@ -6,7 +6,8 @@ const app = express();
 const PORT = 3000;
 
 const ttcApi = new TtcApi();
-await ttcApi.loadGtfsSchedule();
+await ttcApi.loadGtfs();
+// await ttcApi.regenerateStations();
 
 // Serve static files
 app.use(express.static('.'));
@@ -176,15 +177,21 @@ app.get('/api/fetch', async (req, res) => {
 });
 
 app.get('/api/subway/routes', async (req, res) => {
+    const start = Date.now();
     res.json(await ttcApi.getSubwayRoutes());
+    console.log('/api/subway/routes:', Date.now() - start, 'ms');
 });
 
 app.get('/api/subway/stations', async (req, res) => {
+    const start = Date.now();
     res.json(await ttcApi.getSubwayStations());
+    console.log('/api/subway/stations:', Date.now() - start, 'ms');
 });
 
 app.get('/api/subway/platforms', async (req, res) => {
+    const start = Date.now();
     res.json(await ttcApi.getSubwayPlatforms());
+    console.log('/api/subway/platforms:', Date.now() - start, 'ms');
 });
 
 app.get('/api/streetcar/routes', async (req, res) => {
@@ -196,7 +203,9 @@ app.get('/api/streetcar/platforms', async (req, res) => {
 });
 
 app.get('/api/alerts', async (req, res) => {
+    const start = Date.now();
     res.json(await ttcApi.getAlerts());
+    console.log('/api/alerts:', Date.now() - start, 'ms');
 });
 
 app.listen(PORT, () => {

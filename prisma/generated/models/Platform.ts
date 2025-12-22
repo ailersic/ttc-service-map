@@ -230,6 +230,7 @@ export type PlatformWhereInput = {
   parent_station_id?: Prisma.StringNullableFilter<"Platform"> | string | null
   parent_station?: Prisma.XOR<Prisma.StationNullableScalarRelationFilter, Prisma.StationWhereInput> | null
   trip_stops?: Prisma.TripStopListRelationFilter
+  route_stops?: Prisma.RouteStopListRelationFilter
 }
 
 export type PlatformOrderByWithRelationInput = {
@@ -241,6 +242,7 @@ export type PlatformOrderByWithRelationInput = {
   parent_station_id?: Prisma.SortOrderInput | Prisma.SortOrder
   parent_station?: Prisma.StationOrderByWithRelationInput
   trip_stops?: Prisma.TripStopOrderByRelationAggregateInput
+  route_stops?: Prisma.RouteStopOrderByRelationAggregateInput
 }
 
 export type PlatformWhereUniqueInput = Prisma.AtLeast<{
@@ -255,6 +257,7 @@ export type PlatformWhereUniqueInput = Prisma.AtLeast<{
   parent_station_id?: Prisma.StringNullableFilter<"Platform"> | string | null
   parent_station?: Prisma.XOR<Prisma.StationNullableScalarRelationFilter, Prisma.StationWhereInput> | null
   trip_stops?: Prisma.TripStopListRelationFilter
+  route_stops?: Prisma.RouteStopListRelationFilter
 }, "id">
 
 export type PlatformOrderByWithAggregationInput = {
@@ -291,6 +294,7 @@ export type PlatformCreateInput = {
   longitude: number
   parent_station?: Prisma.StationCreateNestedOneWithoutPlatformsInput
   trip_stops?: Prisma.TripStopCreateNestedManyWithoutPlatformInput
+  route_stops?: Prisma.RouteStopCreateNestedManyWithoutPlatformInput
 }
 
 export type PlatformUncheckedCreateInput = {
@@ -301,6 +305,7 @@ export type PlatformUncheckedCreateInput = {
   longitude: number
   parent_station_id?: string | null
   trip_stops?: Prisma.TripStopUncheckedCreateNestedManyWithoutPlatformInput
+  route_stops?: Prisma.RouteStopUncheckedCreateNestedManyWithoutPlatformInput
 }
 
 export type PlatformUpdateInput = {
@@ -311,6 +316,7 @@ export type PlatformUpdateInput = {
   longitude?: Prisma.FloatFieldUpdateOperationsInput | number
   parent_station?: Prisma.StationUpdateOneWithoutPlatformsNestedInput
   trip_stops?: Prisma.TripStopUpdateManyWithoutPlatformNestedInput
+  route_stops?: Prisma.RouteStopUpdateManyWithoutPlatformNestedInput
 }
 
 export type PlatformUncheckedUpdateInput = {
@@ -321,6 +327,7 @@ export type PlatformUncheckedUpdateInput = {
   longitude?: Prisma.FloatFieldUpdateOperationsInput | number
   parent_station_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   trip_stops?: Prisma.TripStopUncheckedUpdateManyWithoutPlatformNestedInput
+  route_stops?: Prisma.RouteStopUncheckedUpdateManyWithoutPlatformNestedInput
 }
 
 export type PlatformCreateManyInput = {
@@ -447,6 +454,20 @@ export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
 }
 
+export type PlatformCreateNestedOneWithoutRoute_stopsInput = {
+  create?: Prisma.XOR<Prisma.PlatformCreateWithoutRoute_stopsInput, Prisma.PlatformUncheckedCreateWithoutRoute_stopsInput>
+  connectOrCreate?: Prisma.PlatformCreateOrConnectWithoutRoute_stopsInput
+  connect?: Prisma.PlatformWhereUniqueInput
+}
+
+export type PlatformUpdateOneRequiredWithoutRoute_stopsNestedInput = {
+  create?: Prisma.XOR<Prisma.PlatformCreateWithoutRoute_stopsInput, Prisma.PlatformUncheckedCreateWithoutRoute_stopsInput>
+  connectOrCreate?: Prisma.PlatformCreateOrConnectWithoutRoute_stopsInput
+  upsert?: Prisma.PlatformUpsertWithoutRoute_stopsInput
+  connect?: Prisma.PlatformWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PlatformUpdateToOneWithWhereWithoutRoute_stopsInput, Prisma.PlatformUpdateWithoutRoute_stopsInput>, Prisma.PlatformUncheckedUpdateWithoutRoute_stopsInput>
+}
+
 export type PlatformCreateNestedOneWithoutTrip_stopsInput = {
   create?: Prisma.XOR<Prisma.PlatformCreateWithoutTrip_stopsInput, Prisma.PlatformUncheckedCreateWithoutTrip_stopsInput>
   connectOrCreate?: Prisma.PlatformCreateOrConnectWithoutTrip_stopsInput
@@ -468,6 +489,7 @@ export type PlatformCreateWithoutParent_stationInput = {
   latitude: number
   longitude: number
   trip_stops?: Prisma.TripStopCreateNestedManyWithoutPlatformInput
+  route_stops?: Prisma.RouteStopCreateNestedManyWithoutPlatformInput
 }
 
 export type PlatformUncheckedCreateWithoutParent_stationInput = {
@@ -477,6 +499,7 @@ export type PlatformUncheckedCreateWithoutParent_stationInput = {
   latitude: number
   longitude: number
   trip_stops?: Prisma.TripStopUncheckedCreateNestedManyWithoutPlatformInput
+  route_stops?: Prisma.RouteStopUncheckedCreateNestedManyWithoutPlatformInput
 }
 
 export type PlatformCreateOrConnectWithoutParent_stationInput = {
@@ -517,6 +540,62 @@ export type PlatformScalarWhereInput = {
   parent_station_id?: Prisma.StringNullableFilter<"Platform"> | string | null
 }
 
+export type PlatformCreateWithoutRoute_stopsInput = {
+  id: string
+  name: string
+  code?: string | null
+  latitude: number
+  longitude: number
+  parent_station?: Prisma.StationCreateNestedOneWithoutPlatformsInput
+  trip_stops?: Prisma.TripStopCreateNestedManyWithoutPlatformInput
+}
+
+export type PlatformUncheckedCreateWithoutRoute_stopsInput = {
+  id: string
+  name: string
+  code?: string | null
+  latitude: number
+  longitude: number
+  parent_station_id?: string | null
+  trip_stops?: Prisma.TripStopUncheckedCreateNestedManyWithoutPlatformInput
+}
+
+export type PlatformCreateOrConnectWithoutRoute_stopsInput = {
+  where: Prisma.PlatformWhereUniqueInput
+  create: Prisma.XOR<Prisma.PlatformCreateWithoutRoute_stopsInput, Prisma.PlatformUncheckedCreateWithoutRoute_stopsInput>
+}
+
+export type PlatformUpsertWithoutRoute_stopsInput = {
+  update: Prisma.XOR<Prisma.PlatformUpdateWithoutRoute_stopsInput, Prisma.PlatformUncheckedUpdateWithoutRoute_stopsInput>
+  create: Prisma.XOR<Prisma.PlatformCreateWithoutRoute_stopsInput, Prisma.PlatformUncheckedCreateWithoutRoute_stopsInput>
+  where?: Prisma.PlatformWhereInput
+}
+
+export type PlatformUpdateToOneWithWhereWithoutRoute_stopsInput = {
+  where?: Prisma.PlatformWhereInput
+  data: Prisma.XOR<Prisma.PlatformUpdateWithoutRoute_stopsInput, Prisma.PlatformUncheckedUpdateWithoutRoute_stopsInput>
+}
+
+export type PlatformUpdateWithoutRoute_stopsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  latitude?: Prisma.FloatFieldUpdateOperationsInput | number
+  longitude?: Prisma.FloatFieldUpdateOperationsInput | number
+  parent_station?: Prisma.StationUpdateOneWithoutPlatformsNestedInput
+  trip_stops?: Prisma.TripStopUpdateManyWithoutPlatformNestedInput
+}
+
+export type PlatformUncheckedUpdateWithoutRoute_stopsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  latitude?: Prisma.FloatFieldUpdateOperationsInput | number
+  longitude?: Prisma.FloatFieldUpdateOperationsInput | number
+  parent_station_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trip_stops?: Prisma.TripStopUncheckedUpdateManyWithoutPlatformNestedInput
+}
+
 export type PlatformCreateWithoutTrip_stopsInput = {
   id: string
   name: string
@@ -524,6 +603,7 @@ export type PlatformCreateWithoutTrip_stopsInput = {
   latitude: number
   longitude: number
   parent_station?: Prisma.StationCreateNestedOneWithoutPlatformsInput
+  route_stops?: Prisma.RouteStopCreateNestedManyWithoutPlatformInput
 }
 
 export type PlatformUncheckedCreateWithoutTrip_stopsInput = {
@@ -533,6 +613,7 @@ export type PlatformUncheckedCreateWithoutTrip_stopsInput = {
   latitude: number
   longitude: number
   parent_station_id?: string | null
+  route_stops?: Prisma.RouteStopUncheckedCreateNestedManyWithoutPlatformInput
 }
 
 export type PlatformCreateOrConnectWithoutTrip_stopsInput = {
@@ -558,6 +639,7 @@ export type PlatformUpdateWithoutTrip_stopsInput = {
   latitude?: Prisma.FloatFieldUpdateOperationsInput | number
   longitude?: Prisma.FloatFieldUpdateOperationsInput | number
   parent_station?: Prisma.StationUpdateOneWithoutPlatformsNestedInput
+  route_stops?: Prisma.RouteStopUpdateManyWithoutPlatformNestedInput
 }
 
 export type PlatformUncheckedUpdateWithoutTrip_stopsInput = {
@@ -567,6 +649,7 @@ export type PlatformUncheckedUpdateWithoutTrip_stopsInput = {
   latitude?: Prisma.FloatFieldUpdateOperationsInput | number
   longitude?: Prisma.FloatFieldUpdateOperationsInput | number
   parent_station_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  route_stops?: Prisma.RouteStopUncheckedUpdateManyWithoutPlatformNestedInput
 }
 
 export type PlatformCreateManyParent_stationInput = {
@@ -584,6 +667,7 @@ export type PlatformUpdateWithoutParent_stationInput = {
   latitude?: Prisma.FloatFieldUpdateOperationsInput | number
   longitude?: Prisma.FloatFieldUpdateOperationsInput | number
   trip_stops?: Prisma.TripStopUpdateManyWithoutPlatformNestedInput
+  route_stops?: Prisma.RouteStopUpdateManyWithoutPlatformNestedInput
 }
 
 export type PlatformUncheckedUpdateWithoutParent_stationInput = {
@@ -593,6 +677,7 @@ export type PlatformUncheckedUpdateWithoutParent_stationInput = {
   latitude?: Prisma.FloatFieldUpdateOperationsInput | number
   longitude?: Prisma.FloatFieldUpdateOperationsInput | number
   trip_stops?: Prisma.TripStopUncheckedUpdateManyWithoutPlatformNestedInput
+  route_stops?: Prisma.RouteStopUncheckedUpdateManyWithoutPlatformNestedInput
 }
 
 export type PlatformUncheckedUpdateManyWithoutParent_stationInput = {
@@ -610,10 +695,12 @@ export type PlatformUncheckedUpdateManyWithoutParent_stationInput = {
 
 export type PlatformCountOutputType = {
   trip_stops: number
+  route_stops: number
 }
 
 export type PlatformCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   trip_stops?: boolean | PlatformCountOutputTypeCountTrip_stopsArgs
+  route_stops?: boolean | PlatformCountOutputTypeCountRoute_stopsArgs
 }
 
 /**
@@ -633,6 +720,13 @@ export type PlatformCountOutputTypeCountTrip_stopsArgs<ExtArgs extends runtime.T
   where?: Prisma.TripStopWhereInput
 }
 
+/**
+ * PlatformCountOutputType without action
+ */
+export type PlatformCountOutputTypeCountRoute_stopsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RouteStopWhereInput
+}
+
 
 export type PlatformSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -643,6 +737,7 @@ export type PlatformSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   parent_station_id?: boolean
   parent_station?: boolean | Prisma.Platform$parent_stationArgs<ExtArgs>
   trip_stops?: boolean | Prisma.Platform$trip_stopsArgs<ExtArgs>
+  route_stops?: boolean | Prisma.Platform$route_stopsArgs<ExtArgs>
   _count?: boolean | Prisma.PlatformCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["platform"]>
 
@@ -679,6 +774,7 @@ export type PlatformOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs =
 export type PlatformInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   parent_station?: boolean | Prisma.Platform$parent_stationArgs<ExtArgs>
   trip_stops?: boolean | Prisma.Platform$trip_stopsArgs<ExtArgs>
+  route_stops?: boolean | Prisma.Platform$route_stopsArgs<ExtArgs>
   _count?: boolean | Prisma.PlatformCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PlatformIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -693,6 +789,7 @@ export type $PlatformPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
   objects: {
     parent_station: Prisma.$StationPayload<ExtArgs> | null
     trip_stops: Prisma.$TripStopPayload<ExtArgs>[]
+    route_stops: Prisma.$RouteStopPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1097,6 +1194,7 @@ export interface Prisma__PlatformClient<T, Null = never, ExtArgs extends runtime
   readonly [Symbol.toStringTag]: "PrismaPromise"
   parent_station<T extends Prisma.Platform$parent_stationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Platform$parent_stationArgs<ExtArgs>>): Prisma.Prisma__StationClient<runtime.Types.Result.GetResult<Prisma.$StationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   trip_stops<T extends Prisma.Platform$trip_stopsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Platform$trip_stopsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TripStopPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  route_stops<T extends Prisma.Platform$route_stopsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Platform$route_stopsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RouteStopPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1568,6 +1666,30 @@ export type Platform$trip_stopsArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.TripStopScalarFieldEnum | Prisma.TripStopScalarFieldEnum[]
+}
+
+/**
+ * Platform.route_stops
+ */
+export type Platform$route_stopsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RouteStop
+   */
+  select?: Prisma.RouteStopSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RouteStop
+   */
+  omit?: Prisma.RouteStopOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RouteStopInclude<ExtArgs> | null
+  where?: Prisma.RouteStopWhereInput
+  orderBy?: Prisma.RouteStopOrderByWithRelationInput | Prisma.RouteStopOrderByWithRelationInput[]
+  cursor?: Prisma.RouteStopWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RouteStopScalarFieldEnum | Prisma.RouteStopScalarFieldEnum[]
 }
 
 /**

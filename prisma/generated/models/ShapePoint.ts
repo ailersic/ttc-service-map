@@ -282,7 +282,7 @@ export type ShapePointCreateInput = {
   longitude: number
   sequence: number
   dist_traveled?: number | null
-  shape: Prisma.ShapeCreateNestedOneWithoutShapePointsInput
+  shape: Prisma.ShapeCreateNestedOneWithoutShape_pointsInput
 }
 
 export type ShapePointUncheckedCreateInput = {
@@ -298,7 +298,7 @@ export type ShapePointUpdateInput = {
   longitude?: Prisma.FloatFieldUpdateOperationsInput | number
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
   dist_traveled?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  shape?: Prisma.ShapeUpdateOneRequiredWithoutShapePointsNestedInput
+  shape?: Prisma.ShapeUpdateOneRequiredWithoutShape_pointsNestedInput
 }
 
 export type ShapePointUncheckedUpdateInput = {
@@ -425,14 +425,6 @@ export type ShapePointUncheckedUpdateManyWithoutShapeNestedInput = {
   update?: Prisma.ShapePointUpdateWithWhereUniqueWithoutShapeInput | Prisma.ShapePointUpdateWithWhereUniqueWithoutShapeInput[]
   updateMany?: Prisma.ShapePointUpdateManyWithWhereWithoutShapeInput | Prisma.ShapePointUpdateManyWithWhereWithoutShapeInput[]
   deleteMany?: Prisma.ShapePointScalarWhereInput | Prisma.ShapePointScalarWhereInput[]
-}
-
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
 }
 
 export type NullableFloatFieldUpdateOperationsInput = {

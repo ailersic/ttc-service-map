@@ -433,9 +433,20 @@ function refreshMap(map) {
     renderLines();
 
     // Connect the two Spadinas
-    let spadinaTunnel = L.polyline([
-        [lines[0].stations[14].lat, lines[0].stations[14].lng], // Line 1 Spadina
-        [lines[1].stations[14].lat, lines[1].stations[14].lng]  // Line 2 Spadina
+    // let spadinaTunnel = L.polyline([
+    //     [lines[0].stations[14].lat, lines[0].stations[14].lng], // Line 1 Spadina
+    //     [lines[1].stations[14].lat, lines[1].stations[14].lng]  // Line 2 Spadina
+    // ], {
+    //     color: "#000000",
+    //     weight: 6,
+    //     opacity: 1.0,
+    //     zIndex: 1
+    // });
+    const spadina1 = subway.stations['spadina-station-1'];
+    const spadina2 = subway.stations['spadina-station-2'];
+    const spadinaTunnel = L.polyline([
+        [spadina1.latitude, spadina1.longitude],
+        [spadina2.latitude, spadina2.longitude],
     ], {
         color: "#000000",
         weight: 6,
@@ -471,23 +482,29 @@ function addLineSegments(line) {
     let isegRed = 0;
     let lastStationNormal = true;
 
-    subway.routes.forEach(({ trips, color }) => trips.forEach(({ trip_stops }) => {
-        const transitPolyLine = L.polyline(trip_stops.map(id => {
-            const platform = subway.platforms[id];
-            if (platform.parent_station_id) {
-                const { latitude, longitude } = subway.stations[platform.parent_station_id];
-                return [latitude, longitude];
-            }
-            const { latitude, longitude } = platform;
-            return [latitude, longitude];
-        }), {
+    subway.routes.forEach(({ stops: [dir0Stops], color, shape }) => {
+        // const transitPolyLine = L.polyline(dir0Stops.map(id => {
+        //     const platform = subway.platforms[id];
+        //     if (platform.parent_station_id) {
+        //         const { latitude, longitude } = subway.stations[platform.parent_station_id];
+        //         return [latitude, longitude];
+        //     }
+        //     const { latitude, longitude } = platform;
+        //     return [latitude, longitude];
+        // }), {
+        //     color,
+        //     weight: 6,
+        //     opacity: 1,
+        //     zIndex: 10000,
+        // });
+        const transitPolyLine = L.polyline(shape.map(({ latitude, longitude }) => [latitude, longitude]), {
             color,
-            weight: 6,
+            weight: 10,
             opacity: 1,
             zIndex: 10000,
         });
         allSegmentPolylines.push(transitPolyLine);
-    }));
+    });
 
     console.warn('got', alerts.fromApi.alerts.length, 'alerts from api');
     alerts.fromApi.alerts.forEach(({ id, effect, criteria, header, description }) =>
@@ -504,13 +521,13 @@ function addLineSegments(line) {
             // if (route === undefined) return;
             switch (effect) {
                 case 'AccessibilityIssue':
-                    // TODO
+                    // TODO (hi prio)
                     break;
                 case 'AdditionalService':
                     // TODO
                     break;
                 case 'Detour':
-                    // TODO
+                    // TODO (hi prio)
                     break;
                 case 'ModifiedService':
                     // TODO
@@ -531,7 +548,6 @@ function addLineSegments(line) {
                     } else {
                         alerts.perStation[station_id] = [newAlert];
                     }
-                    console.warn('add alert to station:', subway.stations[station_id].name);
                     break;
                 default:
                     console.warn('Unsupported Alert.Effect:', effect);
@@ -540,15 +556,14 @@ function addLineSegments(line) {
         }
     ));
 
-    subway.routes.forEach(({ trips: [trip] }) => {
+    subway.routes.forEach(({ stops: [dir0Stops] }) => {
         /** @type {{ [k in string]: [number, number][] }} */
         const pointsPerAlert = {};
-        trip.trip_stops.forEach(platformId => {
+        dir0Stops.forEach(platformId => {
             /** @type {string} */
             const stationId = subway.platforms[platformId].parent_station_id;
             const station = subway.stations[stationId];
             const stationAlerts = alerts.perStation[stationId];
-            console.warn(stationId && station.name || subway.platforms[platformId].name, stationAlerts && stationAlerts.length);
             if (!stationAlerts) return;
             const point = [station.latitude, station.longitude];
             stationAlerts.forEach(({ id }) => {

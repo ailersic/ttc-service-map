@@ -28,21 +28,21 @@ export type AgencyMinAggregateOutputType = {
   id: string | null
   name: string | null
   url: string | null
-  lastUpdatedAt: Date | null
+  last_updated: Date | null
 }
 
 export type AgencyMaxAggregateOutputType = {
   id: string | null
   name: string | null
   url: string | null
-  lastUpdatedAt: Date | null
+  last_updated: Date | null
 }
 
 export type AgencyCountAggregateOutputType = {
   id: number
   name: number
   url: number
-  lastUpdatedAt: number
+  last_updated: number
   _all: number
 }
 
@@ -51,21 +51,21 @@ export type AgencyMinAggregateInputType = {
   id?: true
   name?: true
   url?: true
-  lastUpdatedAt?: true
+  last_updated?: true
 }
 
 export type AgencyMaxAggregateInputType = {
   id?: true
   name?: true
   url?: true
-  lastUpdatedAt?: true
+  last_updated?: true
 }
 
 export type AgencyCountAggregateInputType = {
   id?: true
   name?: true
   url?: true
-  lastUpdatedAt?: true
+  last_updated?: true
   _all?: true
 }
 
@@ -145,7 +145,7 @@ export type AgencyGroupByOutputType = {
   id: string
   name: string
   url: string
-  lastUpdatedAt: Date
+  last_updated: Date
   _count: AgencyCountAggregateOutputType | null
   _min: AgencyMinAggregateOutputType | null
   _max: AgencyMaxAggregateOutputType | null
@@ -173,14 +173,14 @@ export type AgencyWhereInput = {
   id?: Prisma.StringFilter<"Agency"> | string
   name?: Prisma.StringFilter<"Agency"> | string
   url?: Prisma.StringFilter<"Agency"> | string
-  lastUpdatedAt?: Prisma.DateTimeFilter<"Agency"> | Date | string
+  last_updated?: Prisma.DateTimeFilter<"Agency"> | Date | string
 }
 
 export type AgencyOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   url?: Prisma.SortOrder
-  lastUpdatedAt?: Prisma.SortOrder
+  last_updated?: Prisma.SortOrder
 }
 
 export type AgencyWhereUniqueInput = Prisma.AtLeast<{
@@ -190,14 +190,14 @@ export type AgencyWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.AgencyWhereInput | Prisma.AgencyWhereInput[]
   name?: Prisma.StringFilter<"Agency"> | string
   url?: Prisma.StringFilter<"Agency"> | string
-  lastUpdatedAt?: Prisma.DateTimeFilter<"Agency"> | Date | string
+  last_updated?: Prisma.DateTimeFilter<"Agency"> | Date | string
 }, "id">
 
 export type AgencyOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   url?: Prisma.SortOrder
-  lastUpdatedAt?: Prisma.SortOrder
+  last_updated?: Prisma.SortOrder
   _count?: Prisma.AgencyCountOrderByAggregateInput
   _max?: Prisma.AgencyMaxOrderByAggregateInput
   _min?: Prisma.AgencyMinOrderByAggregateInput
@@ -210,77 +210,77 @@ export type AgencyScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Agency"> | string
   name?: Prisma.StringWithAggregatesFilter<"Agency"> | string
   url?: Prisma.StringWithAggregatesFilter<"Agency"> | string
-  lastUpdatedAt?: Prisma.DateTimeWithAggregatesFilter<"Agency"> | Date | string
+  last_updated?: Prisma.DateTimeWithAggregatesFilter<"Agency"> | Date | string
 }
 
 export type AgencyCreateInput = {
   id: string
   name: string
   url: string
-  lastUpdatedAt?: Date | string
+  last_updated?: Date | string
 }
 
 export type AgencyUncheckedCreateInput = {
   id: string
   name: string
   url: string
-  lastUpdatedAt?: Date | string
+  last_updated?: Date | string
 }
 
 export type AgencyUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   url?: Prisma.StringFieldUpdateOperationsInput | string
-  lastUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  last_updated?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type AgencyUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   url?: Prisma.StringFieldUpdateOperationsInput | string
-  lastUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  last_updated?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type AgencyCreateManyInput = {
   id: string
   name: string
   url: string
-  lastUpdatedAt?: Date | string
+  last_updated?: Date | string
 }
 
 export type AgencyUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   url?: Prisma.StringFieldUpdateOperationsInput | string
-  lastUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  last_updated?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type AgencyUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   url?: Prisma.StringFieldUpdateOperationsInput | string
-  lastUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  last_updated?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type AgencyCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   url?: Prisma.SortOrder
-  lastUpdatedAt?: Prisma.SortOrder
+  last_updated?: Prisma.SortOrder
 }
 
 export type AgencyMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   url?: Prisma.SortOrder
-  lastUpdatedAt?: Prisma.SortOrder
+  last_updated?: Prisma.SortOrder
 }
 
 export type AgencyMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   url?: Prisma.SortOrder
-  lastUpdatedAt?: Prisma.SortOrder
+  last_updated?: Prisma.SortOrder
 }
 
 export type StringFieldUpdateOperationsInput = {
@@ -297,31 +297,31 @@ export type AgencySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   id?: boolean
   name?: boolean
   url?: boolean
-  lastUpdatedAt?: boolean
+  last_updated?: boolean
 }, ExtArgs["result"]["agency"]>
 
 export type AgencySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
   url?: boolean
-  lastUpdatedAt?: boolean
+  last_updated?: boolean
 }, ExtArgs["result"]["agency"]>
 
 export type AgencySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
   url?: boolean
-  lastUpdatedAt?: boolean
+  last_updated?: boolean
 }, ExtArgs["result"]["agency"]>
 
 export type AgencySelectScalar = {
   id?: boolean
   name?: boolean
   url?: boolean
-  lastUpdatedAt?: boolean
+  last_updated?: boolean
 }
 
-export type AgencyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "url" | "lastUpdatedAt", ExtArgs["result"]["agency"]>
+export type AgencyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "url" | "last_updated", ExtArgs["result"]["agency"]>
 
 export type $AgencyPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Agency"
@@ -330,7 +330,7 @@ export type $AgencyPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     id: string
     name: string
     url: string
-    lastUpdatedAt: Date
+    last_updated: Date
   }, ExtArgs["result"]["agency"]>
   composites: {}
 }
@@ -757,7 +757,7 @@ export interface AgencyFieldRefs {
   readonly id: Prisma.FieldRef<"Agency", 'String'>
   readonly name: Prisma.FieldRef<"Agency", 'String'>
   readonly url: Prisma.FieldRef<"Agency", 'String'>
-  readonly lastUpdatedAt: Prisma.FieldRef<"Agency", 'DateTime'>
+  readonly last_updated: Prisma.FieldRef<"Agency", 'DateTime'>
 }
     
 

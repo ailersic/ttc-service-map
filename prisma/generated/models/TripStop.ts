@@ -28,26 +28,31 @@ export type AggregateTripStop = {
 
 export type TripStopAvgAggregateOutputType = {
   sequence: number | null
+  distance_along_shape: number | null
 }
 
 export type TripStopSumAggregateOutputType = {
   sequence: number | null
+  distance_along_shape: number | null
 }
 
 export type TripStopMinAggregateOutputType = {
   sequence: number | null
+  distance_along_shape: number | null
   platform_id: string | null
   trip_id: string | null
 }
 
 export type TripStopMaxAggregateOutputType = {
   sequence: number | null
+  distance_along_shape: number | null
   platform_id: string | null
   trip_id: string | null
 }
 
 export type TripStopCountAggregateOutputType = {
   sequence: number
+  distance_along_shape: number
   platform_id: number
   trip_id: number
   _all: number
@@ -56,26 +61,31 @@ export type TripStopCountAggregateOutputType = {
 
 export type TripStopAvgAggregateInputType = {
   sequence?: true
+  distance_along_shape?: true
 }
 
 export type TripStopSumAggregateInputType = {
   sequence?: true
+  distance_along_shape?: true
 }
 
 export type TripStopMinAggregateInputType = {
   sequence?: true
+  distance_along_shape?: true
   platform_id?: true
   trip_id?: true
 }
 
 export type TripStopMaxAggregateInputType = {
   sequence?: true
+  distance_along_shape?: true
   platform_id?: true
   trip_id?: true
 }
 
 export type TripStopCountAggregateInputType = {
   sequence?: true
+  distance_along_shape?: true
   platform_id?: true
   trip_id?: true
   _all?: true
@@ -169,6 +179,7 @@ export type TripStopGroupByArgs<ExtArgs extends runtime.Types.Extensions.Interna
 
 export type TripStopGroupByOutputType = {
   sequence: number
+  distance_along_shape: number
   platform_id: string
   trip_id: string
   _count: TripStopCountAggregateOutputType | null
@@ -198,6 +209,7 @@ export type TripStopWhereInput = {
   OR?: Prisma.TripStopWhereInput[]
   NOT?: Prisma.TripStopWhereInput | Prisma.TripStopWhereInput[]
   sequence?: Prisma.IntFilter<"TripStop"> | number
+  distance_along_shape?: Prisma.FloatFilter<"TripStop"> | number
   platform_id?: Prisma.StringFilter<"TripStop"> | string
   trip_id?: Prisma.StringFilter<"TripStop"> | string
   platform?: Prisma.XOR<Prisma.PlatformScalarRelationFilter, Prisma.PlatformWhereInput>
@@ -206,6 +218,7 @@ export type TripStopWhereInput = {
 
 export type TripStopOrderByWithRelationInput = {
   sequence?: Prisma.SortOrder
+  distance_along_shape?: Prisma.SortOrder
   platform_id?: Prisma.SortOrder
   trip_id?: Prisma.SortOrder
   platform?: Prisma.PlatformOrderByWithRelationInput
@@ -218,6 +231,7 @@ export type TripStopWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.TripStopWhereInput[]
   NOT?: Prisma.TripStopWhereInput | Prisma.TripStopWhereInput[]
   sequence?: Prisma.IntFilter<"TripStop"> | number
+  distance_along_shape?: Prisma.FloatFilter<"TripStop"> | number
   platform_id?: Prisma.StringFilter<"TripStop"> | string
   trip_id?: Prisma.StringFilter<"TripStop"> | string
   platform?: Prisma.XOR<Prisma.PlatformScalarRelationFilter, Prisma.PlatformWhereInput>
@@ -226,6 +240,7 @@ export type TripStopWhereUniqueInput = Prisma.AtLeast<{
 
 export type TripStopOrderByWithAggregationInput = {
   sequence?: Prisma.SortOrder
+  distance_along_shape?: Prisma.SortOrder
   platform_id?: Prisma.SortOrder
   trip_id?: Prisma.SortOrder
   _count?: Prisma.TripStopCountOrderByAggregateInput
@@ -240,46 +255,54 @@ export type TripStopScalarWhereWithAggregatesInput = {
   OR?: Prisma.TripStopScalarWhereWithAggregatesInput[]
   NOT?: Prisma.TripStopScalarWhereWithAggregatesInput | Prisma.TripStopScalarWhereWithAggregatesInput[]
   sequence?: Prisma.IntWithAggregatesFilter<"TripStop"> | number
+  distance_along_shape?: Prisma.FloatWithAggregatesFilter<"TripStop"> | number
   platform_id?: Prisma.StringWithAggregatesFilter<"TripStop"> | string
   trip_id?: Prisma.StringWithAggregatesFilter<"TripStop"> | string
 }
 
 export type TripStopCreateInput = {
   sequence: number
+  distance_along_shape: number
   platform: Prisma.PlatformCreateNestedOneWithoutTrip_stopsInput
   trip: Prisma.TripCreateNestedOneWithoutTrip_stopsInput
 }
 
 export type TripStopUncheckedCreateInput = {
   sequence: number
+  distance_along_shape: number
   platform_id: string
   trip_id: string
 }
 
 export type TripStopUpdateInput = {
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   platform?: Prisma.PlatformUpdateOneRequiredWithoutTrip_stopsNestedInput
   trip?: Prisma.TripUpdateOneRequiredWithoutTrip_stopsNestedInput
 }
 
 export type TripStopUncheckedUpdateInput = {
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   platform_id?: Prisma.StringFieldUpdateOperationsInput | string
   trip_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type TripStopCreateManyInput = {
   sequence: number
+  distance_along_shape: number
   platform_id: string
   trip_id: string
 }
 
 export type TripStopUpdateManyMutationInput = {
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
 }
 
 export type TripStopUncheckedUpdateManyInput = {
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   platform_id?: Prisma.StringFieldUpdateOperationsInput | string
   trip_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
@@ -301,28 +324,33 @@ export type TripStopTrip_idSequenceCompoundUniqueInput = {
 
 export type TripStopCountOrderByAggregateInput = {
   sequence?: Prisma.SortOrder
+  distance_along_shape?: Prisma.SortOrder
   platform_id?: Prisma.SortOrder
   trip_id?: Prisma.SortOrder
 }
 
 export type TripStopAvgOrderByAggregateInput = {
   sequence?: Prisma.SortOrder
+  distance_along_shape?: Prisma.SortOrder
 }
 
 export type TripStopMaxOrderByAggregateInput = {
   sequence?: Prisma.SortOrder
+  distance_along_shape?: Prisma.SortOrder
   platform_id?: Prisma.SortOrder
   trip_id?: Prisma.SortOrder
 }
 
 export type TripStopMinOrderByAggregateInput = {
   sequence?: Prisma.SortOrder
+  distance_along_shape?: Prisma.SortOrder
   platform_id?: Prisma.SortOrder
   trip_id?: Prisma.SortOrder
 }
 
 export type TripStopSumOrderByAggregateInput = {
   sequence?: Prisma.SortOrder
+  distance_along_shape?: Prisma.SortOrder
 }
 
 export type TripStopCreateNestedManyWithoutPlatformInput = {
@@ -411,11 +439,13 @@ export type TripStopUncheckedUpdateManyWithoutTripNestedInput = {
 
 export type TripStopCreateWithoutPlatformInput = {
   sequence: number
+  distance_along_shape: number
   trip: Prisma.TripCreateNestedOneWithoutTrip_stopsInput
 }
 
 export type TripStopUncheckedCreateWithoutPlatformInput = {
   sequence: number
+  distance_along_shape: number
   trip_id: string
 }
 
@@ -450,17 +480,20 @@ export type TripStopScalarWhereInput = {
   OR?: Prisma.TripStopScalarWhereInput[]
   NOT?: Prisma.TripStopScalarWhereInput | Prisma.TripStopScalarWhereInput[]
   sequence?: Prisma.IntFilter<"TripStop"> | number
+  distance_along_shape?: Prisma.FloatFilter<"TripStop"> | number
   platform_id?: Prisma.StringFilter<"TripStop"> | string
   trip_id?: Prisma.StringFilter<"TripStop"> | string
 }
 
 export type TripStopCreateWithoutTripInput = {
   sequence: number
+  distance_along_shape: number
   platform: Prisma.PlatformCreateNestedOneWithoutTrip_stopsInput
 }
 
 export type TripStopUncheckedCreateWithoutTripInput = {
   sequence: number
+  distance_along_shape: number
   platform_id: string
 }
 
@@ -492,41 +525,49 @@ export type TripStopUpdateManyWithWhereWithoutTripInput = {
 
 export type TripStopCreateManyPlatformInput = {
   sequence: number
+  distance_along_shape: number
   trip_id: string
 }
 
 export type TripStopUpdateWithoutPlatformInput = {
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   trip?: Prisma.TripUpdateOneRequiredWithoutTrip_stopsNestedInput
 }
 
 export type TripStopUncheckedUpdateWithoutPlatformInput = {
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   trip_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type TripStopUncheckedUpdateManyWithoutPlatformInput = {
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   trip_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type TripStopCreateManyTripInput = {
   sequence: number
+  distance_along_shape: number
   platform_id: string
 }
 
 export type TripStopUpdateWithoutTripInput = {
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   platform?: Prisma.PlatformUpdateOneRequiredWithoutTrip_stopsNestedInput
 }
 
 export type TripStopUncheckedUpdateWithoutTripInput = {
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   platform_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type TripStopUncheckedUpdateManyWithoutTripInput = {
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   platform_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
@@ -534,6 +575,7 @@ export type TripStopUncheckedUpdateManyWithoutTripInput = {
 
 export type TripStopSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   sequence?: boolean
+  distance_along_shape?: boolean
   platform_id?: boolean
   trip_id?: boolean
   platform?: boolean | Prisma.PlatformDefaultArgs<ExtArgs>
@@ -542,6 +584,7 @@ export type TripStopSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
 
 export type TripStopSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   sequence?: boolean
+  distance_along_shape?: boolean
   platform_id?: boolean
   trip_id?: boolean
   platform?: boolean | Prisma.PlatformDefaultArgs<ExtArgs>
@@ -550,6 +593,7 @@ export type TripStopSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
 
 export type TripStopSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   sequence?: boolean
+  distance_along_shape?: boolean
   platform_id?: boolean
   trip_id?: boolean
   platform?: boolean | Prisma.PlatformDefaultArgs<ExtArgs>
@@ -558,11 +602,12 @@ export type TripStopSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
 
 export type TripStopSelectScalar = {
   sequence?: boolean
+  distance_along_shape?: boolean
   platform_id?: boolean
   trip_id?: boolean
 }
 
-export type TripStopOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"sequence" | "platform_id" | "trip_id", ExtArgs["result"]["tripStop"]>
+export type TripStopOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"sequence" | "distance_along_shape" | "platform_id" | "trip_id", ExtArgs["result"]["tripStop"]>
 export type TripStopInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   platform?: boolean | Prisma.PlatformDefaultArgs<ExtArgs>
   trip?: boolean | Prisma.TripDefaultArgs<ExtArgs>
@@ -584,6 +629,7 @@ export type $TripStopPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     sequence: number
+    distance_along_shape: number
     platform_id: string
     trip_id: string
   }, ExtArgs["result"]["tripStop"]>
@@ -1012,6 +1058,7 @@ export interface Prisma__TripStopClient<T, Null = never, ExtArgs extends runtime
  */
 export interface TripStopFieldRefs {
   readonly sequence: Prisma.FieldRef<"TripStop", 'Int'>
+  readonly distance_along_shape: Prisma.FieldRef<"TripStop", 'Float'>
   readonly platform_id: Prisma.FieldRef<"TripStop", 'String'>
   readonly trip_id: Prisma.FieldRef<"TripStop", 'String'>
 }

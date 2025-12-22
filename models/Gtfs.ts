@@ -104,8 +104,8 @@ namespace Gtfs {
             stop_headsign?: string | '';
             // omitted start_pickup_drop_off_window, end_pickup_drop_off_window,
             //         pickup_type, drop_off_type, continuous_pickup, continuous_drop_off,
-            //         shape_dist_traveled, timepoint, pickup_booking_rule_id,
-            //         drop_off_booking_rule_id
+            shape_dist_traveled?: `${number}`;
+            // omitted timepoint, pickup_booking_rule_id, drop_off_booking_rule_id
         };
 
         export interface Trip {
@@ -128,7 +128,7 @@ namespace Gtfs {
 
         export interface FeedMessage {
             header: FeedHeader;
-            entity: FeedEntity[]; // TODO: Cardinality is Many, unclear exact shape of data
+            entity: FeedEntity[];
         };
 
         export interface FeedHeader {
@@ -198,8 +198,8 @@ namespace Gtfs {
         };
 
         export interface Alert {
-            active_period?: TimeRange[]; // TODO: Cardinality is Many, unclear exact shape of data
-            informed_entity: EntitySelector[]; // TODO: Cardinality is Many, unclear exact shape of data
+            active_period?: TimeRange[];
+            informed_entity: EntitySelector[];
             cause?: Cause;
             cause_detail?: TranslatedString;
             effect?: Effect;
@@ -254,7 +254,7 @@ namespace Gtfs {
         };
 
         export interface TranslatedString {
-            translation: Translation[]; // TODO: Cardinality is Many, unclear exact shape of data
+            translation: Translation[];
         };
 
         export interface Translation {

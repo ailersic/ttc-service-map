@@ -388,6 +388,7 @@ export const ModelName = {
   Station: 'Station',
   Platform: 'Platform',
   Route: 'Route',
+  RouteStop: 'RouteStop',
   Service: 'Service',
   Shape: 'Shape',
   ShapePoint: 'ShapePoint',
@@ -408,7 +409,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "agency" | "station" | "platform" | "route" | "service" | "shape" | "shapePoint" | "trip" | "tripStop"
+    modelProps: "agency" | "station" | "platform" | "route" | "routeStop" | "service" | "shape" | "shapePoint" | "trip" | "tripStop"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -705,6 +706,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.RouteCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.RouteCountAggregateOutputType> | number
+        }
+      }
+    }
+    RouteStop: {
+      payload: Prisma.$RouteStopPayload<ExtArgs>
+      fields: Prisma.RouteStopFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RouteStopFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteStopPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RouteStopFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteStopPayload>
+        }
+        findFirst: {
+          args: Prisma.RouteStopFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteStopPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RouteStopFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteStopPayload>
+        }
+        findMany: {
+          args: Prisma.RouteStopFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteStopPayload>[]
+        }
+        create: {
+          args: Prisma.RouteStopCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteStopPayload>
+        }
+        createMany: {
+          args: Prisma.RouteStopCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RouteStopCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteStopPayload>[]
+        }
+        delete: {
+          args: Prisma.RouteStopDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteStopPayload>
+        }
+        update: {
+          args: Prisma.RouteStopUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteStopPayload>
+        }
+        deleteMany: {
+          args: Prisma.RouteStopDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RouteStopUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RouteStopUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteStopPayload>[]
+        }
+        upsert: {
+          args: Prisma.RouteStopUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteStopPayload>
+        }
+        aggregate: {
+          args: Prisma.RouteStopAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRouteStop>
+        }
+        groupBy: {
+          args: Prisma.RouteStopGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RouteStopGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RouteStopCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RouteStopCountAggregateOutputType> | number
         }
       }
     }
@@ -1121,7 +1196,7 @@ export const AgencyScalarFieldEnum = {
   id: 'id',
   name: 'name',
   url: 'url',
-  lastUpdatedAt: 'lastUpdatedAt'
+  last_updated: 'last_updated'
 } as const
 
 export type AgencyScalarFieldEnum = (typeof AgencyScalarFieldEnum)[keyof typeof AgencyScalarFieldEnum]
@@ -1156,10 +1231,21 @@ export const RouteScalarFieldEnum = {
   type: 'type',
   color: 'color',
   text_color: 'text_color',
-  sort_order: 'sort_order'
+  sort_order: 'sort_order',
+  shape_id: 'shape_id'
 } as const
 
 export type RouteScalarFieldEnum = (typeof RouteScalarFieldEnum)[keyof typeof RouteScalarFieldEnum]
+
+
+export const RouteStopScalarFieldEnum = {
+  direction: 'direction',
+  sequence: 'sequence',
+  route_id: 'route_id',
+  platform_id: 'platform_id'
+} as const
+
+export type RouteStopScalarFieldEnum = (typeof RouteStopScalarFieldEnum)[keyof typeof RouteStopScalarFieldEnum]
 
 
 export const ServiceScalarFieldEnum = {
@@ -1202,6 +1288,7 @@ export type TripScalarFieldEnum = (typeof TripScalarFieldEnum)[keyof typeof Trip
 
 export const TripStopScalarFieldEnum = {
   sequence: 'sequence',
+  distance_along_shape: 'distance_along_shape',
   platform_id: 'platform_id',
   trip_id: 'trip_id'
 } as const
@@ -1407,6 +1494,7 @@ export type GlobalOmitConfig = {
   station?: Prisma.StationOmit
   platform?: Prisma.PlatformOmit
   route?: Prisma.RouteOmit
+  routeStop?: Prisma.RouteStopOmit
   service?: Prisma.ServiceOmit
   shape?: Prisma.ShapeOmit
   shapePoint?: Prisma.ShapePointOmit

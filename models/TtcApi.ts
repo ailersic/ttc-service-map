@@ -91,20 +91,14 @@ export default class TtcApi {
 
     private loadGtfsSchedulePromise: Promise<void> | null = null;
 
+    private gtfsRealtime: protobufjs.Type | null = null;
+
     constructor() { }
 
     async getSubwayPlatforms() {
         return prisma.platform.findMany({
             where: {
-                trip_stops: {
-                    some: {
-                        trip: {
-                            route: {
-                                type: RouteType.SubwayMetro,
-                            },
-                        },
-                    },
-                },
+                parent_station_id: { not: null },
             },
             orderBy: {
                 id: 'asc',
@@ -122,21 +116,6 @@ export default class TtcApi {
 
     async getSubwayStations() {
         return prisma.station.findMany({
-            where: {
-                platforms: {
-                    some: {
-                        trip_stops: {
-                            some: {
-                                trip: {
-                                    route: {
-                                        type: RouteType.SubwayMetro,
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
             orderBy: {
                 id: 'asc',
             },
@@ -161,40 +140,41 @@ export default class TtcApi {
                 short_name: true,
                 long_name: true,
                 color: true,
-                trips: {
+                route_stops: {
                     select: {
-                        headsign: true,
                         direction: true,
-                        trip_stops: {
-                            select: {
-                                platform_id: true,
-                            },
-                            orderBy: {
-                                sequence: 'asc',
-                            },
-                        },
+                        sequence: true,
+                        platform_id: true,
                     },
-                    distinct: 'direction',
-                    orderBy: {
-                        trip_stops: {
-                            _count: 'desc',
+                },
+                shape: {
+                    select: {
+                        shape_points: {
+                            select: {
+                                latitude: true,
+                                longitude: true,
+                            },
+                            orderBy: { sequence: 'asc' },
                         },
                     },
                 },
             },
         }).then(result => {
-            return result.map(r => ({
-                ...r,
-                trips: r.trips.map(t => ({
-                    ...t,
-                    trip_stops: t.trip_stops.map(({ platform_id }) => platform_id),
-                })),
+            return result.map(({ id, short_name, long_name, color, route_stops, shape }) => ({
+                id, short_name, long_name, color,
+                stops: route_stops
+                    .sort((a, b) => a.sequence - b.sequence)
+                    .reduce((stops, { direction, platform_id }) => {
+                        stops[direction].push(platform_id);
+                        return stops;
+                    }, [[], []] as string[][]),
+                shape: shape && shape.shape_points,
             }));
         });
     }
 
-    loadGtfsSchedule(forceReload: boolean = false) {
-        return this.loadGtfsSchedulePromise = this._loadGtfsSchedule(forceReload).then(() => { this.loadGtfsSchedulePromise = null });
+    loadGtfs(forceReload: boolean = false) {
+        return this.loadGtfsSchedulePromise = this._loadGtfs(forceReload).then(() => { this.loadGtfsSchedulePromise = null });
     }
 
     getGtfsStaticPromise() {
@@ -207,19 +187,25 @@ export default class TtcApi {
         await this._generateStations();
     }
 
+    async regenerateRouteStops() {
+        await prisma.routeStop.deleteMany();
+        await this._generateRouteStops();
+    }
+
+    async regenerateRouteShapes() {
+        await this._generateRouteShapes();
+    }
+
     async getAlerts(): Promise<AlertCollection> {
-        const protoRes = await fetch(this.gtfsProtoFileUrl);
-        let protoFile = "";
-        await protoRes.body!.pipeTo(new WritableStream({
-            write(chunk) {
-                protoFile += Buffer.from(chunk).toString('utf8');
-            },
-        }));
-        const root = protobufjs.parse(protoFile, { keepCase: true }).root;
+        if (this.gtfsRealtime === null) {
+            await this._loadGtfsRtProtoDefs();
+        }
+        // This fetch is pretty slow, >2 seconds, and no clear way to speed it up.
+        // Client should not wait for this before rendering.
         const feedRes = await fetch(this.gtfsAlertUrl);
         const feed = await feedRes.body!.getReader().read().then(result => Buffer.from(result.value!));
-        const feedMessage = root.lookupType('FeedMessage').decode(feed).toJSON() as Gtfs.Realtime.FeedMessage;
-        return {
+        const feedMessage = this.gtfsRealtime!.decode(feed).toJSON() as Gtfs.Realtime.FeedMessage;
+        const result = {
             timestamp: Number(feedMessage.header.timestamp),
             alerts: (await Promise.all(
                 feedMessage.entity
@@ -266,16 +252,20 @@ export default class TtcApi {
                     }))
             ).filter((alert): alert is NonNullable<typeof alert> => !!alert),
         };
+        return result;
     }
 
-    private async _loadGtfsSchedule(forceReload: boolean) {
+    private async _loadGtfs(forceReload: boolean) {
+        if (this.gtfsRealtime === null) {
+            await this._loadGtfsRtProtoDefs();
+        }
         const res = await fetch(this.gtfsPackageUrl + this.gtfsPackageId);
         const data = await res.json();
         const lastRefreshed = new Date(data.result.last_refreshed as string);
         console.log('last refreshed:', lastRefreshed.toLocaleDateString());
         if (!forceReload) {
             const agency = await prisma.agency.findFirst();
-            if (agency && agency.lastUpdatedAt > lastRefreshed) {
+            if (agency && agency.last_updated > lastRefreshed) {
                 console.log(agency.name, 'already up to date');
                 return;
             }
@@ -287,7 +277,7 @@ export default class TtcApi {
         console.log('records:', dir.numberOfRecords);
         console.log(dir.files.map(file => file.path));
         // It's faster to just wipe the db and recreate everything
-        const tables = ['tripStop', 'trip', 'shapePoint', 'shape', 'service', 'route', 'platform', 'station'] as const;
+        const tables: (keyof typeof prisma)[] = ['tripStop', 'trip', 'service', 'routeStop', 'route', 'shapePoint', 'shape', 'platform', 'station'];
         for (let k of tables) {
             console.log('delete', k);
             // @ts-expect-error -- signatures of deleteMany on each table don't match, but they all have no-arg signatures
@@ -297,11 +287,11 @@ export default class TtcApi {
             'agency.txt',
             'calendar.txt',
             'calendar_dates.txt',
-            'routes.txt',
             'shapes.txt',
+            'routes.txt',
             'stops.txt',
             'trips.txt',
-            'stop_times.txt'
+            'stop_times.txt',
         ];
         for (let file of dir.files.sort((a, b) => loadOrder.indexOf(a.path) - loadOrder.indexOf(b.path))) {
             switch (file.path) {
@@ -313,7 +303,7 @@ export default class TtcApi {
                     }]: Gtfs.Schedule.Agency[]) => {
                         await prisma.agency.upsert({
                             create: { id, name, url },
-                            update: { name, url, lastUpdatedAt: new Date() },
+                            update: { name, url, last_updated: new Date() },
                             where: { id },
                         })
                     });
@@ -418,10 +408,11 @@ export default class TtcApi {
                     await this._consumeCsv(file, async (stopTimes: Gtfs.Schedule.StopTime[]) => {
                         console.log('GTFS stop times:', stopTimes.length);
                         await prisma.tripStop.createMany({
-                            data: stopTimes.map(({ stop_id, stop_sequence, trip_id }): TripStopCreateManyInput => ({
+                            data: stopTimes.map(({ stop_id, stop_sequence, trip_id, shape_dist_traveled }): TripStopCreateManyInput => ({
                                 trip_id,
                                 platform_id: stop_id,
                                 sequence: Number(stop_sequence),
+                                distance_along_shape: Number(shape_dist_traveled),
                             })),
                         });
                     });
@@ -444,9 +435,24 @@ export default class TtcApi {
                     break;
             }
         }
+        console.log('generating route stops...');
+        await this._generateRouteStops();
+        console.log('generating route shapes...');
+        await this._generateRouteShapes();
         console.log('generating stations...');
         await this._generateStations();
-        console.log('done');
+        console.log('done loading GTFS');
+    }
+
+    private async _loadGtfsRtProtoDefs() {
+        const protoRes = await fetch(this.gtfsProtoFileUrl);
+        let protoFile = "";
+        await protoRes.body!.pipeTo(new WritableStream({
+            write(chunk) {
+                protoFile += Buffer.from(chunk).toString('utf8');
+            },
+        }));
+        this.gtfsRealtime = protobufjs.parse(protoFile, { keepCase: true }).root.lookupType('FeedMessage');
     }
 
     private async _generateStations() {
@@ -456,6 +462,33 @@ export default class TtcApi {
                 name: true,
                 latitude: true,
                 longitude: true,
+                route_stops: {
+                    select: {
+                        route: {
+                            select: {
+                                shape: {
+                                    select: {
+                                        id: true,
+                                        shape_points: {
+                                            select: {
+                                                latitude: true,
+                                                longitude: true,
+                                                dist_traveled: true,
+                                            },
+                                            orderBy: { sequence: 'asc' },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    where: {
+                        route: {
+                            shape_id: { not: null },
+                            type: { in: [RouteType.SubwayMetro, RouteType.TramStreetcarLightRail] },
+                        },
+                    },
+                },
             },
             where: {
                 OR: [{
@@ -477,48 +510,168 @@ export default class TtcApi {
                 name: 'asc',
             },
         });
-        const stationChildren: {
-            [k in string]: (typeof stationPlatforms[0])[];
+        const stationMap: {
+            [k in string]: {
+                name: string;
+                children: (typeof stationPlatforms[0])[];
+            };
         } = {};
+        console.log('platforms:', stationPlatforms.map(({ name }) => name));
         stationPlatforms.forEach(p => {
             // Special handling for York University Station (see above)
             let stationName = (p.name.match(/(.*Station)/i) || p.name.match(/(York University)/))![1];
+            let stationId = stationName.toLowerCase().trim().replace(/[\s-]+/g, '-');
             // Special handling for Bloor-Yonge Station
             if (stationName === 'Bloor Station' || stationName === 'Yonge Station') {
                 stationName = 'Bloor-Yonge Station';
+                stationId = stationName.toLowerCase().trim().replace(/[\s-]+/g, '-');
             }
             // Special handling for Bloor-Yonge Station
             if (stationName === 'Spadina Station') {
                 if (p.name.includes('Northbound') || p.name.includes('Southbound')) {
-                    stationName = 'Spadina Station - Line 1';
+                    stationId = `${stationId}-1`;
                 } else {
-                    stationName = 'Spadina Station - Line 2';
+                    stationId = `${stationId}-2`;
                 }
             }
-            if (stationChildren[stationName] === undefined) {
-                stationChildren[stationName] = [];
+            if (stationId in stationMap) {
+                stationMap[stationId].children.push(p);
+            } else {
+                stationMap[stationId] = {
+                    name: stationName,
+                    children: [p],
+                };
             }
-            stationChildren[stationName].push(p);
         });
-        const stations = Object.entries(stationChildren).map(([name, children]) => ({
-            id: name.toLowerCase().trim().replace(/\s+/g, '-'),
-            name,
-            ...children.reduce((sum, current) => ({
-                latitude: sum.latitude + current.latitude / children.length,
-                longitude: sum.longitude + current.longitude / children.length,
-            }), { latitude: 0, longitude: 0 }),
-        }));
+        const stations = Object.entries(stationMap).map(([id, { name, children }]) => {
+            const pointsPerShape: {
+                [k in string]: {
+                    latitude: number;
+                    longitude: number;
+                    dist_traveled: number | null;
+                }[];
+            } = {};
+            const average = { latitude: 0, longitude: 0 };
+            children.forEach(p => {
+                average.latitude += p.latitude / children.length;
+                average.longitude += p.longitude / children.length;
+            });
+            const shapes: {
+                [k in string]: NonNullable<typeof stationPlatforms[0]['route_stops'][0]['route']['shape']>;
+            } = {};
+            children.forEach(({ route_stops }) =>
+                route_stops.forEach(({ route: { shape } }) => {
+                    if (shape && !(shape.id in shapes)) {
+                        shapes[shape.id] = shape;
+                    }
+                }),
+            );
+            console.log('found', Object.keys(shapes).length, 'shapes for', name, '-', Object.keys(shapes));
+            const far = {
+                latitude: Infinity,
+                longitude: Infinity,
+                sqrDist: Infinity,
+            };
+            const current = { ...average };
+            const delta = { latitude: Infinity, longitude: Infinity };
+            // Converge onto nearest intersection of shapes
+            // console.log(0, current);
+            for (
+                let it = 0;
+                it < 100 && (delta.latitude > 1e-7 || delta.longitude > 1e-7);
+                it++
+            ) {
+                const avgOnShapes = Object.values(shapes)
+                    .reduce((avg, shape) => {
+                        // TODO: try lerp between closest and second closest
+                        const closestOnShape = shape.shape_points
+                            .reduce((closest, { latitude, longitude }) => {
+                                const sqrDist = Math.pow(latitude - current.latitude, 2) + Math.pow(longitude - current.longitude, 2);
+                                if (sqrDist < closest.sqrDist) {
+                                    closest.sqrDist = sqrDist;
+                                    closest.latitude = latitude;
+                                    closest.longitude = longitude;
+                                }
+                                return closest;
+                            }, { ...far });
+                        // console.log(Math.sqrt(closestOnShape.sqrDist));
+                        avg.latitude += closestOnShape.latitude / Object.keys(shapes).length;
+                        avg.longitude += closestOnShape.longitude / Object.keys(shapes).length;
+                        return avg;
+                    }, { latitude: 0, longitude: 0 });
+                delta.latitude = Math.abs(avgOnShapes.latitude - current.latitude);
+                delta.longitude = Math.abs(avgOnShapes.longitude - current.longitude);
+                // console.log('delta:', delta);
+                current.latitude = avgOnShapes.latitude;
+                current.longitude = avgOnShapes.longitude;
+                // console.log(it + 1, current);
+            }
+            const { latitude, longitude } = current;
+            return { id, name, latitude, longitude };
+        });
         stations.forEach(s => {
-            s.latitude = Math.round(s.latitude * 1e6) / 1e6;
-            s.longitude = Math.round(s.longitude * 1e6) / 1e6;
+            const { latitude, longitude } = s;
+            s.latitude = Math.round(latitude * 1e6) / 1e6;
+            s.longitude = Math.round(longitude * 1e6) / 1e6;
         });
-        await prisma.station.createMany({
-            data: stations,
-        });
-        await Promise.all(stations.map(({ id, name }) => prisma.platform.updateMany({
-            where: { id: { in: stationChildren[name].map(({ id }) => id) } },
-            data: { parent_station_id: { set: id } },
+        await prisma.station.createMany({ data: stations });
+        await Promise.all(stations.map(({ id: station_id }) => prisma.platform.updateMany({
+            where: { id: { in: stationMap[station_id].children.map(({ id }) => id) } },
+            data: { parent_station_id: { set: station_id } },
         })));
+    }
+
+    private async _generateRouteStops() {
+        await prisma.routeStop.createMany({
+            data: await prisma.trip.findMany({
+                select: {
+                    direction: true,
+                    route_id: true,
+                    trip_stops: {
+                        select: {
+                            platform_id: true,
+                            sequence: true,
+                        },
+                        orderBy: {
+                            sequence: 'asc',
+                        },
+                    },
+                },
+                distinct: ['direction', 'route_id'],
+                orderBy: {
+                    trip_stops: {
+                        _count: 'desc',
+                    },
+                }
+            }).then(result => result.map(({ direction, route_id, trip_stops }) =>
+                trip_stops.map(({ platform_id, sequence }) => ({ direction: direction || 0, sequence, route_id, platform_id })),
+            ).flat()),
+        });
+    }
+
+    private async _generateRouteShapes() {
+        await prisma.route.updateMany({ data: { shape_id: null } });
+        await prisma.route.findMany({
+            select: {
+                id: true,
+                trips: {
+                    take: 1,
+                    select: { shape_id: true },
+                    where: {
+                        AND: [
+                            { shape_id: { not: null } },
+                            { OR: [{ direction: 0 }, { direction: null }] },
+                        ],
+                    },
+                    orderBy: { trip_stops: { _count: 'desc' } },
+                },
+            },
+        }).then(result => Promise.all(
+            result.map(({ id, trips: [trip] }) => prisma.route.update({
+                where: { id },
+                data: { shape_id: trip?.shape_id },
+            })),
+        ));
     }
 
     private async _consumeCsv<T extends { [k in keyof T]: string }>(file: unzipper.File, store: (rows: T[]) => Promise<void>) {

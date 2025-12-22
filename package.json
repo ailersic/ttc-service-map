@@ -21,11 +21,13 @@
   "scripts": {
     "start": "node build/api/index.js",
     "dev": "npm run build && npm start",
-    "build": "tsc",
+    "build": "npm run db:update && tsc",
     "build:watch": "tsc -w",
-    "rebuild": "npm run db:migrate && npm run db:genTypes && npm run build",
+    "rebuild": "npm run db:rebuild && npm run build",
     "db:migrate": "echo '' | npx prisma migrate dev",
-    "db:genTypes": "npx prisma generate"
+    "db:genTypes": "npx prisma generate",
+    "db:update": "npm run db:migrate && npm run db:genTypes",
+    "db:rebuild": "npx prisma migrate reset && npm run db:update"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

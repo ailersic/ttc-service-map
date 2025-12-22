@@ -55,6 +55,7 @@ export const ModelName = {
   Station: 'Station',
   Platform: 'Platform',
   Route: 'Route',
+  RouteStop: 'RouteStop',
   Service: 'Service',
   Shape: 'Shape',
   ShapePoint: 'ShapePoint',
@@ -82,7 +83,7 @@ export const AgencyScalarFieldEnum = {
   id: 'id',
   name: 'name',
   url: 'url',
-  lastUpdatedAt: 'lastUpdatedAt'
+  last_updated: 'last_updated'
 } as const
 
 export type AgencyScalarFieldEnum = (typeof AgencyScalarFieldEnum)[keyof typeof AgencyScalarFieldEnum]
@@ -117,10 +118,21 @@ export const RouteScalarFieldEnum = {
   type: 'type',
   color: 'color',
   text_color: 'text_color',
-  sort_order: 'sort_order'
+  sort_order: 'sort_order',
+  shape_id: 'shape_id'
 } as const
 
 export type RouteScalarFieldEnum = (typeof RouteScalarFieldEnum)[keyof typeof RouteScalarFieldEnum]
+
+
+export const RouteStopScalarFieldEnum = {
+  direction: 'direction',
+  sequence: 'sequence',
+  route_id: 'route_id',
+  platform_id: 'platform_id'
+} as const
+
+export type RouteStopScalarFieldEnum = (typeof RouteStopScalarFieldEnum)[keyof typeof RouteStopScalarFieldEnum]
 
 
 export const ServiceScalarFieldEnum = {
@@ -163,6 +175,7 @@ export type TripScalarFieldEnum = (typeof TripScalarFieldEnum)[keyof typeof Trip
 
 export const TripStopScalarFieldEnum = {
   sequence: 'sequence',
+  distance_along_shape: 'distance_along_shape',
   platform_id: 'platform_id',
   trip_id: 'trip_id'
 } as const

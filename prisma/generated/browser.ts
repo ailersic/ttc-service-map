@@ -38,6 +38,11 @@ export type Platform = Prisma.PlatformModel
  */
 export type Route = Prisma.RouteModel
 /**
+ * Model RouteStop
+ * 
+ */
+export type RouteStop = Prisma.RouteStopModel
+/**
  * Model Service
  * 
  */
