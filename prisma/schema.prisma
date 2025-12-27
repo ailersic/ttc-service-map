@@ -48,7 +48,6 @@ model Platform {
     parent_station    Station? @relation(fields: [parent_station_id], references: [id])
     parent_station_id String?
 
-    trip_stops  TripStop[]
     route_stops RouteStop[]
 
     @@index([parent_station_id])
@@ -73,7 +72,6 @@ model Route {
     shape    Shape?  @relation(fields: [shape_id], references: [id])
     shape_id String?
 
-    trips       Trip[]
     route_stops RouteStop[]
 
     @@index([shape_id])
@@ -82,6 +80,7 @@ model Route {
 model RouteStop {
     direction Int
     sequence  Int
+    distance_along_shape Float
 
     route    Route  @relation(fields: [route_id], references: [id])
     route_id String
@@ -96,15 +95,12 @@ model RouteStop {
 
 model Service {
     id String @id
-
-    trips Trip[]
 }
 
 model Shape {
     id String @id
 
     shape_points ShapePoint[]
-    trips        Trip[]
     routes       Route[]
 
     stationAnchors StationAnchor[]
@@ -121,40 +117,4 @@ model ShapePoint {
 
     @@id([shape_id, sequence])
     @@index([shape_id])
-}
-
-model Trip {
-    id         String  @id
-    headsign   String?
-    short_name String?
-    direction  Int?
-
-    route    Route  @relation(fields: [route_id], references: [id])
-    route_id String
-
-    service    Service @relation(fields: [service_id], references: [id])
-    service_id String
-
-    shape    Shape?  @relation(fields: [shape_id], references: [id])
-    shape_id String?
-
-    trip_stops TripStop[]
-
-    @@index([route_id])
-    @@index([service_id])
-    @@index([shape_id])
-}
-
-model TripStop {
-    sequence             Int
-    distance_along_shape Float
-
-    platform    Platform @relation(fields: [platform_id], references: [id])
-    platform_id String
-
-    trip    Trip   @relation(fields: [trip_id], references: [id])
-    trip_id String
-
-    @@id([trip_id, sequence])
-    @@index([trip_id])
 }

@@ -241,7 +241,6 @@ export type RouteWhereInput = {
   sort_order?: Prisma.IntNullableFilter<"Route"> | number | null
   shape_id?: Prisma.StringNullableFilter<"Route"> | string | null
   shape?: Prisma.XOR<Prisma.ShapeNullableScalarRelationFilter, Prisma.ShapeWhereInput> | null
-  trips?: Prisma.TripListRelationFilter
   route_stops?: Prisma.RouteStopListRelationFilter
 }
 
@@ -255,7 +254,6 @@ export type RouteOrderByWithRelationInput = {
   sort_order?: Prisma.SortOrderInput | Prisma.SortOrder
   shape_id?: Prisma.SortOrderInput | Prisma.SortOrder
   shape?: Prisma.ShapeOrderByWithRelationInput
-  trips?: Prisma.TripOrderByRelationAggregateInput
   route_stops?: Prisma.RouteStopOrderByRelationAggregateInput
 }
 
@@ -272,7 +270,6 @@ export type RouteWhereUniqueInput = Prisma.AtLeast<{
   sort_order?: Prisma.IntNullableFilter<"Route"> | number | null
   shape_id?: Prisma.StringNullableFilter<"Route"> | string | null
   shape?: Prisma.XOR<Prisma.ShapeNullableScalarRelationFilter, Prisma.ShapeWhereInput> | null
-  trips?: Prisma.TripListRelationFilter
   route_stops?: Prisma.RouteStopListRelationFilter
 }, "id">
 
@@ -315,7 +312,6 @@ export type RouteCreateInput = {
   text_color?: string | null
   sort_order?: number | null
   shape?: Prisma.ShapeCreateNestedOneWithoutRoutesInput
-  trips?: Prisma.TripCreateNestedManyWithoutRouteInput
   route_stops?: Prisma.RouteStopCreateNestedManyWithoutRouteInput
 }
 
@@ -328,7 +324,6 @@ export type RouteUncheckedCreateInput = {
   text_color?: string | null
   sort_order?: number | null
   shape_id?: string | null
-  trips?: Prisma.TripUncheckedCreateNestedManyWithoutRouteInput
   route_stops?: Prisma.RouteStopUncheckedCreateNestedManyWithoutRouteInput
 }
 
@@ -341,7 +336,6 @@ export type RouteUpdateInput = {
   text_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sort_order?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   shape?: Prisma.ShapeUpdateOneWithoutRoutesNestedInput
-  trips?: Prisma.TripUpdateManyWithoutRouteNestedInput
   route_stops?: Prisma.RouteStopUpdateManyWithoutRouteNestedInput
 }
 
@@ -354,7 +348,6 @@ export type RouteUncheckedUpdateInput = {
   text_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sort_order?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   shape_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  trips?: Prisma.TripUncheckedUpdateManyWithoutRouteNestedInput
   route_stops?: Prisma.RouteStopUncheckedUpdateManyWithoutRouteNestedInput
 }
 
@@ -514,20 +507,6 @@ export type RouteUncheckedUpdateManyWithoutShapeNestedInput = {
   deleteMany?: Prisma.RouteScalarWhereInput | Prisma.RouteScalarWhereInput[]
 }
 
-export type RouteCreateNestedOneWithoutTripsInput = {
-  create?: Prisma.XOR<Prisma.RouteCreateWithoutTripsInput, Prisma.RouteUncheckedCreateWithoutTripsInput>
-  connectOrCreate?: Prisma.RouteCreateOrConnectWithoutTripsInput
-  connect?: Prisma.RouteWhereUniqueInput
-}
-
-export type RouteUpdateOneRequiredWithoutTripsNestedInput = {
-  create?: Prisma.XOR<Prisma.RouteCreateWithoutTripsInput, Prisma.RouteUncheckedCreateWithoutTripsInput>
-  connectOrCreate?: Prisma.RouteCreateOrConnectWithoutTripsInput
-  upsert?: Prisma.RouteUpsertWithoutTripsInput
-  connect?: Prisma.RouteWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.RouteUpdateToOneWithWhereWithoutTripsInput, Prisma.RouteUpdateWithoutTripsInput>, Prisma.RouteUncheckedUpdateWithoutTripsInput>
-}
-
 export type RouteCreateWithoutRoute_stopsInput = {
   id: string
   short_name: string
@@ -537,7 +516,6 @@ export type RouteCreateWithoutRoute_stopsInput = {
   text_color?: string | null
   sort_order?: number | null
   shape?: Prisma.ShapeCreateNestedOneWithoutRoutesInput
-  trips?: Prisma.TripCreateNestedManyWithoutRouteInput
 }
 
 export type RouteUncheckedCreateWithoutRoute_stopsInput = {
@@ -549,7 +527,6 @@ export type RouteUncheckedCreateWithoutRoute_stopsInput = {
   text_color?: string | null
   sort_order?: number | null
   shape_id?: string | null
-  trips?: Prisma.TripUncheckedCreateNestedManyWithoutRouteInput
 }
 
 export type RouteCreateOrConnectWithoutRoute_stopsInput = {
@@ -577,7 +554,6 @@ export type RouteUpdateWithoutRoute_stopsInput = {
   text_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sort_order?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   shape?: Prisma.ShapeUpdateOneWithoutRoutesNestedInput
-  trips?: Prisma.TripUpdateManyWithoutRouteNestedInput
 }
 
 export type RouteUncheckedUpdateWithoutRoute_stopsInput = {
@@ -589,7 +565,6 @@ export type RouteUncheckedUpdateWithoutRoute_stopsInput = {
   text_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sort_order?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   shape_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  trips?: Prisma.TripUncheckedUpdateManyWithoutRouteNestedInput
 }
 
 export type RouteCreateWithoutShapeInput = {
@@ -600,7 +575,6 @@ export type RouteCreateWithoutShapeInput = {
   color?: string | null
   text_color?: string | null
   sort_order?: number | null
-  trips?: Prisma.TripCreateNestedManyWithoutRouteInput
   route_stops?: Prisma.RouteStopCreateNestedManyWithoutRouteInput
 }
 
@@ -612,7 +586,6 @@ export type RouteUncheckedCreateWithoutShapeInput = {
   color?: string | null
   text_color?: string | null
   sort_order?: number | null
-  trips?: Prisma.TripUncheckedCreateNestedManyWithoutRouteInput
   route_stops?: Prisma.RouteStopUncheckedCreateNestedManyWithoutRouteInput
 }
 
@@ -656,70 +629,6 @@ export type RouteScalarWhereInput = {
   shape_id?: Prisma.StringNullableFilter<"Route"> | string | null
 }
 
-export type RouteCreateWithoutTripsInput = {
-  id: string
-  short_name: string
-  long_name: string
-  type: $Enums.RouteType
-  color?: string | null
-  text_color?: string | null
-  sort_order?: number | null
-  shape?: Prisma.ShapeCreateNestedOneWithoutRoutesInput
-  route_stops?: Prisma.RouteStopCreateNestedManyWithoutRouteInput
-}
-
-export type RouteUncheckedCreateWithoutTripsInput = {
-  id: string
-  short_name: string
-  long_name: string
-  type: $Enums.RouteType
-  color?: string | null
-  text_color?: string | null
-  sort_order?: number | null
-  shape_id?: string | null
-  route_stops?: Prisma.RouteStopUncheckedCreateNestedManyWithoutRouteInput
-}
-
-export type RouteCreateOrConnectWithoutTripsInput = {
-  where: Prisma.RouteWhereUniqueInput
-  create: Prisma.XOR<Prisma.RouteCreateWithoutTripsInput, Prisma.RouteUncheckedCreateWithoutTripsInput>
-}
-
-export type RouteUpsertWithoutTripsInput = {
-  update: Prisma.XOR<Prisma.RouteUpdateWithoutTripsInput, Prisma.RouteUncheckedUpdateWithoutTripsInput>
-  create: Prisma.XOR<Prisma.RouteCreateWithoutTripsInput, Prisma.RouteUncheckedCreateWithoutTripsInput>
-  where?: Prisma.RouteWhereInput
-}
-
-export type RouteUpdateToOneWithWhereWithoutTripsInput = {
-  where?: Prisma.RouteWhereInput
-  data: Prisma.XOR<Prisma.RouteUpdateWithoutTripsInput, Prisma.RouteUncheckedUpdateWithoutTripsInput>
-}
-
-export type RouteUpdateWithoutTripsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  short_name?: Prisma.StringFieldUpdateOperationsInput | string
-  long_name?: Prisma.StringFieldUpdateOperationsInput | string
-  type?: Prisma.EnumRouteTypeFieldUpdateOperationsInput | $Enums.RouteType
-  color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  text_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  sort_order?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  shape?: Prisma.ShapeUpdateOneWithoutRoutesNestedInput
-  route_stops?: Prisma.RouteStopUpdateManyWithoutRouteNestedInput
-}
-
-export type RouteUncheckedUpdateWithoutTripsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  short_name?: Prisma.StringFieldUpdateOperationsInput | string
-  long_name?: Prisma.StringFieldUpdateOperationsInput | string
-  type?: Prisma.EnumRouteTypeFieldUpdateOperationsInput | $Enums.RouteType
-  color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  text_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  sort_order?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  shape_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  route_stops?: Prisma.RouteStopUncheckedUpdateManyWithoutRouteNestedInput
-}
-
 export type RouteCreateManyShapeInput = {
   id: string
   short_name: string
@@ -738,7 +647,6 @@ export type RouteUpdateWithoutShapeInput = {
   color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   text_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sort_order?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  trips?: Prisma.TripUpdateManyWithoutRouteNestedInput
   route_stops?: Prisma.RouteStopUpdateManyWithoutRouteNestedInput
 }
 
@@ -750,7 +658,6 @@ export type RouteUncheckedUpdateWithoutShapeInput = {
   color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   text_color?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sort_order?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  trips?: Prisma.TripUncheckedUpdateManyWithoutRouteNestedInput
   route_stops?: Prisma.RouteStopUncheckedUpdateManyWithoutRouteNestedInput
 }
 
@@ -770,12 +677,10 @@ export type RouteUncheckedUpdateManyWithoutShapeInput = {
  */
 
 export type RouteCountOutputType = {
-  trips: number
   route_stops: number
 }
 
 export type RouteCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  trips?: boolean | RouteCountOutputTypeCountTripsArgs
   route_stops?: boolean | RouteCountOutputTypeCountRoute_stopsArgs
 }
 
@@ -787,13 +692,6 @@ export type RouteCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extens
    * Select specific fields to fetch from the RouteCountOutputType
    */
   select?: Prisma.RouteCountOutputTypeSelect<ExtArgs> | null
-}
-
-/**
- * RouteCountOutputType without action
- */
-export type RouteCountOutputTypeCountTripsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.TripWhereInput
 }
 
 /**
@@ -814,7 +712,6 @@ export type RouteSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   sort_order?: boolean
   shape_id?: boolean
   shape?: boolean | Prisma.Route$shapeArgs<ExtArgs>
-  trips?: boolean | Prisma.Route$tripsArgs<ExtArgs>
   route_stops?: boolean | Prisma.Route$route_stopsArgs<ExtArgs>
   _count?: boolean | Prisma.RouteCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["route"]>
@@ -857,7 +754,6 @@ export type RouteSelectScalar = {
 export type RouteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "short_name" | "long_name" | "type" | "color" | "text_color" | "sort_order" | "shape_id", ExtArgs["result"]["route"]>
 export type RouteInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   shape?: boolean | Prisma.Route$shapeArgs<ExtArgs>
-  trips?: boolean | Prisma.Route$tripsArgs<ExtArgs>
   route_stops?: boolean | Prisma.Route$route_stopsArgs<ExtArgs>
   _count?: boolean | Prisma.RouteCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -872,7 +768,6 @@ export type $RoutePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   name: "Route"
   objects: {
     shape: Prisma.$ShapePayload<ExtArgs> | null
-    trips: Prisma.$TripPayload<ExtArgs>[]
     route_stops: Prisma.$RouteStopPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1279,7 +1174,6 @@ readonly fields: RouteFieldRefs;
 export interface Prisma__RouteClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   shape<T extends Prisma.Route$shapeArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Route$shapeArgs<ExtArgs>>): Prisma.Prisma__ShapeClient<runtime.Types.Result.GetResult<Prisma.$ShapePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  trips<T extends Prisma.Route$tripsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Route$tripsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TripPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   route_stops<T extends Prisma.Route$route_stopsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Route$route_stopsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RouteStopPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1730,30 +1624,6 @@ export type Route$shapeArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    */
   include?: Prisma.ShapeInclude<ExtArgs> | null
   where?: Prisma.ShapeWhereInput
-}
-
-/**
- * Route.trips
- */
-export type Route$tripsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Trip
-   */
-  select?: Prisma.TripSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Trip
-   */
-  omit?: Prisma.TripOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.TripInclude<ExtArgs> | null
-  where?: Prisma.TripWhereInput
-  orderBy?: Prisma.TripOrderByWithRelationInput | Prisma.TripOrderByWithRelationInput[]
-  cursor?: Prisma.TripWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.TripScalarFieldEnum | Prisma.TripScalarFieldEnum[]
 }
 
 /**

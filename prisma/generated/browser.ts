@@ -62,13 +62,3 @@ export type Shape = Prisma.ShapeModel
  * 
  */
 export type ShapePoint = Prisma.ShapePointModel
-/**
- * Model Trip
- * 
- */
-export type Trip = Prisma.TripModel
-/**
- * Model TripStop
- * 
- */
-export type TripStop = Prisma.TripStopModel

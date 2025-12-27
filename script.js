@@ -410,6 +410,15 @@ async function loadAlerts() {
     alerts.fromApi = await fetch('/api/alerts').then(res => res.json());
 }
 
+const Layers = {
+    Top: 10000,
+    AlertMarker: 4000,
+    StationMarker: 3000,
+    AlertOverlay: 2000,
+    SubwayLine: 1000,
+    Bottom: 1,
+};
+
 var allSegmentPolylines = [];
 var allReductionPolylines = [];
 var allStationMarkers = [];
@@ -433,28 +442,19 @@ function refreshMap(map) {
     renderLines();
 
     // Connect the two Spadinas
-    // let spadinaTunnel = L.polyline([
-    //     [lines[0].stations[14].lat, lines[0].stations[14].lng], // Line 1 Spadina
-    //     [lines[1].stations[14].lat, lines[1].stations[14].lng]  // Line 2 Spadina
-    // ], {
-    //     color: "#000000",
-    //     weight: 6,
-    //     opacity: 1.0,
-    //     zIndex: 1
-    // });
     const spadina1 = subway.stations['spadina-station-1'];
     const spadina2 = subway.stations['spadina-station-2'];
     const spadinaTunnel = L.polyline([
         [spadina1.latitude, spadina1.longitude],
         [spadina2.latitude, spadina2.longitude],
     ], {
-        color: "#000000",
-        weight: 6,
+        color: "#000",
+        weight: 4,
         opacity: 1.0,
-        zIndex: 1
+        zIndex: Layers.Top,
     });
 
-    spadinaTunnel.addTo(map);
+    // spadinaTunnel.addTo(map);
     allSegmentPolylines.push(spadinaTunnel);
 
     allSegmentPolylines.forEach(polyline => polyline.addTo(map));
@@ -482,15 +482,17 @@ function addLineSegments(line) {
     let isegRed = 0;
     let lastStationNormal = true;
 
-    subway.routes.forEach(({ color, shape }) => {
-        const transitPolyLine = L.polyline(shape.map(({ latitude, longitude }) => [latitude, longitude]), {
-            color,
-            weight: 10,
-            opacity: 1,
-            zIndex: 10000,
+    subway.routes
+        .sort(({ id }, _) => id === '2' ? -1 : 0) // draw line 2 first
+        .forEach(({ color, shape }) => {
+            const transitPolyLine = L.polyline(shape.map(({ latitude, longitude }) => [latitude, longitude]), {
+                color,
+                weight: 16,
+                opacity: 0.8,
+                zIndex: Layers.SubwayLine,
+            });
+            allSegmentPolylines.push(transitPolyLine);
         });
-        allSegmentPolylines.push(transitPolyLine);
-    });
 
     console.warn('got', alerts.fromApi.alerts.length, 'alerts from api');
     alerts.fromApi.alerts.forEach(({ id, effect, criteria, header, description }) =>
@@ -575,7 +577,7 @@ function addLineSegments(line) {
                 weight: 6,
                 opacity: 1.0,
                 dashArray: '5, 15', // Create a dashed line
-                zIndex: 20000,
+                zIndex: Layers.AlertOverlay,
             }));
         });
     });
@@ -678,13 +680,13 @@ function addLineSegments(line) {
 function addStationMarkers(line) {
     Object.values(subway.stations).forEach(({ latitude, longitude, name }) => {
         const stationMarker = L.circleMarker([latitude, longitude], {
-            radius: 6,
+            radius: 8,
             color: '#000',
             fillColor: '#fff',
             fillOpacity: 1,
-            weight: 4,
+            weight: 5,
             opacity: 1,
-            zIndexOffset: 400
+            zIndex: Layers.StationMarker,
         });
 
         // Create an info window for the station marker
@@ -704,6 +706,35 @@ function addStationMarkers(line) {
         // Store the marker in the global array
         allStationMarkers.push(stationMarker);
     });
+
+    // DEBUG
+    if (false) {
+        subway.routes.forEach(({ id, color, shape }) => {
+            if (id === '1') {
+                console.log(`[${shape.slice(162, 197).map(({ latitude, longitude }) => `[${longitude}, ${latitude}]`).join(', ')}]`);
+            }
+            shape.forEach(({ latitude, longitude }, i) => {
+                const debugMarker = L.circleMarker([latitude, longitude], {
+                    radius: 6,
+                    color: '#000',
+                    weight: 2,
+                    opacity: 1,
+                    fillColor: color,
+                    fillOpacity: 1,
+                    zIndex: Layers.SubwayLine + 1,
+                });
+                const debugTooltip = L.tooltip({
+                    direction: 'top',
+                    sticky: false,
+                    className: 'station-tooltip',
+                    offset: [0, 0],
+                });
+                debugTooltip.setContent(`${i}: ${latitude}, ${longitude}`);
+                debugMarker.bindTooltip(debugTooltip);
+                allStationMarkers.push(debugMarker);
+            });
+        });
+    }
 }
 
 function getHeading(latlng1, latlng2) {
@@ -848,7 +879,7 @@ function addServiceReductions(line) {
             color: serviceReductionType.icon.strokeColor,
             weight: 12,
             opacity: 0.5,
-            zIndexOffset: 100,
+            zIndex: Layers.AlertOverlay,
         });
 
         let serviceReductionHighlightPolyLine = L.polyline(stationIdxs.map(idx => [
@@ -858,7 +889,7 @@ function addServiceReductions(line) {
             color: "rgba(0, 255, 255, 0.5)",
             weight: 20,
             opacity: 0,
-            zIndexOffset: 1000,
+            zIndex: Layers.AlertOverlay + 1,
         });
 
         // Store the polyline in the global array
@@ -939,7 +970,7 @@ function addServiceReductions(line) {
 
         let serviceReductionMarker = L.marker([midLat, midLng], {
             icon: serviceReductionIcon,
-            zIndexOffset: 1000
+            zIndex: Layers.AlertMarker,
         });
         serviceReductionMarker.bindTooltip(serviceReductionInfoWindow);
 
@@ -973,7 +1004,7 @@ function addServiceReductions(line) {
         });
         let directionMarker = L.marker([midLat, midLng], {
             icon: directionMarkerIcon,
-            zIndexOffset: 200
+            zIndex: Layers.AlertMarker,
         });
 
         // Store the marker in the global array

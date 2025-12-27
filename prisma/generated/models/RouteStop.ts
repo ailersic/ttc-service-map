@@ -29,16 +29,19 @@ export type AggregateRouteStop = {
 export type RouteStopAvgAggregateOutputType = {
   direction: number | null
   sequence: number | null
+  distance_along_shape: number | null
 }
 
 export type RouteStopSumAggregateOutputType = {
   direction: number | null
   sequence: number | null
+  distance_along_shape: number | null
 }
 
 export type RouteStopMinAggregateOutputType = {
   direction: number | null
   sequence: number | null
+  distance_along_shape: number | null
   route_id: string | null
   platform_id: string | null
 }
@@ -46,6 +49,7 @@ export type RouteStopMinAggregateOutputType = {
 export type RouteStopMaxAggregateOutputType = {
   direction: number | null
   sequence: number | null
+  distance_along_shape: number | null
   route_id: string | null
   platform_id: string | null
 }
@@ -53,6 +57,7 @@ export type RouteStopMaxAggregateOutputType = {
 export type RouteStopCountAggregateOutputType = {
   direction: number
   sequence: number
+  distance_along_shape: number
   route_id: number
   platform_id: number
   _all: number
@@ -62,16 +67,19 @@ export type RouteStopCountAggregateOutputType = {
 export type RouteStopAvgAggregateInputType = {
   direction?: true
   sequence?: true
+  distance_along_shape?: true
 }
 
 export type RouteStopSumAggregateInputType = {
   direction?: true
   sequence?: true
+  distance_along_shape?: true
 }
 
 export type RouteStopMinAggregateInputType = {
   direction?: true
   sequence?: true
+  distance_along_shape?: true
   route_id?: true
   platform_id?: true
 }
@@ -79,6 +87,7 @@ export type RouteStopMinAggregateInputType = {
 export type RouteStopMaxAggregateInputType = {
   direction?: true
   sequence?: true
+  distance_along_shape?: true
   route_id?: true
   platform_id?: true
 }
@@ -86,6 +95,7 @@ export type RouteStopMaxAggregateInputType = {
 export type RouteStopCountAggregateInputType = {
   direction?: true
   sequence?: true
+  distance_along_shape?: true
   route_id?: true
   platform_id?: true
   _all?: true
@@ -180,6 +190,7 @@ export type RouteStopGroupByArgs<ExtArgs extends runtime.Types.Extensions.Intern
 export type RouteStopGroupByOutputType = {
   direction: number
   sequence: number
+  distance_along_shape: number
   route_id: string
   platform_id: string
   _count: RouteStopCountAggregateOutputType | null
@@ -210,6 +221,7 @@ export type RouteStopWhereInput = {
   NOT?: Prisma.RouteStopWhereInput | Prisma.RouteStopWhereInput[]
   direction?: Prisma.IntFilter<"RouteStop"> | number
   sequence?: Prisma.IntFilter<"RouteStop"> | number
+  distance_along_shape?: Prisma.FloatFilter<"RouteStop"> | number
   route_id?: Prisma.StringFilter<"RouteStop"> | string
   platform_id?: Prisma.StringFilter<"RouteStop"> | string
   route?: Prisma.XOR<Prisma.RouteScalarRelationFilter, Prisma.RouteWhereInput>
@@ -219,6 +231,7 @@ export type RouteStopWhereInput = {
 export type RouteStopOrderByWithRelationInput = {
   direction?: Prisma.SortOrder
   sequence?: Prisma.SortOrder
+  distance_along_shape?: Prisma.SortOrder
   route_id?: Prisma.SortOrder
   platform_id?: Prisma.SortOrder
   route?: Prisma.RouteOrderByWithRelationInput
@@ -232,6 +245,7 @@ export type RouteStopWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.RouteStopWhereInput | Prisma.RouteStopWhereInput[]
   direction?: Prisma.IntFilter<"RouteStop"> | number
   sequence?: Prisma.IntFilter<"RouteStop"> | number
+  distance_along_shape?: Prisma.FloatFilter<"RouteStop"> | number
   route_id?: Prisma.StringFilter<"RouteStop"> | string
   platform_id?: Prisma.StringFilter<"RouteStop"> | string
   route?: Prisma.XOR<Prisma.RouteScalarRelationFilter, Prisma.RouteWhereInput>
@@ -241,6 +255,7 @@ export type RouteStopWhereUniqueInput = Prisma.AtLeast<{
 export type RouteStopOrderByWithAggregationInput = {
   direction?: Prisma.SortOrder
   sequence?: Prisma.SortOrder
+  distance_along_shape?: Prisma.SortOrder
   route_id?: Prisma.SortOrder
   platform_id?: Prisma.SortOrder
   _count?: Prisma.RouteStopCountOrderByAggregateInput
@@ -256,6 +271,7 @@ export type RouteStopScalarWhereWithAggregatesInput = {
   NOT?: Prisma.RouteStopScalarWhereWithAggregatesInput | Prisma.RouteStopScalarWhereWithAggregatesInput[]
   direction?: Prisma.IntWithAggregatesFilter<"RouteStop"> | number
   sequence?: Prisma.IntWithAggregatesFilter<"RouteStop"> | number
+  distance_along_shape?: Prisma.FloatWithAggregatesFilter<"RouteStop"> | number
   route_id?: Prisma.StringWithAggregatesFilter<"RouteStop"> | string
   platform_id?: Prisma.StringWithAggregatesFilter<"RouteStop"> | string
 }
@@ -263,6 +279,7 @@ export type RouteStopScalarWhereWithAggregatesInput = {
 export type RouteStopCreateInput = {
   direction: number
   sequence: number
+  distance_along_shape: number
   route: Prisma.RouteCreateNestedOneWithoutRoute_stopsInput
   platform: Prisma.PlatformCreateNestedOneWithoutRoute_stopsInput
 }
@@ -270,6 +287,7 @@ export type RouteStopCreateInput = {
 export type RouteStopUncheckedCreateInput = {
   direction: number
   sequence: number
+  distance_along_shape: number
   route_id: string
   platform_id: string
 }
@@ -277,6 +295,7 @@ export type RouteStopUncheckedCreateInput = {
 export type RouteStopUpdateInput = {
   direction?: Prisma.IntFieldUpdateOperationsInput | number
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   route?: Prisma.RouteUpdateOneRequiredWithoutRoute_stopsNestedInput
   platform?: Prisma.PlatformUpdateOneRequiredWithoutRoute_stopsNestedInput
 }
@@ -284,6 +303,7 @@ export type RouteStopUpdateInput = {
 export type RouteStopUncheckedUpdateInput = {
   direction?: Prisma.IntFieldUpdateOperationsInput | number
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   route_id?: Prisma.StringFieldUpdateOperationsInput | string
   platform_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
@@ -291,6 +311,7 @@ export type RouteStopUncheckedUpdateInput = {
 export type RouteStopCreateManyInput = {
   direction: number
   sequence: number
+  distance_along_shape: number
   route_id: string
   platform_id: string
 }
@@ -298,11 +319,13 @@ export type RouteStopCreateManyInput = {
 export type RouteStopUpdateManyMutationInput = {
   direction?: Prisma.IntFieldUpdateOperationsInput | number
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
 }
 
 export type RouteStopUncheckedUpdateManyInput = {
   direction?: Prisma.IntFieldUpdateOperationsInput | number
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   route_id?: Prisma.StringFieldUpdateOperationsInput | string
   platform_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
@@ -326,6 +349,7 @@ export type RouteStopRoute_idDirectionSequenceCompoundUniqueInput = {
 export type RouteStopCountOrderByAggregateInput = {
   direction?: Prisma.SortOrder
   sequence?: Prisma.SortOrder
+  distance_along_shape?: Prisma.SortOrder
   route_id?: Prisma.SortOrder
   platform_id?: Prisma.SortOrder
 }
@@ -333,11 +357,13 @@ export type RouteStopCountOrderByAggregateInput = {
 export type RouteStopAvgOrderByAggregateInput = {
   direction?: Prisma.SortOrder
   sequence?: Prisma.SortOrder
+  distance_along_shape?: Prisma.SortOrder
 }
 
 export type RouteStopMaxOrderByAggregateInput = {
   direction?: Prisma.SortOrder
   sequence?: Prisma.SortOrder
+  distance_along_shape?: Prisma.SortOrder
   route_id?: Prisma.SortOrder
   platform_id?: Prisma.SortOrder
 }
@@ -345,6 +371,7 @@ export type RouteStopMaxOrderByAggregateInput = {
 export type RouteStopMinOrderByAggregateInput = {
   direction?: Prisma.SortOrder
   sequence?: Prisma.SortOrder
+  distance_along_shape?: Prisma.SortOrder
   route_id?: Prisma.SortOrder
   platform_id?: Prisma.SortOrder
 }
@@ -352,6 +379,7 @@ export type RouteStopMinOrderByAggregateInput = {
 export type RouteStopSumOrderByAggregateInput = {
   direction?: Prisma.SortOrder
   sequence?: Prisma.SortOrder
+  distance_along_shape?: Prisma.SortOrder
 }
 
 export type RouteStopCreateNestedManyWithoutPlatformInput = {
@@ -449,12 +477,14 @@ export type IntFieldUpdateOperationsInput = {
 export type RouteStopCreateWithoutPlatformInput = {
   direction: number
   sequence: number
+  distance_along_shape: number
   route: Prisma.RouteCreateNestedOneWithoutRoute_stopsInput
 }
 
 export type RouteStopUncheckedCreateWithoutPlatformInput = {
   direction: number
   sequence: number
+  distance_along_shape: number
   route_id: string
 }
 
@@ -490,6 +520,7 @@ export type RouteStopScalarWhereInput = {
   NOT?: Prisma.RouteStopScalarWhereInput | Prisma.RouteStopScalarWhereInput[]
   direction?: Prisma.IntFilter<"RouteStop"> | number
   sequence?: Prisma.IntFilter<"RouteStop"> | number
+  distance_along_shape?: Prisma.FloatFilter<"RouteStop"> | number
   route_id?: Prisma.StringFilter<"RouteStop"> | string
   platform_id?: Prisma.StringFilter<"RouteStop"> | string
 }
@@ -497,12 +528,14 @@ export type RouteStopScalarWhereInput = {
 export type RouteStopCreateWithoutRouteInput = {
   direction: number
   sequence: number
+  distance_along_shape: number
   platform: Prisma.PlatformCreateNestedOneWithoutRoute_stopsInput
 }
 
 export type RouteStopUncheckedCreateWithoutRouteInput = {
   direction: number
   sequence: number
+  distance_along_shape: number
   platform_id: string
 }
 
@@ -535,48 +568,56 @@ export type RouteStopUpdateManyWithWhereWithoutRouteInput = {
 export type RouteStopCreateManyPlatformInput = {
   direction: number
   sequence: number
+  distance_along_shape: number
   route_id: string
 }
 
 export type RouteStopUpdateWithoutPlatformInput = {
   direction?: Prisma.IntFieldUpdateOperationsInput | number
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   route?: Prisma.RouteUpdateOneRequiredWithoutRoute_stopsNestedInput
 }
 
 export type RouteStopUncheckedUpdateWithoutPlatformInput = {
   direction?: Prisma.IntFieldUpdateOperationsInput | number
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   route_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type RouteStopUncheckedUpdateManyWithoutPlatformInput = {
   direction?: Prisma.IntFieldUpdateOperationsInput | number
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   route_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type RouteStopCreateManyRouteInput = {
   direction: number
   sequence: number
+  distance_along_shape: number
   platform_id: string
 }
 
 export type RouteStopUpdateWithoutRouteInput = {
   direction?: Prisma.IntFieldUpdateOperationsInput | number
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   platform?: Prisma.PlatformUpdateOneRequiredWithoutRoute_stopsNestedInput
 }
 
 export type RouteStopUncheckedUpdateWithoutRouteInput = {
   direction?: Prisma.IntFieldUpdateOperationsInput | number
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   platform_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type RouteStopUncheckedUpdateManyWithoutRouteInput = {
   direction?: Prisma.IntFieldUpdateOperationsInput | number
   sequence?: Prisma.IntFieldUpdateOperationsInput | number
+  distance_along_shape?: Prisma.FloatFieldUpdateOperationsInput | number
   platform_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
@@ -585,6 +626,7 @@ export type RouteStopUncheckedUpdateManyWithoutRouteInput = {
 export type RouteStopSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   direction?: boolean
   sequence?: boolean
+  distance_along_shape?: boolean
   route_id?: boolean
   platform_id?: boolean
   route?: boolean | Prisma.RouteDefaultArgs<ExtArgs>
@@ -594,6 +636,7 @@ export type RouteStopSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type RouteStopSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   direction?: boolean
   sequence?: boolean
+  distance_along_shape?: boolean
   route_id?: boolean
   platform_id?: boolean
   route?: boolean | Prisma.RouteDefaultArgs<ExtArgs>
@@ -603,6 +646,7 @@ export type RouteStopSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
 export type RouteStopSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   direction?: boolean
   sequence?: boolean
+  distance_along_shape?: boolean
   route_id?: boolean
   platform_id?: boolean
   route?: boolean | Prisma.RouteDefaultArgs<ExtArgs>
@@ -612,11 +656,12 @@ export type RouteStopSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
 export type RouteStopSelectScalar = {
   direction?: boolean
   sequence?: boolean
+  distance_along_shape?: boolean
   route_id?: boolean
   platform_id?: boolean
 }
 
-export type RouteStopOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"direction" | "sequence" | "route_id" | "platform_id", ExtArgs["result"]["routeStop"]>
+export type RouteStopOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"direction" | "sequence" | "distance_along_shape" | "route_id" | "platform_id", ExtArgs["result"]["routeStop"]>
 export type RouteStopInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   route?: boolean | Prisma.RouteDefaultArgs<ExtArgs>
   platform?: boolean | Prisma.PlatformDefaultArgs<ExtArgs>
@@ -639,6 +684,7 @@ export type $RouteStopPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     direction: number
     sequence: number
+    distance_along_shape: number
     route_id: string
     platform_id: string
   }, ExtArgs["result"]["routeStop"]>
@@ -1068,6 +1114,7 @@ export interface Prisma__RouteStopClient<T, Null = never, ExtArgs extends runtim
 export interface RouteStopFieldRefs {
   readonly direction: Prisma.FieldRef<"RouteStop", 'Int'>
   readonly sequence: Prisma.FieldRef<"RouteStop", 'Int'>
+  readonly distance_along_shape: Prisma.FieldRef<"RouteStop", 'Float'>
   readonly route_id: Prisma.FieldRef<"RouteStop", 'String'>
   readonly platform_id: Prisma.FieldRef<"RouteStop", 'String'>
 }

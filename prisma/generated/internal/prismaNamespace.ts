@@ -392,9 +392,7 @@ export const ModelName = {
   RouteStop: 'RouteStop',
   Service: 'Service',
   Shape: 'Shape',
-  ShapePoint: 'ShapePoint',
-  Trip: 'Trip',
-  TripStop: 'TripStop'
+  ShapePoint: 'ShapePoint'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -410,7 +408,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "agency" | "station" | "stationAnchor" | "platform" | "route" | "routeStop" | "service" | "shape" | "shapePoint" | "trip" | "tripStop"
+    modelProps: "agency" | "station" | "stationAnchor" | "platform" | "route" | "routeStop" | "service" | "shape" | "shapePoint"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1080,154 +1078,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    Trip: {
-      payload: Prisma.$TripPayload<ExtArgs>
-      fields: Prisma.TripFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.TripFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.TripFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripPayload>
-        }
-        findFirst: {
-          args: Prisma.TripFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.TripFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripPayload>
-        }
-        findMany: {
-          args: Prisma.TripFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripPayload>[]
-        }
-        create: {
-          args: Prisma.TripCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripPayload>
-        }
-        createMany: {
-          args: Prisma.TripCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.TripCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripPayload>[]
-        }
-        delete: {
-          args: Prisma.TripDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripPayload>
-        }
-        update: {
-          args: Prisma.TripUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripPayload>
-        }
-        deleteMany: {
-          args: Prisma.TripDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.TripUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.TripUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripPayload>[]
-        }
-        upsert: {
-          args: Prisma.TripUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripPayload>
-        }
-        aggregate: {
-          args: Prisma.TripAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateTrip>
-        }
-        groupBy: {
-          args: Prisma.TripGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.TripGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.TripCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.TripCountAggregateOutputType> | number
-        }
-      }
-    }
-    TripStop: {
-      payload: Prisma.$TripStopPayload<ExtArgs>
-      fields: Prisma.TripStopFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.TripStopFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripStopPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.TripStopFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripStopPayload>
-        }
-        findFirst: {
-          args: Prisma.TripStopFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripStopPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.TripStopFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripStopPayload>
-        }
-        findMany: {
-          args: Prisma.TripStopFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripStopPayload>[]
-        }
-        create: {
-          args: Prisma.TripStopCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripStopPayload>
-        }
-        createMany: {
-          args: Prisma.TripStopCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.TripStopCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripStopPayload>[]
-        }
-        delete: {
-          args: Prisma.TripStopDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripStopPayload>
-        }
-        update: {
-          args: Prisma.TripStopUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripStopPayload>
-        }
-        deleteMany: {
-          args: Prisma.TripStopDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.TripStopUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.TripStopUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripStopPayload>[]
-        }
-        upsert: {
-          args: Prisma.TripStopUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripStopPayload>
-        }
-        aggregate: {
-          args: Prisma.TripStopAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateTripStop>
-        }
-        groupBy: {
-          args: Prisma.TripStopGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.TripStopGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.TripStopCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.TripStopCountAggregateOutputType> | number
-        }
-      }
-    }
   }
 } & {
   other: {
@@ -1325,6 +1175,7 @@ export type RouteScalarFieldEnum = (typeof RouteScalarFieldEnum)[keyof typeof Ro
 export const RouteStopScalarFieldEnum = {
   direction: 'direction',
   sequence: 'sequence',
+  distance_along_shape: 'distance_along_shape',
   route_id: 'route_id',
   platform_id: 'platform_id'
 } as const
@@ -1355,29 +1206,6 @@ export const ShapePointScalarFieldEnum = {
 } as const
 
 export type ShapePointScalarFieldEnum = (typeof ShapePointScalarFieldEnum)[keyof typeof ShapePointScalarFieldEnum]
-
-
-export const TripScalarFieldEnum = {
-  id: 'id',
-  headsign: 'headsign',
-  short_name: 'short_name',
-  direction: 'direction',
-  route_id: 'route_id',
-  service_id: 'service_id',
-  shape_id: 'shape_id'
-} as const
-
-export type TripScalarFieldEnum = (typeof TripScalarFieldEnum)[keyof typeof TripScalarFieldEnum]
-
-
-export const TripStopScalarFieldEnum = {
-  sequence: 'sequence',
-  distance_along_shape: 'distance_along_shape',
-  platform_id: 'platform_id',
-  trip_id: 'trip_id'
-} as const
-
-export type TripStopScalarFieldEnum = (typeof TripStopScalarFieldEnum)[keyof typeof TripStopScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1583,8 +1411,6 @@ export type GlobalOmitConfig = {
   service?: Prisma.ServiceOmit
   shape?: Prisma.ShapeOmit
   shapePoint?: Prisma.ShapePointOmit
-  trip?: Prisma.TripOmit
-  tripStop?: Prisma.TripStopOmit
 }
 
 /* Types for Logging */
