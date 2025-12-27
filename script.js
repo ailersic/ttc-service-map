@@ -1,5 +1,5 @@
-const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                 ('ontouchstart' in window);
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    ('ontouchstart' in window);
 
 class Station {
     constructor(name, lat, lng) {
@@ -383,6 +383,50 @@ var lines = [
     )
 ];
 
+
+/**
+ * @typedef {Object} SubwayInfo
+ * @property {import("./models/TtcApi.ts").SubwayPlatformCollection} platforms
+ * @property {import("./models/TtcApi.ts").SubwayStationCollection} stations
+ * @property {import("./models/TtcApi.ts").SubwayRouteCollection} routes
+ */
+/** @type {SubwayInfo} */
+const subway = {
+    platforms: {},
+    stations: {},
+    routes: [],
+};
+
+async function loadSubway() {
+    subway.platforms = await fetch('/api/subway/platforms').then(res => res.json());
+    subway.stations = await fetch('/api/subway/stations').then(res => res.json());
+    subway.routes = await fetch('/api/subway/routes').then(res => res.json());
+}
+
+/**
+ * @typedef {Object} AlertInfo
+ * @property {import("./models/TtcApi.ts").AlertCollection} fromApi
+ * @property {{ [k in string]: Pick<Alert, 'id' | 'header' | 'effect' | 'description'>[] }} perStation
+ */
+/** @type {AlertInfo} */
+const alerts = {
+    fromApi: {},
+    perStation: {},
+};
+
+async function loadAlerts() {
+    alerts.fromApi = await fetch('/api/alerts').then(res => res.json());
+}
+
+const Layers = {
+    Top: 10000,
+    AlertMarker: 4000,
+    StationMarker: 3000,
+    AlertOverlay: 2000,
+    SubwayLine: 1000,
+    Bottom: 1,
+};
+
 var allSegmentPolylines = [];
 var allReductionPolylines = [];
 var allStationMarkers = [];
@@ -406,23 +450,25 @@ function refreshMap(map) {
     renderLines();
 
     // Connect the two Spadinas
-    let spadinaTunnel = L.polyline([
-        [lines[0].stations[14].lat, lines[0].stations[14].lng], // Line 1 Spadina
-        [lines[1].stations[14].lat, lines[1].stations[14].lng]  // Line 2 Spadina
+    const spadina1 = subway.stations['spadina-station-1'];
+    const spadina2 = subway.stations['spadina-station-2'];
+    const spadinaTunnel = L.polyline([
+        [spadina1.latitude, spadina1.longitude],
+        [spadina2.latitude, spadina2.longitude],
     ], {
-        color: "#000000",
-        weight: 6,
+        color: "#000",
+        weight: 4,
         opacity: 1.0,
-        zIndex: 1
+        zIndex: Layers.Top,
     });
 
-    spadinaTunnel.addTo(map);
+    // spadinaTunnel.addTo(map);
     allSegmentPolylines.push(spadinaTunnel);
 
     allSegmentPolylines.forEach(polyline => polyline.addTo(map));
-    allReductionPolylines.forEach(polyline => polyline.addTo(map));
+    // allReductionPolylines.forEach(polyline => polyline.addTo(map));
     allStationMarkers.forEach(marker => marker.addTo(map));
-    allReductionMarkers.forEach(marker => marker.addTo(map));
+    // allReductionMarkers.forEach(marker => marker.addTo(map));
 }
 
 function renderLines() {
@@ -444,17 +490,117 @@ function addLineSegments(line) {
     let isegRed = 0;
     let lastStationNormal = true;
 
+    subway.routes
+        .sort(({ id }, _) => id === '2' ? -1 : 0) // draw line 2 first
+        .forEach(({ color, shape }) => {
+            const transitPolyLine = L.polyline(shape.map(({ latitude, longitude }) => [latitude, longitude]), {
+                color,
+                weight: 16,
+                opacity: 0.8,
+                zIndex: Layers.SubwayLine,
+            });
+            allSegmentPolylines.push(transitPolyLine);
+        });
+
+    console.warn('got', alerts.fromApi.alerts.length, 'alerts from api');
+    alerts.fromApi.alerts.forEach(({ id, effect, criteria, header, description }) =>
+        criteria.forEach(({ direction, platform_id, route_id, route_type }) => {
+            // We currently only pay attention to alerts with:
+            // - a defined platform with a parent station
+            if (platform_id === undefined) return;
+            const platform = subway.platforms[platform_id];
+            if (platform === undefined || platform.parent_station_id === null) return;
+            const station_id = platform.parent_station_id;
+            const station = subway.stations[station_id];
+            if (station === undefined) return;
+            // const route = subway.routes.find(({ id }) => id === route_id);
+            // if (route === undefined) return;
+            switch (effect) {
+                case 'AccessibilityIssue':
+                    // TODO (hi prio)
+                    break;
+                case 'AdditionalService':
+                    // TODO
+                    break;
+                case 'Detour':
+                    // TODO (hi prio)
+                    break;
+                case 'ModifiedService':
+                    // TODO
+                    break;
+                case 'NoService':
+                    // TODO
+                    break;
+                case 'ReducedService':
+                    // TODO
+                    break;
+                case 'SignificantDelay':
+                    const newAlert = { id, effect, header, description };
+                    if (station_id in alerts.perStation) {
+                        if (alerts.perStation[station_id].some(({ id: existing_id }) => existing_id === id)) {
+                            return;
+                        }
+                        alerts.perStation[station_id].push(newAlert);
+                    } else {
+                        alerts.perStation[station_id] = [newAlert];
+                    }
+                    break;
+                default:
+                    console.warn('Unsupported Alert.Effect:', effect);
+                    return;
+            }
+        }
+        ));
+
+    subway.routes.forEach(({ stops, segments }) => {
+        /** @type {{ [k in string]: [number, number][] }} */
+        const pointsPerAlert = {};
+        stops.forEach((platformId, i) => {
+            if (i === 0) return;
+            /** @type {string} */
+            const prevStationId = subway.platforms[stops[i - 1]].parent_station_id;
+            // const prevStation = subway.stations[prevStationId];
+            const prevStationAlerts = alerts.perStation[prevStationId];
+            if (!prevStationAlerts) return;
+            /** @type {string} */
+            const stationId = subway.platforms[platformId].parent_station_id;
+            // const station = subway.stations[stationId];
+            const stationAlerts = alerts.perStation[stationId];
+            if (!stationAlerts) return;
+            // const point = [station.latitude, station.longitude];
+            const segment = segments[i - 1].map(({ latitude, longitude }) => [latitude, longitude]);
+            stationAlerts
+                .filter(({ id }) => prevStationAlerts.some(({ id: prevId }) => id === prevId))
+                .forEach(({ id }) => {
+                    if (id in pointsPerAlert) {
+                        pointsPerAlert[id].push(segment);
+                    } else {
+                        pointsPerAlert[id] = [segment];
+                    }
+                });
+        });
+        Object.values(pointsPerAlert).forEach(points => {
+            allSegmentPolylines.push(L.polyline(points, {
+                color: 'rgba(100, 100, 100, 1)',
+                weight: 6,
+                opacity: 1.0,
+                dashArray: '5, 15', // Create a dashed line
+                zIndex: Layers.AlertOverlay,
+            }));
+        });
+    });
+
+    /*
     for (let i = 0; i < line.stations.length; i++) {
         let normalServiceFlag = true;
         for (let j = 0; j < line.serviceReductions.length; j++) {
             if (i >= line.serviceReductions[j].startStationIdx &&
                 i < line.serviceReductions[j].endStationIdx &&
-                serviceReductionTypes[line.serviceReductions[j].typeIdx].view)
-            {
+                serviceReductionTypes[line.serviceReductions[j].typeIdx].view) {
                 normalServiceFlag = false;
             }
         }
-        
+
         if (lastStationNormal == normalServiceFlag) {
             if (normalServiceFlag) {
                 normalServiceSegments[iseg].push(i);
@@ -493,7 +639,7 @@ function addLineSegments(line) {
 
             let startStationName = line.stations[normalServiceSegments[i][0]].name;
             let endStationName = line.stations[normalServiceSegments[i][normalServiceSegments[i].length - 1]].name;
-            
+
             // Create a tooltip for the polyline
             const lineInfoWindow = L.tooltip({
                 direction: 'top',
@@ -536,18 +682,19 @@ function addLineSegments(line) {
             allSegmentPolylines.push(transitPolyLine);
         }
     }
+    */
 }
 
 function addStationMarkers(line) {
-    line.stations.forEach(station => {
-        let stationMarker = L.circleMarker([station.lat, station.lng], {
-            radius: 6,
-            color: '#000000',
-            fillColor: '#FFFFFF',
+    Object.values(subway.stations).forEach(({ latitude, longitude, name }) => {
+        const stationMarker = L.circleMarker([latitude, longitude], {
+            radius: 8,
+            color: '#000',
+            fillColor: '#fff',
             fillOpacity: 1,
-            weight: 4,
+            weight: 5,
             opacity: 1,
-            zIndexOffset: 400
+            zIndex: Layers.StationMarker,
         });
 
         // Create an info window for the station marker
@@ -559,7 +706,7 @@ function addStationMarkers(line) {
         });
         stationInfoWindow.setContent(`
             <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
-                <div style="font-size: 14px; text-align: center;">${station.name}</div>
+                <div style="font-size: 14px; text-align: center;">${name}</div>
             </div>
         `);
         stationMarker.bindTooltip(stationInfoWindow);
@@ -567,6 +714,35 @@ function addStationMarkers(line) {
         // Store the marker in the global array
         allStationMarkers.push(stationMarker);
     });
+
+    // DEBUG
+    if (false) {
+        subway.routes.forEach(({ id, color, shape }) => {
+            if (id === '1') {
+                console.log(`[${shape.slice(162, 197).map(({ latitude, longitude }) => `[${longitude}, ${latitude}]`).join(', ')}]`);
+            }
+            shape.forEach(({ latitude, longitude }, i) => {
+                const debugMarker = L.circleMarker([latitude, longitude], {
+                    radius: 6,
+                    color: '#000',
+                    weight: 2,
+                    opacity: 1,
+                    fillColor: color,
+                    fillOpacity: 1,
+                    zIndex: Layers.SubwayLine + 1,
+                });
+                const debugTooltip = L.tooltip({
+                    direction: 'top',
+                    sticky: false,
+                    className: 'station-tooltip',
+                    offset: [0, 0],
+                });
+                debugTooltip.setContent(`${i}: ${latitude}, ${longitude}`);
+                debugMarker.bindTooltip(debugTooltip);
+                allStationMarkers.push(debugMarker);
+            });
+        });
+    }
 }
 
 function getHeading(latlng1, latlng2) {
@@ -579,7 +755,7 @@ function getHeading(latlng1, latlng2) {
 
     const y = Math.sin(deltaLng) * Math.cos(lat2);
     const x = Math.cos(lat1) * Math.sin(lat2) -
-                Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
+        Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
 
     const angle = Math.atan2(y, x);
     return (toDeg(angle) + 360) % 360;  // normalize to 0-360
@@ -603,11 +779,11 @@ function addServiceReductions(line) {
             let i2End = line.serviceReductions[i2].endStationIdx;
 
             if (((i1Start >= i2Start && i1Start <= i2End) || // i1 starts inside i2
-                 (i1End >= i2Start && i1End <= i2End) || // i1 ends inside i2
-                 (i2Start >= i1Start && i2Start <= i1End) || // i2 starts inside i1
-                 (i2End >= i1Start && i2End <= i1End)) && // i2 ends inside i1
+                (i1End >= i2Start && i1End <= i2End) || // i1 ends inside i2
+                (i2Start >= i1Start && i2Start <= i1End) || // i2 starts inside i1
+                (i2End >= i1Start && i2End <= i1End)) && // i2 ends inside i1
                 (line.serviceReductions[i1].typeIdx === line.serviceReductions[i2].typeIdx)) {
-                
+
                 // If the service reduction is adjacent to a previous one and the same type, combine them
                 line.serviceReductions[i1].startStationIdx = Math.min(line.serviceReductions[i1].startStationIdx, line.serviceReductions[i2].startStationIdx);
                 line.serviceReductions[i1].endStationIdx = Math.max(line.serviceReductions[i1].endStationIdx, line.serviceReductions[i2].endStationIdx);
@@ -643,7 +819,7 @@ function addServiceReductions(line) {
 
             if (line.serviceReductions[i1].startStationIdx === line.serviceReductions[i2].startStationIdx &&
                 line.serviceReductions[i1].endStationIdx === line.serviceReductions[i2].endStationIdx) {
-                
+
                 // If the service reduction is the same as a previous one, combine them
                 line.serviceReductions[i1].description += `<hr>${line.serviceReductions[i2].description}`;
 
@@ -667,7 +843,7 @@ function addServiceReductions(line) {
                     //    line.serviceReductions[i1].typeIdx = line.serviceReductions[i2].typeIdx;
                     //}
                     //else if (line.serviceReductions[i2].typeIdx === restoredIdx) {} // Do nothing, we already set the typeIdx to the other one
-                    
+
                     // Otherwise, set the combined alert to "Multiple alerts"
                     else {
                         line.serviceReductions[i1].typeIdx = serviceReductionTypes.findIndex(type => type.name === "Multiple alerts");
@@ -711,7 +887,7 @@ function addServiceReductions(line) {
             color: serviceReductionType.icon.strokeColor,
             weight: 12,
             opacity: 0.5,
-            zIndexOffset: 100,
+            zIndex: Layers.AlertOverlay,
         });
 
         let serviceReductionHighlightPolyLine = L.polyline(stationIdxs.map(idx => [
@@ -721,7 +897,7 @@ function addServiceReductions(line) {
             color: "rgba(0, 255, 255, 0.5)",
             weight: 20,
             opacity: 0,
-            zIndexOffset: 1000,
+            zIndex: Layers.AlertOverlay + 1,
         });
 
         // Store the polyline in the global array
@@ -765,7 +941,7 @@ function addServiceReductions(line) {
         const icon = serviceReductionType.icon;
         const serviceReductionIcon = L.divIcon({
             className: 'my-custom-svg-icon', // Optional: for CSS styling
-            html: `<svg width="${24*icon.scale}" height="${24*icon.scale}" viewBox="${-12*icon.scale} ${-12*icon.scale} ${24*icon.scale} ${24*icon.scale}" xmlns="http://www.w3.org/2000/svg">
+            html: `<svg width="${24 * icon.scale}" height="${24 * icon.scale}" viewBox="${-12 * icon.scale} ${-12 * icon.scale} ${24 * icon.scale} ${24 * icon.scale}" xmlns="http://www.w3.org/2000/svg">
                 <g transform="scale(${icon.scale})">
                 <path d="${icon.path}" 
                 stroke="${icon.strokeColor}" 
@@ -802,15 +978,15 @@ function addServiceReductions(line) {
 
         let serviceReductionMarker = L.marker([midLat, midLng], {
             icon: serviceReductionIcon,
-            zIndexOffset: 1000
+            zIndex: Layers.AlertMarker,
         });
         serviceReductionMarker.bindTooltip(serviceReductionInfoWindow);
 
-        serviceReductionMarker.on('tooltipopen', function() {
-            serviceReductionHighlightPolyLine.setStyle({opacity: 1});
+        serviceReductionMarker.on('tooltipopen', function () {
+            serviceReductionHighlightPolyLine.setStyle({ opacity: 1 });
         });
-        serviceReductionMarker.on('tooltipclose', function() {
-            serviceReductionHighlightPolyLine.setStyle({opacity: 0});
+        serviceReductionMarker.on('tooltipclose', function () {
+            serviceReductionHighlightPolyLine.setStyle({ opacity: 0 });
         });
 
         const scaleRGB = c => c.replace(/\d+/g, n => Math.round(n * 0.75));
@@ -820,7 +996,7 @@ function addServiceReductions(line) {
 
         let directionMarkerIcon = L.divIcon({
             className: 'my-custom-svg-icon',
-            html: `<svg width="${32*directionIcon.scale}" height="${32*directionIcon.scale}" viewBox="${-16*directionIcon.scale} ${-16*directionIcon.scale} ${32*directionIcon.scale} ${32*directionIcon.scale}" xmlns="http://www.w3.org/2000/svg">
+            html: `<svg width="${32 * directionIcon.scale}" height="${32 * directionIcon.scale}" viewBox="${-16 * directionIcon.scale} ${-16 * directionIcon.scale} ${32 * directionIcon.scale} ${32 * directionIcon.scale}" xmlns="http://www.w3.org/2000/svg">
                 <g transform="scale(${directionIcon.scale})">
                 <path d="${directionIcon.path}"
                 transform="rotate(${rotAngle}, 0, 0)"
@@ -836,7 +1012,7 @@ function addServiceReductions(line) {
         });
         let directionMarker = L.marker([midLat, midLng], {
             icon: directionMarkerIcon,
-            zIndexOffset: 200
+            zIndex: Layers.AlertMarker,
         });
 
         // Store the marker in the global array

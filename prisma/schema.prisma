@@ -1,0 +1,120 @@
+generator client {
+    provider = "prisma-client"
+    output   = "./generated"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+model Agency {
+    id           String   @id
+    name         String
+    url          String
+    last_updated DateTime @default(now())
+}
+
+model Station {
+    id        String @id
+    name      String
+    latitude  Float
+    longitude Float
+
+    platforms Platform[]
+    anchors StationAnchor[]
+}
+
+model StationAnchor {
+    interpolationFactor Float
+
+    station    Station  @relation(fields: [station_id], references: [id])
+    station_id String
+
+    shape    Shape  @relation(fields: [shape_id], references: [id])
+    shape_id String
+
+    @@id([station_id, shape_id])
+    @@index([station_id])
+    @@index([shape_id])
+}
+
+model Platform {
+    id        String  @id
+    name      String
+    code      String?
+    latitude  Float
+    longitude Float
+
+    parent_station    Station? @relation(fields: [parent_station_id], references: [id])
+    parent_station_id String?
+
+    route_stops RouteStop[]
+
+    @@index([parent_station_id])
+}
+
+enum RouteType {
+    TramStreetcarLightRail
+    SubwayMetro
+    Rail
+    Bus
+}
+
+model Route {
+    id         String    @id
+    short_name String
+    long_name  String
+    type       RouteType
+    color      String?
+    text_color String?
+    sort_order Int?
+
+    shape    Shape?  @relation(fields: [shape_id], references: [id])
+    shape_id String?
+
+    route_stops RouteStop[]
+
+    @@index([shape_id])
+}
+
+model RouteStop {
+    direction Int
+    sequence  Int
+    distance_along_shape Float
+
+    route    Route  @relation(fields: [route_id], references: [id])
+    route_id String
+
+    platform    Platform @relation(fields: [platform_id], references: [id])
+    platform_id String
+
+    @@id([route_id, direction, sequence])
+    @@index([route_id])
+    @@index([platform_id])
+}
+
+model Service {
+    id String @id
+}
+
+model Shape {
+    id String @id
+
+    shape_points ShapePoint[]
+    routes       Route[]
+
+    stationAnchors StationAnchor[]
+}
+
+model ShapePoint {
+    latitude      Float
+    longitude     Float
+    sequence      Int
+    dist_traveled Float?
+
+    shape    Shape  @relation(fields: [shape_id], references: [id])
+    shape_id String
+
+    @@id([shape_id, sequence])
+    @@index([shape_id])
+}
