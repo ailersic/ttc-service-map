@@ -380,6 +380,30 @@ var lines = [
             new Station("Leslie", 43.7712980, -79.3658900),
             new Station("Don Mills", 43.7753975, -79.3463865)
         ]
+    ),
+    new Line(
+        "Line 6 - Finch West LRT",
+        " #646464",
+        [
+            new Station("Humber College", 43.7299048, -79.6015296),
+            new Station("Westmore", 43.7348147, -79.6003652),
+            new Station("Martin Grove", 43.7366316, -79.5923394),
+            new Station("Albion", 43.7411377, -79.5892051),
+            new Station("Stevenson", 43.7432573, -79.5865726),
+            new Station("Mount Olive", 43.7433737, -79.5813581),
+            new Station("Rowntree Mills", 43.7462218, -79.5685629),
+            new Station("Pearldale", 43.7476892, -79.5629559),
+            new Station("Duncanwoods", 43.7489724, -79.556895),
+            new Station("Milvan Rumike", 43.7499601, -79.552337),
+            new Station("Emery", 43.7520405, -79.5423827),
+            new Station("Signet Arrow", 43.7532955, -79.5361882),
+            new Station("Norfinch Oakdale", 43.7559301, -79.524251),
+            new Station("Jane and Finch", 43.7572507, -79.517746),
+            new Station("Driftwood", 43.7580635, -79.5133814),
+            new Station("Tobermory", 43.7592824, -79.5079134),
+            new Station("Sentinel", 43.7610537, -79.500013),
+            new Station("Finch West", 43.7639743, -79.4915419),
+        ]
     )
 ];
 

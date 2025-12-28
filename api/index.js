@@ -16,6 +16,8 @@ app.get('/api/fetch', async (req, res) => {
 
         const liveAlertResponse = await fetch('https://alerts.ttc.ca/api/alerts/live-alerts');
         const jsonData = await liveAlertResponse.json();
+        // const jsonData = require(path.join(__dirname, '..', 'local-test-alerts.json')); // For testing with local file
+        // console.log('Fetched test alerts data.');
         console.log(`Found ${jsonData.routes.length} route alerts, ${jsonData.accessibility.length} accessibility alerts.`);
 
         /*const slowZoneResponse = await fetch('https://www.ttc.ca/riding-the-ttc/Updates/Reduced-Speed-Zones');
@@ -98,10 +100,18 @@ app.get('/api/fetch', async (req, res) => {
                 if (route.route == "1") {lineIdx = 0;}
                 else if (route.route == "2") {lineIdx = 1;}
                 else if (route.route == "4") {lineIdx = 3;}
+                else if (route.route == "6") {lineIdx = 4;}
                 else {
                     if (description.includes("Line 1")) { lineIdx = 0; }
                     else if (description.includes("Line 2")) { lineIdx = 1; }
                     else if (description.includes("Line 4")) { lineIdx = 3; }
+                    else if (description.includes("Line 6")) { lineIdx = 4; }
+                }
+            }
+            else if (route.routeType == "LRT") {
+                if (route.route == "6") {lineIdx = 4;}
+                else {
+                    if (description.includes("Line 6")) { lineIdx = 4; }
                 }
             }
 
