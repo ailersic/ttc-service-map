@@ -104,7 +104,7 @@ div.button-container {
 
 .button {
     border: none;
-    padding: 12px 12px;
+    padding: 6px 12px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
@@ -194,6 +194,19 @@ div.button-container {
     margin: 15% auto; /* 15% from the top and centered */
     padding: 20px;
     width: 80%; /* Could be more or less, depending on screen size */
+}
+
+/* Loading modal is visible by default */
+#loading-modal {
+    display: flex;
+    background-color: rgba(0,0,0,0.7); /* Black w/ opacity */
+}
+#loading-modal-content {
+    background-color: transparent;
+    margin: auto;
+    padding: 0px;
+    width: auto;
+    justify-content: center;
 }
 
 /* The Close Button */

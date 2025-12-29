@@ -41,6 +41,12 @@
     
     <div id="map"></div>
 
+    <div id="loading-modal" class="modal">
+        <div id="loading-modal-content" class="modal-content"> <!-- Show loading svg animation -->
+            <img src="loading.svg" alt="Loading..." />
+        </div>
+    </div>
+
     <div id="about-modal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
@@ -229,6 +235,7 @@
                 };
                 
                 document.getElementById("subheading").innerHTML = `Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)} <button class="small-button refresh-button" onClick="window.location.reload()"><i class="fas fa-rotate-right"></i></button><br>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a>`;
+                document.getElementById("loading-modal").style.display = "none"; // Hide loading modal
 
                 refreshMap(map);
             }

@@ -1,0 +1,51 @@
+<svg width="128" height="128"
+    viewBox="-64.0 -64.0 128 128"
+    xmlns="http://www.w3.org/2000/svg">
+    <g transform="scale(4)">
+    <path
+        d="M 10 8 L -1 8 A 7 7 0 0 1 -8 1 L -8 -8 L -8 -5 A 2 2 0 0 0 -4 -5 L -4 -8 L -4 0 A 4 4 0 0 0 0 4 L 3 4 L 0 4 A 4 4 0 0 1 -4 0 L -4 -1 A 7 7 0 0 1 3 -8 A 6 6 0 0 1 9 -2 A 6 6 0 0 1 3 4 A 7 4 0 0 1 10 8 M 3 0 A 2 2 0 0 0 5 -2 A 2 2 0 0 0 3 -4 A 3 3 0 0 0 0 -1 L 0 1 A 3 3 0 0 0 3 4 A 3 3 0 0 1 0 1 L 0 -1 A 3 3 0 0 1 3 -4 A 2 2 0 0 1 5 -2 A 2 2 0 0 1 3 0"
+        stroke="rgb(200, 100, 0)"
+        stroke-opacity="1"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="1.3333333333333333"
+        fill="#ffffff"
+        fill-opacity="1">
+
+        <!-- Path morphing -->
+        <animate
+            attributeName="d"
+            dur="2.0s"
+            repeatCount="indefinite"
+            values="M 10 8 L -1 8 A 7 7 0 0 1 -8 1 L -8 -8 L -8 -5 A 2 2 0 0 0 -4 -5 L -4 -8 L -4 0 A 4 4 0 0 0 0 4 L 3 4 L 0 4 A 4 4 0 0 1 -4 0 L -4 -1 A 7 7 0 0 1 3 -8 A 6 6 0 0 1 9 -2 A 6 6 0 0 1 3 4 A 7 4 0 0 1 10 8 M 3 0 A 2 2 0 0 0 5 -2 A 2 2 0 0 0 3 -4 A 3 3 0 0 0 0 -1 L 0 1 A 3 3 0 0 0 3 4 A 3 3 0 0 1 0 1 L 0 -1 A 3 3 0 0 1 3 -4 A 2 2 0 0 1 5 -2 A 2 2 0 0 1 3 0;M 12 8 L -1 8 A 7 7 0 0 1 -8 1 L -8 -7 L -8 -4 A 2 2 0 0 0 -4 -4 L -4 -7 L -4 0 A 4 4 0 0 0 0 4 L 3 4 L 0 4 A 4 4 0 0 1 -4 0 L -4 -1 A 7 7 0 0 1 3 -8 A 6 6 0 0 1 9 -2 A 6 6 0 0 1 3 4 A 9 4 0 0 1 12 8 M 3 0 A 2 2 0 0 0 5 -2 A 2 2 0 0 0 3 -4 A 3 3 0 0 0 0 -1 L 0 1 A 3 3 0 0 0 3 4 A 3 3 0 0 1 0 1 L 0 -1 A 3 3 0 0 1 3 -4 A 2 2 0 0 1 5 -2 A 2 2 0 0 1 3 0;M 10 8 L -1 8 A 7 7 0 0 1 -8 1 L -8 -8 L -8 -5 A 2 2 0 0 0 -4 -5 L -4 -8 L -4 0 A 4 4 0 0 0 0 4 L 3 4 L 0 4 A 4 4 0 0 1 -4 0 L -4 -1 A 7 7 0 0 1 3 -8 A 6 6 0 0 1 9 -2 A 6 6 0 0 1 3 4 A 7 4 0 0 1 10 8 M 3 0 A 2 2 0 0 0 5 -2 A 2 2 0 0 0 3 -4 A 3 3 0 0 0 0 -1 L 0 1 A 3 3 0 0 0 3 4 A 3 3 0 0 1 0 1 L 0 -1 A 3 3 0 0 1 3 -4 A 2 2 0 0 1 5 -2 A 2 2 0 0 1 3 0"
+            keyTimes="0.000;0.500;1.000"
+            calcMode="spline"
+            keySplines="0.5 0.0 0.5 1.0;0.5 0.0 0.5 1.0" />
+
+        <!-- Primary translation -->
+        <animateTransform
+            attributeName="transform"
+            type="translate"
+            additive="replace"
+            dur="2.0s"
+            repeatCount="indefinite"
+            values="2.5 0;-1.5 0;-1.5 0"
+            keyTimes="0.000;0.500;1.000"
+            calcMode="spline"
+            keySplines="0.5 0.0 0.5 1.0;0.5 0.0 0.5 1.0" />
+
+        <!-- Secondary additive translation -->
+        <animateTransform
+            attributeName="transform"
+            type="translate"
+            additive="sum"
+            dur="2.0s"
+            repeatCount="indefinite"
+            values="-2 0;0 0;2 0"
+            keyTimes="0.000;0.500;1.000"
+            calcMode="spline"
+            keySplines="0.0 0.0 1.0 1.0;0.0 0.0 1.0 1.0" />
+
+    </path>
+    </g>
+</svg>
