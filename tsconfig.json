@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "outDir": "./build",
+        "allowJs": true,
+        "target": "es6",
+        "module": "nodenext",
+        // "moduleResolution": "node",
+        "esModuleInterop": true,
+        "rewriteRelativeImportExtensions": true,
+        "strict": true,
+    }
+}

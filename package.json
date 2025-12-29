@@ -2,14 +2,38 @@
   "name": "ttc-service-map",
   "version": "2025.12.28.1",
   "description": "A web application to visualize TTC service disruptions on a map.",
+  "type": "module",
   "main": "api/index.js",
   "author": "Andrew F. Ilersich <andrew.ilersich@mail.utoronto.ca> (https://www.ilersich.com/)",
   "license": "GPL-3.0-only",
   "dependencies": {
-    "express": "^4.18.2"
+    "@prisma/adapter-pg": "^7.1.0",
+    "@prisma/client": "^7.2.0",
+    "csv-parse": "^6.1.0",
+    "dotenv": "^17.2.3",
+    "express": "^4.18.2",
+    "pg": "^8.16.3",
+    "prisma": "^7.1.0",
+    "protobufjs": "^8.0.0",
+    "stream-transform": "^3.4.0",
+    "unzipper": "^0.12.3"
   },
   "scripts": {
-    "start": "node api/index.js",
-    "dev": "node api/index.js"
+    "start": "node build/api/index.js",
+    "dev": "npm run build && npm start",
+    "build": "npm run db:update && tsc",
+    "build:watch": "tsc -w",
+    "rebuild": "npm run db:rebuild && npm run build",
+    "db:migrate": "echo '' | npx prisma migrate dev",
+    "db:genTypes": "npx prisma generate",
+    "db:update": "npm run db:migrate && npm run db:genTypes",
+    "db:rebuild": "npx prisma migrate reset && npm run db:update"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.0.3",
+    "@types/pg": "^8.16.0",
+    "@types/unzipper": "^0.10.11",
+    "typescript": "^5.9.3"
   }
 }
