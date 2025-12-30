@@ -285,7 +285,7 @@ var lines = [
             new Station("Highway 407", 43.7833590, -79.5234540),
             new Station("Pioneer Village", 43.7767455, -79.5093530),
             new Station("York University", 43.7740970, -79.4998880),
-            new Station("Finch West", 43.7648550, -79.4911180),
+            new Station("Finch West", 43.7644147, -79.4913299),
             new Station("Downsview Park", 43.7533110, -79.4786930),
             new Station("Sheppard West", 43.7496755, -79.4623870),
             new Station("Wilson", 43.7344480, -79.4500420),
@@ -402,7 +402,7 @@ var lines = [
             new Station("Driftwood", 43.7580635, -79.5133814),
             new Station("Tobermory", 43.7592824, -79.5079134),
             new Station("Sentinel", 43.7610537, -79.500013),
-            new Station("Finch West", 43.7639743, -79.4915419),
+            new Station("Finch West", 43.7644147, -79.4913299),
         ]
     )
 ];
