@@ -1,65 +1,11 @@
-const express = require('express');
-const path = require('path');
-const app = express();
-//const PORT = 3000;
-
-// Serve static files
-app.use(express.static('.'));
-
 // API endpoint
-app.get('/api/fetch', async (req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    
+export async function onRequestGet(context) {
     try {
         const alerts = [];
 
         const liveAlertResponse = await fetch('https://alerts.ttc.ca/api/alerts/live-alerts');
         const jsonData = await liveAlertResponse.json();
         console.log(`Found ${jsonData.routes.length} route alerts, ${jsonData.accessibility.length} accessibility alerts.`);
-
-        /*const slowZoneResponse = await fetch('https://www.ttc.ca/riding-the-ttc/Updates/Reduced-Speed-Zones');
-        const slowZoneText = await slowZoneResponse.text();
-        const slowZoneTables = slowZoneText.match(/<table[\s\S]*?<\/table>/g) || [];
-        console.log(`Found ${slowZoneTables.length} slow zone tables.`);
-        
-        // Process slow zone tables
-        for (let i = 0; i < slowZoneTables.length; i++) {
-            const table = slowZoneTables[i];
-            const rows = table.match(/<tr[\s\S]*?<\/tr>/g) || [];
-            for (let j = 1; j < rows.length; j++) { // Skip the header row
-                const row = rows[j];
-                const cells = row.match(/<td[\s\S]*?<\/td>/g) || [];
-                const descCell = cells[0] || '';
-                const causeCell = cells[6] || '';
-                const trimmedDesc = descCell.replace(/<\/?td[^>]*>/g, '').trim().replace(/\&nbsp;/g, '').replace(' (x2)', '');
-                const trimmedCause = causeCell.replace(/<\/?td[^>]*>/g, '').trim();
-
-                let stopStart = trimmedDesc.split(' to ')[0].trim();
-                const firstSpaceIndex = stopStart.indexOf(' ');
-                stopStart = stopStart.substring(firstSpaceIndex + 1).trim();
-                const stopEnd = trimmedDesc.split(' to ')[1].trim();
-
-                const description = 'Reduced speed ' +
-                                    trimmedDesc.charAt(0).toLowerCase() +
-                                    trimmedDesc.slice(1) +
-                                    ' due to ' +
-                                    trimmedCause.toLowerCase();
-                console.log(`Slow zone alert found: ${description}`);
-
-                let lineIdx = -1;
-                if (i == 0 || i == 1) {lineIdx = 0;} // Line 1
-                else if (i == 2 || i == 3) {lineIdx = 1;} // Line 2
-
-                alerts.push({
-                    lineIdx: lineIdx, // Assuming each table corresponds to a line index
-                    startStation: stopStart,
-                    endStation: stopEnd,
-                    effectDesc: "Delays",
-                    description: description,
-                });
-            }
-        }*/
 
         // Select each alert item
         jsonData.routes.forEach(route => {
@@ -159,19 +105,29 @@ app.get('/api/fetch', async (req, res) => {
         });
         
         console.log(`Scraping complete. Found ${alerts.length} relevant alerts.`);
-        res.json({ alerts, lastUpdated: jsonData.lastUpdated });
+        return new Response(JSON.stringify({ 
+            alerts, 
+            lastUpdated: jsonData.lastUpdated 
+        }), {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET'
+            }
+        });
       
     } catch (error) {
         console.error('Scraping error:', error);
-        res.status(500).json({
-            error: 'Failed to fetch data',
-            alerts: []
+        return new Response(JSON.stringify({
+            error: 'Scraping error'
+        }), {
+            status: 500,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET'
+            }
         });
     }
-});
-
-//app.listen(PORT, () => {
-//    console.log(`Server running at http://localhost:${PORT}`);
-//});
-
-module.exports = app; // Export the app for testing purposes
+}

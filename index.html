@@ -43,7 +43,8 @@
 
     <div id="loading-modal" class="modal">
         <div id="loading-modal-content" class="modal-content"> <!-- Show loading svg animation -->
-            <img src="loading.svg" alt="Loading..." />
+            <img src="loading.svg" alt="Loading...">
+            <p>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a></p>
         </div>
     </div>
 
@@ -234,7 +235,7 @@
                     hour12: true,
                 };
                 
-                document.getElementById("subheading").innerHTML = `Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)} <button class="small-button refresh-button" onClick="window.location.reload()"><i class="fas fa-rotate-right"></i></button><br>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a>`;
+                document.getElementById("subheading").innerHTML = `Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)} <button class="small-button refresh-button" onClick="window.location.reload()"><i class="fas fa-rotate-right"></i></button>`;
                 document.getElementById("loading-modal").style.display = "none"; // Hide loading modal
 
                 refreshMap(map);
