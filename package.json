@@ -1,7 +1,7 @@
 {
   "name": "ttc-service-map",
-  "version": "2025.12.31.2",
-  "description": "A web application to map TTC network status.",
+  "version": "2026.1.3.1",
+  "description": "A network status map for the Toronto Transit Commission.",
   "author": "Andrew F. Ilersich <andrew.ilersich@mail.utoronto.ca> (https://www.ilersich.com/)",
   "contributors": [
     "Kevin Xu <wenkai.xu@mail.utoronto.ca> (https://github.com/KevinUTAT)"
