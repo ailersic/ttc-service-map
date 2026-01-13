@@ -1,10 +1,11 @@
 {
   "name": "ttc-service-map",
-  "version": "2025.11.17.1",
+  "version": "2026.1.13.1",
   "description": "A web application to visualize TTC service disruptions on a map.",
   "type": "module",
   "main": "api/index.js",
   "author": "Andrew F. Ilersich",
+  "contributors": ["Anthony Ilersich"],
   "license": "GPL-3.0-only",
   "dependencies": {
     "@prisma/adapter-pg": "^7.1.0",
@@ -21,7 +22,7 @@
   "scripts": {
     "start": "node build/api/index.js",
     "dev": "npm run build && npm start",
-    "build": "npm run db:update && tsc",
+    "build": "tsc",
     "build:watch": "tsc -w",
     "rebuild": "npm run db:rebuild && npm run build",
     "db:migrate": "echo '' | npx prisma migrate dev",

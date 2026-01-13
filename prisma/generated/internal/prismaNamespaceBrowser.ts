@@ -99,7 +99,7 @@ export type StationScalarFieldEnum = (typeof StationScalarFieldEnum)[keyof typeo
 
 
 export const StationAnchorScalarFieldEnum = {
-  interpolationFactor: 'interpolationFactor',
+  interpolation_factor: 'interpolation_factor',
   station_id: 'station_id',
   shape_id: 'shape_id'
 } as const

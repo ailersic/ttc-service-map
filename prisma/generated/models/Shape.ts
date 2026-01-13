@@ -152,14 +152,14 @@ export type ShapeWhereInput = {
   id?: Prisma.StringFilter<"Shape"> | string
   shape_points?: Prisma.ShapePointListRelationFilter
   routes?: Prisma.RouteListRelationFilter
-  stationAnchors?: Prisma.StationAnchorListRelationFilter
+  station_anchors?: Prisma.StationAnchorListRelationFilter
 }
 
 export type ShapeOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   shape_points?: Prisma.ShapePointOrderByRelationAggregateInput
   routes?: Prisma.RouteOrderByRelationAggregateInput
-  stationAnchors?: Prisma.StationAnchorOrderByRelationAggregateInput
+  station_anchors?: Prisma.StationAnchorOrderByRelationAggregateInput
 }
 
 export type ShapeWhereUniqueInput = Prisma.AtLeast<{
@@ -169,7 +169,7 @@ export type ShapeWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.ShapeWhereInput | Prisma.ShapeWhereInput[]
   shape_points?: Prisma.ShapePointListRelationFilter
   routes?: Prisma.RouteListRelationFilter
-  stationAnchors?: Prisma.StationAnchorListRelationFilter
+  station_anchors?: Prisma.StationAnchorListRelationFilter
 }, "id">
 
 export type ShapeOrderByWithAggregationInput = {
@@ -190,28 +190,28 @@ export type ShapeCreateInput = {
   id: string
   shape_points?: Prisma.ShapePointCreateNestedManyWithoutShapeInput
   routes?: Prisma.RouteCreateNestedManyWithoutShapeInput
-  stationAnchors?: Prisma.StationAnchorCreateNestedManyWithoutShapeInput
+  station_anchors?: Prisma.StationAnchorCreateNestedManyWithoutShapeInput
 }
 
 export type ShapeUncheckedCreateInput = {
   id: string
   shape_points?: Prisma.ShapePointUncheckedCreateNestedManyWithoutShapeInput
   routes?: Prisma.RouteUncheckedCreateNestedManyWithoutShapeInput
-  stationAnchors?: Prisma.StationAnchorUncheckedCreateNestedManyWithoutShapeInput
+  station_anchors?: Prisma.StationAnchorUncheckedCreateNestedManyWithoutShapeInput
 }
 
 export type ShapeUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   shape_points?: Prisma.ShapePointUpdateManyWithoutShapeNestedInput
   routes?: Prisma.RouteUpdateManyWithoutShapeNestedInput
-  stationAnchors?: Prisma.StationAnchorUpdateManyWithoutShapeNestedInput
+  station_anchors?: Prisma.StationAnchorUpdateManyWithoutShapeNestedInput
 }
 
 export type ShapeUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   shape_points?: Prisma.ShapePointUncheckedUpdateManyWithoutShapeNestedInput
   routes?: Prisma.RouteUncheckedUpdateManyWithoutShapeNestedInput
-  stationAnchors?: Prisma.StationAnchorUncheckedUpdateManyWithoutShapeNestedInput
+  station_anchors?: Prisma.StationAnchorUncheckedUpdateManyWithoutShapeNestedInput
 }
 
 export type ShapeCreateManyInput = {
@@ -248,18 +248,18 @@ export type ShapeMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
 }
 
-export type ShapeCreateNestedOneWithoutStationAnchorsInput = {
-  create?: Prisma.XOR<Prisma.ShapeCreateWithoutStationAnchorsInput, Prisma.ShapeUncheckedCreateWithoutStationAnchorsInput>
-  connectOrCreate?: Prisma.ShapeCreateOrConnectWithoutStationAnchorsInput
+export type ShapeCreateNestedOneWithoutStation_anchorsInput = {
+  create?: Prisma.XOR<Prisma.ShapeCreateWithoutStation_anchorsInput, Prisma.ShapeUncheckedCreateWithoutStation_anchorsInput>
+  connectOrCreate?: Prisma.ShapeCreateOrConnectWithoutStation_anchorsInput
   connect?: Prisma.ShapeWhereUniqueInput
 }
 
-export type ShapeUpdateOneRequiredWithoutStationAnchorsNestedInput = {
-  create?: Prisma.XOR<Prisma.ShapeCreateWithoutStationAnchorsInput, Prisma.ShapeUncheckedCreateWithoutStationAnchorsInput>
-  connectOrCreate?: Prisma.ShapeCreateOrConnectWithoutStationAnchorsInput
-  upsert?: Prisma.ShapeUpsertWithoutStationAnchorsInput
+export type ShapeUpdateOneRequiredWithoutStation_anchorsNestedInput = {
+  create?: Prisma.XOR<Prisma.ShapeCreateWithoutStation_anchorsInput, Prisma.ShapeUncheckedCreateWithoutStation_anchorsInput>
+  connectOrCreate?: Prisma.ShapeCreateOrConnectWithoutStation_anchorsInput
+  upsert?: Prisma.ShapeUpsertWithoutStation_anchorsInput
   connect?: Prisma.ShapeWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.ShapeUpdateToOneWithWhereWithoutStationAnchorsInput, Prisma.ShapeUpdateWithoutStationAnchorsInput>, Prisma.ShapeUncheckedUpdateWithoutStationAnchorsInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ShapeUpdateToOneWithWhereWithoutStation_anchorsInput, Prisma.ShapeUpdateWithoutStation_anchorsInput>, Prisma.ShapeUncheckedUpdateWithoutStation_anchorsInput>
 }
 
 export type ShapeCreateNestedOneWithoutRoutesInput = {
@@ -292,41 +292,41 @@ export type ShapeUpdateOneRequiredWithoutShape_pointsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ShapeUpdateToOneWithWhereWithoutShape_pointsInput, Prisma.ShapeUpdateWithoutShape_pointsInput>, Prisma.ShapeUncheckedUpdateWithoutShape_pointsInput>
 }
 
-export type ShapeCreateWithoutStationAnchorsInput = {
+export type ShapeCreateWithoutStation_anchorsInput = {
   id: string
   shape_points?: Prisma.ShapePointCreateNestedManyWithoutShapeInput
   routes?: Prisma.RouteCreateNestedManyWithoutShapeInput
 }
 
-export type ShapeUncheckedCreateWithoutStationAnchorsInput = {
+export type ShapeUncheckedCreateWithoutStation_anchorsInput = {
   id: string
   shape_points?: Prisma.ShapePointUncheckedCreateNestedManyWithoutShapeInput
   routes?: Prisma.RouteUncheckedCreateNestedManyWithoutShapeInput
 }
 
-export type ShapeCreateOrConnectWithoutStationAnchorsInput = {
+export type ShapeCreateOrConnectWithoutStation_anchorsInput = {
   where: Prisma.ShapeWhereUniqueInput
-  create: Prisma.XOR<Prisma.ShapeCreateWithoutStationAnchorsInput, Prisma.ShapeUncheckedCreateWithoutStationAnchorsInput>
+  create: Prisma.XOR<Prisma.ShapeCreateWithoutStation_anchorsInput, Prisma.ShapeUncheckedCreateWithoutStation_anchorsInput>
 }
 
-export type ShapeUpsertWithoutStationAnchorsInput = {
-  update: Prisma.XOR<Prisma.ShapeUpdateWithoutStationAnchorsInput, Prisma.ShapeUncheckedUpdateWithoutStationAnchorsInput>
-  create: Prisma.XOR<Prisma.ShapeCreateWithoutStationAnchorsInput, Prisma.ShapeUncheckedCreateWithoutStationAnchorsInput>
+export type ShapeUpsertWithoutStation_anchorsInput = {
+  update: Prisma.XOR<Prisma.ShapeUpdateWithoutStation_anchorsInput, Prisma.ShapeUncheckedUpdateWithoutStation_anchorsInput>
+  create: Prisma.XOR<Prisma.ShapeCreateWithoutStation_anchorsInput, Prisma.ShapeUncheckedCreateWithoutStation_anchorsInput>
   where?: Prisma.ShapeWhereInput
 }
 
-export type ShapeUpdateToOneWithWhereWithoutStationAnchorsInput = {
+export type ShapeUpdateToOneWithWhereWithoutStation_anchorsInput = {
   where?: Prisma.ShapeWhereInput
-  data: Prisma.XOR<Prisma.ShapeUpdateWithoutStationAnchorsInput, Prisma.ShapeUncheckedUpdateWithoutStationAnchorsInput>
+  data: Prisma.XOR<Prisma.ShapeUpdateWithoutStation_anchorsInput, Prisma.ShapeUncheckedUpdateWithoutStation_anchorsInput>
 }
 
-export type ShapeUpdateWithoutStationAnchorsInput = {
+export type ShapeUpdateWithoutStation_anchorsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   shape_points?: Prisma.ShapePointUpdateManyWithoutShapeNestedInput
   routes?: Prisma.RouteUpdateManyWithoutShapeNestedInput
 }
 
-export type ShapeUncheckedUpdateWithoutStationAnchorsInput = {
+export type ShapeUncheckedUpdateWithoutStation_anchorsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   shape_points?: Prisma.ShapePointUncheckedUpdateManyWithoutShapeNestedInput
   routes?: Prisma.RouteUncheckedUpdateManyWithoutShapeNestedInput
@@ -335,13 +335,13 @@ export type ShapeUncheckedUpdateWithoutStationAnchorsInput = {
 export type ShapeCreateWithoutRoutesInput = {
   id: string
   shape_points?: Prisma.ShapePointCreateNestedManyWithoutShapeInput
-  stationAnchors?: Prisma.StationAnchorCreateNestedManyWithoutShapeInput
+  station_anchors?: Prisma.StationAnchorCreateNestedManyWithoutShapeInput
 }
 
 export type ShapeUncheckedCreateWithoutRoutesInput = {
   id: string
   shape_points?: Prisma.ShapePointUncheckedCreateNestedManyWithoutShapeInput
-  stationAnchors?: Prisma.StationAnchorUncheckedCreateNestedManyWithoutShapeInput
+  station_anchors?: Prisma.StationAnchorUncheckedCreateNestedManyWithoutShapeInput
 }
 
 export type ShapeCreateOrConnectWithoutRoutesInput = {
@@ -363,25 +363,25 @@ export type ShapeUpdateToOneWithWhereWithoutRoutesInput = {
 export type ShapeUpdateWithoutRoutesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   shape_points?: Prisma.ShapePointUpdateManyWithoutShapeNestedInput
-  stationAnchors?: Prisma.StationAnchorUpdateManyWithoutShapeNestedInput
+  station_anchors?: Prisma.StationAnchorUpdateManyWithoutShapeNestedInput
 }
 
 export type ShapeUncheckedUpdateWithoutRoutesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   shape_points?: Prisma.ShapePointUncheckedUpdateManyWithoutShapeNestedInput
-  stationAnchors?: Prisma.StationAnchorUncheckedUpdateManyWithoutShapeNestedInput
+  station_anchors?: Prisma.StationAnchorUncheckedUpdateManyWithoutShapeNestedInput
 }
 
 export type ShapeCreateWithoutShape_pointsInput = {
   id: string
   routes?: Prisma.RouteCreateNestedManyWithoutShapeInput
-  stationAnchors?: Prisma.StationAnchorCreateNestedManyWithoutShapeInput
+  station_anchors?: Prisma.StationAnchorCreateNestedManyWithoutShapeInput
 }
 
 export type ShapeUncheckedCreateWithoutShape_pointsInput = {
   id: string
   routes?: Prisma.RouteUncheckedCreateNestedManyWithoutShapeInput
-  stationAnchors?: Prisma.StationAnchorUncheckedCreateNestedManyWithoutShapeInput
+  station_anchors?: Prisma.StationAnchorUncheckedCreateNestedManyWithoutShapeInput
 }
 
 export type ShapeCreateOrConnectWithoutShape_pointsInput = {
@@ -403,13 +403,13 @@ export type ShapeUpdateToOneWithWhereWithoutShape_pointsInput = {
 export type ShapeUpdateWithoutShape_pointsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   routes?: Prisma.RouteUpdateManyWithoutShapeNestedInput
-  stationAnchors?: Prisma.StationAnchorUpdateManyWithoutShapeNestedInput
+  station_anchors?: Prisma.StationAnchorUpdateManyWithoutShapeNestedInput
 }
 
 export type ShapeUncheckedUpdateWithoutShape_pointsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   routes?: Prisma.RouteUncheckedUpdateManyWithoutShapeNestedInput
-  stationAnchors?: Prisma.StationAnchorUncheckedUpdateManyWithoutShapeNestedInput
+  station_anchors?: Prisma.StationAnchorUncheckedUpdateManyWithoutShapeNestedInput
 }
 
 
@@ -420,13 +420,13 @@ export type ShapeUncheckedUpdateWithoutShape_pointsInput = {
 export type ShapeCountOutputType = {
   shape_points: number
   routes: number
-  stationAnchors: number
+  station_anchors: number
 }
 
 export type ShapeCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   shape_points?: boolean | ShapeCountOutputTypeCountShape_pointsArgs
   routes?: boolean | ShapeCountOutputTypeCountRoutesArgs
-  stationAnchors?: boolean | ShapeCountOutputTypeCountStationAnchorsArgs
+  station_anchors?: boolean | ShapeCountOutputTypeCountStation_anchorsArgs
 }
 
 /**
@@ -456,7 +456,7 @@ export type ShapeCountOutputTypeCountRoutesArgs<ExtArgs extends runtime.Types.Ex
 /**
  * ShapeCountOutputType without action
  */
-export type ShapeCountOutputTypeCountStationAnchorsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type ShapeCountOutputTypeCountStation_anchorsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.StationAnchorWhereInput
 }
 
@@ -465,7 +465,7 @@ export type ShapeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   id?: boolean
   shape_points?: boolean | Prisma.Shape$shape_pointsArgs<ExtArgs>
   routes?: boolean | Prisma.Shape$routesArgs<ExtArgs>
-  stationAnchors?: boolean | Prisma.Shape$stationAnchorsArgs<ExtArgs>
+  station_anchors?: boolean | Prisma.Shape$station_anchorsArgs<ExtArgs>
   _count?: boolean | Prisma.ShapeCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["shape"]>
 
@@ -485,7 +485,7 @@ export type ShapeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = ru
 export type ShapeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   shape_points?: boolean | Prisma.Shape$shape_pointsArgs<ExtArgs>
   routes?: boolean | Prisma.Shape$routesArgs<ExtArgs>
-  stationAnchors?: boolean | Prisma.Shape$stationAnchorsArgs<ExtArgs>
+  station_anchors?: boolean | Prisma.Shape$station_anchorsArgs<ExtArgs>
   _count?: boolean | Prisma.ShapeCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ShapeIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -496,7 +496,7 @@ export type $ShapePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   objects: {
     shape_points: Prisma.$ShapePointPayload<ExtArgs>[]
     routes: Prisma.$RoutePayload<ExtArgs>[]
-    stationAnchors: Prisma.$StationAnchorPayload<ExtArgs>[]
+    station_anchors: Prisma.$StationAnchorPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -896,7 +896,7 @@ export interface Prisma__ShapeClient<T, Null = never, ExtArgs extends runtime.Ty
   readonly [Symbol.toStringTag]: "PrismaPromise"
   shape_points<T extends Prisma.Shape$shape_pointsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Shape$shape_pointsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShapePointPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   routes<T extends Prisma.Shape$routesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Shape$routesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RoutePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  stationAnchors<T extends Prisma.Shape$stationAnchorsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Shape$stationAnchorsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StationAnchorPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  station_anchors<T extends Prisma.Shape$station_anchorsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Shape$station_anchorsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StationAnchorPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1363,9 +1363,9 @@ export type Shape$routesArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
 }
 
 /**
- * Shape.stationAnchors
+ * Shape.station_anchors
  */
-export type Shape$stationAnchorsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Shape$station_anchorsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
    * Select specific fields to fetch from the StationAnchor
    */

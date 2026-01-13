@@ -134,7 +134,7 @@ export default class TtcApi {
                                     select: {
                                         anchors: {
                                             select: {
-                                                interpolationFactor: true,
+                                                interpolation_factor: true,
                                                 shape_id: true,
                                             },
                                         },
@@ -156,31 +156,64 @@ export default class TtcApi {
                             },
                             orderBy: { sequence: 'asc' },
                         },
+                        station_anchors: {
+                            select: {
+                                interpolation_factor: true,
+                                station: {
+                                    select: {
+                                        latitude: true,
+                                        longitude: true,
+                                    },
+                                },
+                            },
+                            orderBy: { interpolation_factor: 'desc' },
+                        },
                     },
                 },
             },
         }).then(result => {
-            return result.map(({ id, short_name, long_name, color, route_stops, shape }) => ({
-                id, short_name, long_name, color,
-                stops: route_stops.map(({ platform }) => platform.id),
-                segments: route_stops.reduce((segments, { platform }, i, a) => {
-                    const thisAnchor = platform.parent_station?.anchors
-                        .find(({ shape_id }) => shape_id === shape?.id)?.interpolationFactor!;
-                    if (i > 0) {
-                        const prevAnchor = a[i - 1].platform.parent_station?.anchors
-                            .find(({ shape_id }) => shape_id === shape?.id)?.interpolationFactor!;
-                        segments.push(
-                            geometry.slicePolyLine(
-                                shape!.shape_points.map(({ latitude, longitude }) => [longitude, latitude]),
-                                prevAnchor,
-                                thisAnchor,
-                            ).map(([longitude, latitude]) => ({ latitude, longitude }))
-                        );
+            return result.map(({ id, short_name, long_name, color, route_stops, shape }) => {
+                const points = [...shape!.shape_points];
+                // Insert stations as points so the shape doesn't drift away
+                shape!.station_anchors.forEach(({ interpolation_factor, station: { latitude, longitude } }) => {
+                    if (interpolation_factor % 1 !== 0) {
+                        points.splice(Math.ceil(interpolation_factor), 0, { latitude, longitude });
                     }
-                    return segments;
-                }, [] as { latitude: number, longitude: number }[][]),
-                shape: shape?.shape_points,
-            }));
+                });
+                return {
+                    id, short_name, long_name, color,
+                    stops: route_stops.map(({ platform }) => platform.id),
+                    segments: route_stops.reduce((segments, { platform }, i, a) => {
+                        const thisAnchor = platform.parent_station?.anchors
+                            .find(({ shape_id }) => shape_id === shape?.id)?.interpolation_factor!;
+                        if (i > 0) {
+                            const prevAnchor = a[i - 1].platform.parent_station?.anchors
+                                .find(({ shape_id }) => shape_id === shape?.id)?.interpolation_factor!;
+                            segments.push(
+                                geometry.reducePolyLine({
+                                    points: geometry.smoothenPolyLine(
+                                        geometry.slicePolyLine(
+                                            shape!.shape_points.map(({ latitude, longitude }) => [longitude, latitude]),
+                                            prevAnchor,
+                                            thisAnchor,
+                                        ),
+                                        1e-4,
+                                    ),
+                                    tolerance: 1e-6,
+                                }).map(([longitude, latitude]) => ({ latitude, longitude })),
+                            );
+                        }
+                        return segments;
+                    }, [] as { latitude: number, longitude: number }[][]),
+                    shape: geometry.reducePolyLine({
+                        points: geometry.smoothenPolyLine(
+                            points.map(({ latitude, longitude }) => [longitude, latitude]),
+                            1e-4,
+                        ),
+                        tolerance: 1e-6,
+                    }).map(([longitude, latitude]) => ({ latitude, longitude })),
+                };
+            });
         });
     }
 
@@ -318,6 +351,7 @@ export default class TtcApi {
         ];
         for (let file of dir.files.sort((a, b) => loadOrder.indexOf(a.path) - loadOrder.indexOf(b.path))) {
             switch (file.path) {
+
                 case 'agency.txt':
                     await this._consumeCsv(file, async ([{
                         agency_id: id,
@@ -331,6 +365,7 @@ export default class TtcApi {
                         })
                     });
                     break;
+
                 case 'calendar.txt':
                     await this._consumeCsv(file, async (calendarServices: Gtfs.Schedule.CalendarService[]) => {
                         await prisma.service.createMany({
@@ -340,8 +375,10 @@ export default class TtcApi {
                         });
                     });
                     break;
+
                 case 'calendar_dates.txt':
                     break;
+
                 case 'routes.txt':
                     await this._consumeCsv(file, async (routes: Gtfs.Schedule.Route[]) => {
                         await prisma.route.createMany({
@@ -357,6 +394,7 @@ export default class TtcApi {
                         });
                     });
                     break;
+
                 case 'shapes.txt':
                     const pointsByShape: {
                         [k in string]: {
@@ -387,18 +425,18 @@ export default class TtcApi {
                                 points: points.sort(({ sequence: a }, { sequence: b }) => a - b),
                                 x: 'longitude', y: 'latitude',
                                 iterations: 10,
-                                tolerance: 6e-5, // ~6.7m N/S, ~4.9m E/W, see: https://www.omnicalculator.com/other/latitude-longitude-distance
+                                tolerance: 1.4e-4, // ~16.7m N/S, ~12.2m E/W, see: https://www.omnicalculator.com/other/latitude-longitude-distance
                             }).map(({ longitude, latitude, sequence, dist_traveled }) => ({
                                 latitude,
                                 longitude,
                                 sequence,
                                 dist_traveled,
                                 shape_id,
-                            }))
-                            ).flat(),
+                            }))).flat(),
                     });
                     console.log(shapePointCount, 'shape points');
                     break;
+
                 case 'stops.txt':
                     await this._consumeCsv(file, async (stops: Gtfs.Schedule.Stop[]) => {
                         await prisma.platform.createMany({
@@ -413,26 +451,29 @@ export default class TtcApi {
                         });
                     });
                     break;
+
                 case 'trips.txt':
-                    await this._consumeCsv(file, async (trips: Gtfs.Schedule.Trip[]) => {
-                        trips.forEach(trip => {
-                            if (tripStopCountLookup[trip.route_id] === undefined) {
-                                tripStopCountLookup[trip.route_id] = {
+                    await this._consumeCsv<Gtfs.Schedule.Trip>(file, async (trips) => {
+                        trips.forEach(({ route_id, trip_id, direction_id, shape_id }) => {
+                            if (tripStopCountLookup[route_id] === undefined) {
+                                tripStopCountLookup[route_id] = {
                                     '0': {},
                                     '1': {},
                                 };
                             }
-                            tripStopCountLookup[trip.route_id][trip.direction_id || '0'][trip.trip_id] = 0;
-                            routeAndDirectionByTripId[trip.trip_id] = [trip.route_id, trip.direction_id || '0'];
-                            tripShapeLookup[trip.trip_id] = trip.shape_id!;
+                            tripStopCountLookup[route_id][direction_id || '0'][trip_id] = 0;
+                            routeAndDirectionByTripId[trip_id] = [route_id, direction_id || '0'];
+                            tripShapeLookup[trip_id] = shape_id!;
                         });
                     });
                     break;
+
                 case 'stop_times.txt':
 
                     console.log('counting stops by trip...');
-                    await this._consumeCsv(file, async (stopTimes: Gtfs.Schedule.StopTime[]) => {
-                        stopTimes.forEach(({ trip_id }) => {
+                    await this._consumeCsv<Gtfs.Schedule.StopTime>(file, stopTimes => {
+                        stopTimes.forEach(row => {
+                            const trip_id = row.trip_id;
                             const [route_id, direction] = routeAndDirectionByTripId[trip_id];
                             tripStopCountLookup[route_id][direction][trip_id]++;
                         });
@@ -443,11 +484,9 @@ export default class TtcApi {
                     const trip_ids_to_keep: string[] = [];
                     Object.entries(tripStopCountLookup).forEach(([route_id, lookupByDirection]) => {
                         Object.entries(lookupByDirection).forEach(([direction, counts]) => {
-                            console.log(route_id, direction);
                             const [trip_id] = Object.entries(counts).reduce(
                                 ([max_trip_id, max_count], [trip_id, count]) => {
                                     if (count > max_count) {
-                                        console.log('new max:', count);
                                         return [trip_id, count];
                                     } else {
                                         return [max_trip_id, max_count];
@@ -472,31 +511,37 @@ export default class TtcApi {
                     console.log('done');
 
                     console.log('creating RouteStop...');
-                    await this._consumeCsv(file, async (stopTimes: Gtfs.Schedule.StopTime[]) => {
-                        const { count } = await prisma.routeStop.createMany({
-                            data: stopTimes.filter(({ trip_id }) => trip_ids_to_keep.includes(trip_id))
-                                .map(({ stop_id, stop_sequence, trip_id, shape_dist_traveled }): RouteStopCreateManyInput => {
-                                    const [route_id, direction] = routeAndDirectionByTripId[trip_id];
-                                    return {
-                                        route_id,
-                                        direction: Number(direction),
-                                        platform_id: stop_id,
-                                        sequence: Number(stop_sequence),
-                                        distance_along_shape: Number(shape_dist_traveled),
-                                    };
-                                }),
-                        });
-                        console.log(count, 'route stops');
+                    const keepIdLookup: { [k in string]?: boolean } = {};
+                    trip_ids_to_keep.forEach(trip_id => keepIdLookup[trip_id] = true);
+                    let data: RouteStopCreateManyInput[] = [];
+                    await this._consumeCsv<Gtfs.Schedule.StopTime>(file, async (stopTimes) => {
+                        data = data.concat(stopTimes
+                            .filter(row => keepIdLookup[row.trip_id])
+                            .map(row => {
+                                const [route_id, direction] = routeAndDirectionByTripId[row.trip_id];
+                                return {
+                                    route_id,
+                                    direction: Number(direction),
+                                    platform_id: row.stop_id,
+                                    sequence: Number(row.stop_sequence),
+                                    distance_along_shape: Number(row.shape_dist_traveled!),
+                                };
+                            }));
                     });
+                    console.log(data.length, 'route stops');
+                    await prisma.routeStop.createMany({ data });
                     console.log('done');
 
                     break;
             }
         }
+
         console.log('generating stations...');
         await this._generateStations();
         console.log('done')
+
         console.log('loaded GTFS in', Math.round((Date.now() - start) / 100) / 10, 'seconds');
+
         let totalRows = 0;
         for (let k of tables) {
             // @ts-expect-error -- signatures of count on each table don't match, but they all have no-arg signatures
@@ -625,7 +670,7 @@ export default class TtcApi {
             const interpolationFactorsPerShape: {
                 [k in string]: number;
             } = {};
-            console.log('found', Object.keys(shapes).length, 'shapes for', name, '-', Object.keys(shapes));
+            // console.log('found', Object.keys(shapes).length, 'shapes for', name, '-', Object.keys(shapes));
             const current = { ...average };
             const delta = { latitude: Infinity, longitude: Infinity };
             // Converge onto nearest intersection of shapes
@@ -650,8 +695,8 @@ export default class TtcApi {
                 current.latitude = avgOnShapes.latitude;
                 current.longitude = avgOnShapes.longitude;
             }
-            anchors.push(...Object.entries(interpolationFactorsPerShape).map(([shape_id, interpolationFactor]) => ({
-                interpolationFactor,
+            anchors.push(...Object.entries(interpolationFactorsPerShape).map(([shape_id, interpolation_factor]) => ({
+                interpolation_factor,
                 shape_id,
                 station_id,
             })));
@@ -671,7 +716,10 @@ export default class TtcApi {
         })));
     }
 
-    private async _consumeCsv<T extends { [k in keyof T]: string }>(file: unzipper.File, store: (rows: T[]) => Promise<void>) {
+    private async _consumeCsv<T extends { [k in keyof T]?: string }>(
+        file: unzipper.File,
+        store: (rows: T[]) => void | Promise<void>,
+    ) {
         const kB = file.uncompressedSize / 1024;
         const MB = kB / 1024;
         console.log(`${file.path} (${(MB < 1 ? `${kB.toFixed(1)} kB` : `${MB.toFixed(1)} MB`)})`);
@@ -679,7 +727,6 @@ export default class TtcApi {
         let keys: (keyof T)[] | undefined;
         let rows: T[] = [];
         const batchSize = 100000;
-        let count = 0;
         const consumer = new Writable({
             async write(rec: string[], _, cb) {
                 if (keys === undefined) {
@@ -689,7 +736,6 @@ export default class TtcApi {
                     keys.forEach((k, i) => row[k] = rec[i]);
                     rows.push(row as T);
                     if (rows.length >= batchSize) {
-                        count += rows.length;
                         await store(rows);
                         rows = [];
                     }
@@ -698,7 +744,6 @@ export default class TtcApi {
             },
             objectMode: true,
             async final(cb) {
-                count += rows.length;
                 await store(rows);
                 cb();
             }

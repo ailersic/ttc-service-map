@@ -1,7 +1,9 @@
 /** Utility functions for handling 2D geometry */
 namespace geometry {
 
-    export type Point<T extends any[] = any[]> = [number, number, ...T];
+    // useful: https://paulbourke.net/geometry/pointlineplane/    
+
+    export type Point<T extends any[] = []> = [number, number, ...T];
     export type PointLike<T extends {}, X extends keyof T, Y extends keyof T> = T & {
         [k in X | Y]: number;
     };
@@ -16,19 +18,68 @@ namespace geometry {
         return Math.sqrt(squareDistance(a, b));
     }
 
+    export function midpoint(...pl: Point[]): Point {
+        return pl.reduce(([mx, my], [px, py]) => [mx + px / pl.length, my + py / pl.length], [0, 0]);
+    }
+
     export function distanceToLine(p: Point, a: Point, b: Point, clampA: boolean = true, clampB: boolean = true) {
         return distance(p, snapToLine(p, a, b, clampA, clampB).point);
+    }
+
+    export function intersection(
+        a: Point, b: Point, c: Point, d: Point,
+        clampA?: boolean, clampB?: boolean, clampC?: boolean, clampD?: boolean,
+    ): Point | undefined {
+        const [ax, ay] = a;
+        const [bx, by] = b;
+        const [cx, cy] = c;
+        const [dx, dy] = d;
+        const denom = (ax - bx) * (cy - dy) - (cx - dx) * (ay - by);
+        if (denom === 0) {
+            return undefined;
+        }
+
+        const ab = ((dx - cx) * (ay - cy) - (dy - cy) * (ax - cx)) / denom;
+        const cd = ((bx - ax) * (ay - cy) - (by - ay) * (ax - cx)) / denom;
+
+        if (
+            (ab < 0 && clampA) ||
+            (ab > 1 && clampB) ||
+            (cd < 0 && clampC) ||
+            (cd > 1 && clampD)
+        ) {
+            return undefined
+        }
+
+        return [
+            ax + ab * (bx - ax),
+            ay + ab * (by - ay),
+        ];
     }
 
     export function lerp(a: Point, b: Point, t: number): Point {
         const [ax, ay] = a;
         const [bx, by] = b;
-        const dx = bx - ax;
-        const dy = by - ay;
+        const vx = bx - ax;
+        const vy = by - ay;
         return [
-            ax + dx * t,
-            ay + dy * t,
+            ax + vx * t,
+            ay + vy * t,
         ];
+    }
+
+    export function bezier(points: Point[], t: number): Point {
+        if (points.length === 1) {
+            return points[0];
+        }
+        // B_n([P0, ..., Pn], t) = B_n-1([Q0, ..., Qn-1], t) where Qi = lerp(Pi, Pi+1, t)
+        return bezier(points.reduce(({ result, prev }, p) => {
+            if (prev === undefined) {
+                return { result, prev: p };
+            }
+            result.push(lerp(prev, p, t));
+            return { result, prev: p };
+        }, { result: [] as Point[], prev: undefined as Point | undefined }).result, t);
     }
 
     export function snapToLine(
@@ -47,6 +98,33 @@ namespace geometry {
         if (clampA) t = Math.max(0, t);
         if (clampB) t = Math.min(t, 1);
         return { point: lerp(a, b, t), t };
+    }
+
+    // <0 counterclockwise
+    // =0 collinear
+    // >0 clockwise
+    export function turn(a: Point, b: Point, c: Point) {
+        const [ax, ay] = a;
+        const [bx, by] = b;
+        const [cx, cy] = c;
+        return ((by - ay) * (cx - bx)) - ((bx - ax) * (cy - by));
+    }
+
+    // =1     straight
+    // (1,0)  obtuse
+    // =0     right
+    // (0,-1) acute
+    // =-1    anti-straight
+    export function cosTurnAngle(a: Point, b: Point, c: Point) {
+        const [ax, ay] = a;
+        const [bx, by] = b;
+        const [cx, cy] = c;
+        const vx = bx - ax;
+        const vy = by - ay;
+        const ux = cx - bx;
+        const uy = cy - by;
+        const dotuv = vx * ux + vy * uy;
+        return dotuv / (distance(a, b) * distance(b, c));
     }
 
     export function snapToPolyLine(p: Point, pl: Point[]): { point: Point, t: number } | null {
@@ -150,6 +228,56 @@ namespace geometry {
             points = reduced as typeof points;
         }
         return points;
+    }
+
+    export function smoothenPolyLine(points: Point[], density?: number) {
+        density = Math.abs(density || 1);
+        const smoothened = [];
+        for (let i = 0; i < points.length - 1; i++) {
+            smoothened.push(points[i]);
+
+            const [ax, ay] = i > 0 ? points[i - 1] : points[i];
+            const [bx, by] = points[i];
+            const [cx, cy] = points[i + 1];
+            const [dx, dy] = (i < points.length - 2) ? (points[i + 2]) : (points[i + 1]);
+
+            const abx = bx - ax;
+            const aby = by - ay;
+            const ablen = Math.sqrt(abx * abx + aby * aby);
+            const bcx = cx - bx;
+            const bcy = cy - by;
+            const bclen = Math.sqrt(bcx * bcx + bcy * bcy);
+            const cdx = dx - cx;
+            const cdy = dy - cy;
+            const cdlen = Math.sqrt(cdx * cdx + cdy * cdy);
+
+            const bdirx = (ablen ? (abx / ablen) : 0) + bcx / bclen;
+            const bdiry = (ablen ? (aby / ablen) : 0) + bcy / bclen;
+            const bdirlen = Math.sqrt(bdirx * bdirx + bdiry * bdiry);
+            const cdirx = bcx / bclen + (cdlen ? (cdx / cdlen) : 0);
+            const cdiry = bcy / bclen + (cdlen ? (cdy / cdlen) : 0);
+            const cdirlen = Math.sqrt(cdirx * cdirx + cdiry * cdiry);
+
+            const cpOff = bclen / 5;
+
+            const cp1: Point = [
+                bx + bdirx / bdirlen * cpOff,
+                by + bdiry / bdirlen * cpOff,
+            ];
+            const cp2: Point = [
+                cx - cdirx / cdirlen * cpOff,
+                cy - cdiry / cdirlen * cpOff,
+            ];
+
+            const n = Math.round(bclen / density);
+            for (let ti = 1; ti < n; ti++) {
+                const p = bezier([[bx, by], cp1, cp2, [cx, cy]], ti / n);
+                // const [px, py] = p;
+                smoothened.push(p);
+            }
+        }
+        smoothened.push(points[points.length - 1]);
+        return smoothened;
     }
 };
 

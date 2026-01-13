@@ -27,27 +27,27 @@ export type AggregateStationAnchor = {
 }
 
 export type StationAnchorAvgAggregateOutputType = {
-  interpolationFactor: number | null
+  interpolation_factor: number | null
 }
 
 export type StationAnchorSumAggregateOutputType = {
-  interpolationFactor: number | null
+  interpolation_factor: number | null
 }
 
 export type StationAnchorMinAggregateOutputType = {
-  interpolationFactor: number | null
+  interpolation_factor: number | null
   station_id: string | null
   shape_id: string | null
 }
 
 export type StationAnchorMaxAggregateOutputType = {
-  interpolationFactor: number | null
+  interpolation_factor: number | null
   station_id: string | null
   shape_id: string | null
 }
 
 export type StationAnchorCountAggregateOutputType = {
-  interpolationFactor: number
+  interpolation_factor: number
   station_id: number
   shape_id: number
   _all: number
@@ -55,27 +55,27 @@ export type StationAnchorCountAggregateOutputType = {
 
 
 export type StationAnchorAvgAggregateInputType = {
-  interpolationFactor?: true
+  interpolation_factor?: true
 }
 
 export type StationAnchorSumAggregateInputType = {
-  interpolationFactor?: true
+  interpolation_factor?: true
 }
 
 export type StationAnchorMinAggregateInputType = {
-  interpolationFactor?: true
+  interpolation_factor?: true
   station_id?: true
   shape_id?: true
 }
 
 export type StationAnchorMaxAggregateInputType = {
-  interpolationFactor?: true
+  interpolation_factor?: true
   station_id?: true
   shape_id?: true
 }
 
 export type StationAnchorCountAggregateInputType = {
-  interpolationFactor?: true
+  interpolation_factor?: true
   station_id?: true
   shape_id?: true
   _all?: true
@@ -168,7 +168,7 @@ export type StationAnchorGroupByArgs<ExtArgs extends runtime.Types.Extensions.In
 }
 
 export type StationAnchorGroupByOutputType = {
-  interpolationFactor: number
+  interpolation_factor: number
   station_id: string
   shape_id: string
   _count: StationAnchorCountAggregateOutputType | null
@@ -197,7 +197,7 @@ export type StationAnchorWhereInput = {
   AND?: Prisma.StationAnchorWhereInput | Prisma.StationAnchorWhereInput[]
   OR?: Prisma.StationAnchorWhereInput[]
   NOT?: Prisma.StationAnchorWhereInput | Prisma.StationAnchorWhereInput[]
-  interpolationFactor?: Prisma.FloatFilter<"StationAnchor"> | number
+  interpolation_factor?: Prisma.FloatFilter<"StationAnchor"> | number
   station_id?: Prisma.StringFilter<"StationAnchor"> | string
   shape_id?: Prisma.StringFilter<"StationAnchor"> | string
   station?: Prisma.XOR<Prisma.StationScalarRelationFilter, Prisma.StationWhereInput>
@@ -205,7 +205,7 @@ export type StationAnchorWhereInput = {
 }
 
 export type StationAnchorOrderByWithRelationInput = {
-  interpolationFactor?: Prisma.SortOrder
+  interpolation_factor?: Prisma.SortOrder
   station_id?: Prisma.SortOrder
   shape_id?: Prisma.SortOrder
   station?: Prisma.StationOrderByWithRelationInput
@@ -217,7 +217,7 @@ export type StationAnchorWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.StationAnchorWhereInput | Prisma.StationAnchorWhereInput[]
   OR?: Prisma.StationAnchorWhereInput[]
   NOT?: Prisma.StationAnchorWhereInput | Prisma.StationAnchorWhereInput[]
-  interpolationFactor?: Prisma.FloatFilter<"StationAnchor"> | number
+  interpolation_factor?: Prisma.FloatFilter<"StationAnchor"> | number
   station_id?: Prisma.StringFilter<"StationAnchor"> | string
   shape_id?: Prisma.StringFilter<"StationAnchor"> | string
   station?: Prisma.XOR<Prisma.StationScalarRelationFilter, Prisma.StationWhereInput>
@@ -225,7 +225,7 @@ export type StationAnchorWhereUniqueInput = Prisma.AtLeast<{
 }, "station_id_shape_id">
 
 export type StationAnchorOrderByWithAggregationInput = {
-  interpolationFactor?: Prisma.SortOrder
+  interpolation_factor?: Prisma.SortOrder
   station_id?: Prisma.SortOrder
   shape_id?: Prisma.SortOrder
   _count?: Prisma.StationAnchorCountOrderByAggregateInput
@@ -239,47 +239,47 @@ export type StationAnchorScalarWhereWithAggregatesInput = {
   AND?: Prisma.StationAnchorScalarWhereWithAggregatesInput | Prisma.StationAnchorScalarWhereWithAggregatesInput[]
   OR?: Prisma.StationAnchorScalarWhereWithAggregatesInput[]
   NOT?: Prisma.StationAnchorScalarWhereWithAggregatesInput | Prisma.StationAnchorScalarWhereWithAggregatesInput[]
-  interpolationFactor?: Prisma.FloatWithAggregatesFilter<"StationAnchor"> | number
+  interpolation_factor?: Prisma.FloatWithAggregatesFilter<"StationAnchor"> | number
   station_id?: Prisma.StringWithAggregatesFilter<"StationAnchor"> | string
   shape_id?: Prisma.StringWithAggregatesFilter<"StationAnchor"> | string
 }
 
 export type StationAnchorCreateInput = {
-  interpolationFactor: number
+  interpolation_factor: number
   station: Prisma.StationCreateNestedOneWithoutAnchorsInput
-  shape: Prisma.ShapeCreateNestedOneWithoutStationAnchorsInput
+  shape: Prisma.ShapeCreateNestedOneWithoutStation_anchorsInput
 }
 
 export type StationAnchorUncheckedCreateInput = {
-  interpolationFactor: number
+  interpolation_factor: number
   station_id: string
   shape_id: string
 }
 
 export type StationAnchorUpdateInput = {
-  interpolationFactor?: Prisma.FloatFieldUpdateOperationsInput | number
+  interpolation_factor?: Prisma.FloatFieldUpdateOperationsInput | number
   station?: Prisma.StationUpdateOneRequiredWithoutAnchorsNestedInput
-  shape?: Prisma.ShapeUpdateOneRequiredWithoutStationAnchorsNestedInput
+  shape?: Prisma.ShapeUpdateOneRequiredWithoutStation_anchorsNestedInput
 }
 
 export type StationAnchorUncheckedUpdateInput = {
-  interpolationFactor?: Prisma.FloatFieldUpdateOperationsInput | number
+  interpolation_factor?: Prisma.FloatFieldUpdateOperationsInput | number
   station_id?: Prisma.StringFieldUpdateOperationsInput | string
   shape_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type StationAnchorCreateManyInput = {
-  interpolationFactor: number
+  interpolation_factor: number
   station_id: string
   shape_id: string
 }
 
 export type StationAnchorUpdateManyMutationInput = {
-  interpolationFactor?: Prisma.FloatFieldUpdateOperationsInput | number
+  interpolation_factor?: Prisma.FloatFieldUpdateOperationsInput | number
 }
 
 export type StationAnchorUncheckedUpdateManyInput = {
-  interpolationFactor?: Prisma.FloatFieldUpdateOperationsInput | number
+  interpolation_factor?: Prisma.FloatFieldUpdateOperationsInput | number
   station_id?: Prisma.StringFieldUpdateOperationsInput | string
   shape_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
@@ -300,29 +300,29 @@ export type StationAnchorStation_idShape_idCompoundUniqueInput = {
 }
 
 export type StationAnchorCountOrderByAggregateInput = {
-  interpolationFactor?: Prisma.SortOrder
+  interpolation_factor?: Prisma.SortOrder
   station_id?: Prisma.SortOrder
   shape_id?: Prisma.SortOrder
 }
 
 export type StationAnchorAvgOrderByAggregateInput = {
-  interpolationFactor?: Prisma.SortOrder
+  interpolation_factor?: Prisma.SortOrder
 }
 
 export type StationAnchorMaxOrderByAggregateInput = {
-  interpolationFactor?: Prisma.SortOrder
+  interpolation_factor?: Prisma.SortOrder
   station_id?: Prisma.SortOrder
   shape_id?: Prisma.SortOrder
 }
 
 export type StationAnchorMinOrderByAggregateInput = {
-  interpolationFactor?: Prisma.SortOrder
+  interpolation_factor?: Prisma.SortOrder
   station_id?: Prisma.SortOrder
   shape_id?: Prisma.SortOrder
 }
 
 export type StationAnchorSumOrderByAggregateInput = {
-  interpolationFactor?: Prisma.SortOrder
+  interpolation_factor?: Prisma.SortOrder
 }
 
 export type StationAnchorCreateNestedManyWithoutStationInput = {
@@ -410,12 +410,12 @@ export type StationAnchorUncheckedUpdateManyWithoutShapeNestedInput = {
 }
 
 export type StationAnchorCreateWithoutStationInput = {
-  interpolationFactor: number
-  shape: Prisma.ShapeCreateNestedOneWithoutStationAnchorsInput
+  interpolation_factor: number
+  shape: Prisma.ShapeCreateNestedOneWithoutStation_anchorsInput
 }
 
 export type StationAnchorUncheckedCreateWithoutStationInput = {
-  interpolationFactor: number
+  interpolation_factor: number
   shape_id: string
 }
 
@@ -449,18 +449,18 @@ export type StationAnchorScalarWhereInput = {
   AND?: Prisma.StationAnchorScalarWhereInput | Prisma.StationAnchorScalarWhereInput[]
   OR?: Prisma.StationAnchorScalarWhereInput[]
   NOT?: Prisma.StationAnchorScalarWhereInput | Prisma.StationAnchorScalarWhereInput[]
-  interpolationFactor?: Prisma.FloatFilter<"StationAnchor"> | number
+  interpolation_factor?: Prisma.FloatFilter<"StationAnchor"> | number
   station_id?: Prisma.StringFilter<"StationAnchor"> | string
   shape_id?: Prisma.StringFilter<"StationAnchor"> | string
 }
 
 export type StationAnchorCreateWithoutShapeInput = {
-  interpolationFactor: number
+  interpolation_factor: number
   station: Prisma.StationCreateNestedOneWithoutAnchorsInput
 }
 
 export type StationAnchorUncheckedCreateWithoutShapeInput = {
-  interpolationFactor: number
+  interpolation_factor: number
   station_id: string
 }
 
@@ -491,49 +491,49 @@ export type StationAnchorUpdateManyWithWhereWithoutShapeInput = {
 }
 
 export type StationAnchorCreateManyStationInput = {
-  interpolationFactor: number
+  interpolation_factor: number
   shape_id: string
 }
 
 export type StationAnchorUpdateWithoutStationInput = {
-  interpolationFactor?: Prisma.FloatFieldUpdateOperationsInput | number
-  shape?: Prisma.ShapeUpdateOneRequiredWithoutStationAnchorsNestedInput
+  interpolation_factor?: Prisma.FloatFieldUpdateOperationsInput | number
+  shape?: Prisma.ShapeUpdateOneRequiredWithoutStation_anchorsNestedInput
 }
 
 export type StationAnchorUncheckedUpdateWithoutStationInput = {
-  interpolationFactor?: Prisma.FloatFieldUpdateOperationsInput | number
+  interpolation_factor?: Prisma.FloatFieldUpdateOperationsInput | number
   shape_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type StationAnchorUncheckedUpdateManyWithoutStationInput = {
-  interpolationFactor?: Prisma.FloatFieldUpdateOperationsInput | number
+  interpolation_factor?: Prisma.FloatFieldUpdateOperationsInput | number
   shape_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type StationAnchorCreateManyShapeInput = {
-  interpolationFactor: number
+  interpolation_factor: number
   station_id: string
 }
 
 export type StationAnchorUpdateWithoutShapeInput = {
-  interpolationFactor?: Prisma.FloatFieldUpdateOperationsInput | number
+  interpolation_factor?: Prisma.FloatFieldUpdateOperationsInput | number
   station?: Prisma.StationUpdateOneRequiredWithoutAnchorsNestedInput
 }
 
 export type StationAnchorUncheckedUpdateWithoutShapeInput = {
-  interpolationFactor?: Prisma.FloatFieldUpdateOperationsInput | number
+  interpolation_factor?: Prisma.FloatFieldUpdateOperationsInput | number
   station_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type StationAnchorUncheckedUpdateManyWithoutShapeInput = {
-  interpolationFactor?: Prisma.FloatFieldUpdateOperationsInput | number
+  interpolation_factor?: Prisma.FloatFieldUpdateOperationsInput | number
   station_id?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 
 
 export type StationAnchorSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
-  interpolationFactor?: boolean
+  interpolation_factor?: boolean
   station_id?: boolean
   shape_id?: boolean
   station?: boolean | Prisma.StationDefaultArgs<ExtArgs>
@@ -541,7 +541,7 @@ export type StationAnchorSelect<ExtArgs extends runtime.Types.Extensions.Interna
 }, ExtArgs["result"]["stationAnchor"]>
 
 export type StationAnchorSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
-  interpolationFactor?: boolean
+  interpolation_factor?: boolean
   station_id?: boolean
   shape_id?: boolean
   station?: boolean | Prisma.StationDefaultArgs<ExtArgs>
@@ -549,7 +549,7 @@ export type StationAnchorSelectCreateManyAndReturn<ExtArgs extends runtime.Types
 }, ExtArgs["result"]["stationAnchor"]>
 
 export type StationAnchorSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
-  interpolationFactor?: boolean
+  interpolation_factor?: boolean
   station_id?: boolean
   shape_id?: boolean
   station?: boolean | Prisma.StationDefaultArgs<ExtArgs>
@@ -557,12 +557,12 @@ export type StationAnchorSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
 }, ExtArgs["result"]["stationAnchor"]>
 
 export type StationAnchorSelectScalar = {
-  interpolationFactor?: boolean
+  interpolation_factor?: boolean
   station_id?: boolean
   shape_id?: boolean
 }
 
-export type StationAnchorOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"interpolationFactor" | "station_id" | "shape_id", ExtArgs["result"]["stationAnchor"]>
+export type StationAnchorOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"interpolation_factor" | "station_id" | "shape_id", ExtArgs["result"]["stationAnchor"]>
 export type StationAnchorInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   station?: boolean | Prisma.StationDefaultArgs<ExtArgs>
   shape?: boolean | Prisma.ShapeDefaultArgs<ExtArgs>
@@ -583,7 +583,7 @@ export type $StationAnchorPayload<ExtArgs extends runtime.Types.Extensions.Inter
     shape: Prisma.$ShapePayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
-    interpolationFactor: number
+    interpolation_factor: number
     station_id: string
     shape_id: string
   }, ExtArgs["result"]["stationAnchor"]>
@@ -669,8 +669,8 @@ export interface StationAnchorDelegate<ExtArgs extends runtime.Types.Extensions.
    * // Get first 10 StationAnchors
    * const stationAnchors = await prisma.stationAnchor.findMany({ take: 10 })
    * 
-   * // Only select the `interpolationFactor`
-   * const stationAnchorWithInterpolationFactorOnly = await prisma.stationAnchor.findMany({ select: { interpolationFactor: true } })
+   * // Only select the `interpolation_factor`
+   * const stationAnchorWithInterpolation_factorOnly = await prisma.stationAnchor.findMany({ select: { interpolation_factor: true } })
    * 
    */
   findMany<T extends StationAnchorFindManyArgs>(args?: Prisma.SelectSubset<T, StationAnchorFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StationAnchorPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
@@ -714,9 +714,9 @@ export interface StationAnchorDelegate<ExtArgs extends runtime.Types.Extensions.
    *   ]
    * })
    * 
-   * // Create many StationAnchors and only return the `interpolationFactor`
-   * const stationAnchorWithInterpolationFactorOnly = await prisma.stationAnchor.createManyAndReturn({
-   *   select: { interpolationFactor: true },
+   * // Create many StationAnchors and only return the `interpolation_factor`
+   * const stationAnchorWithInterpolation_factorOnly = await prisma.stationAnchor.createManyAndReturn({
+   *   select: { interpolation_factor: true },
    *   data: [
    *     // ... provide data here
    *   ]
@@ -805,9 +805,9 @@ export interface StationAnchorDelegate<ExtArgs extends runtime.Types.Extensions.
    *   ]
    * })
    * 
-   * // Update zero or more StationAnchors and only return the `interpolationFactor`
-   * const stationAnchorWithInterpolationFactorOnly = await prisma.stationAnchor.updateManyAndReturn({
-   *   select: { interpolationFactor: true },
+   * // Update zero or more StationAnchors and only return the `interpolation_factor`
+   * const stationAnchorWithInterpolation_factorOnly = await prisma.stationAnchor.updateManyAndReturn({
+   *   select: { interpolation_factor: true },
    *   where: {
    *     // ... provide filter here
    *   },
@@ -1011,7 +1011,7 @@ export interface Prisma__StationAnchorClient<T, Null = never, ExtArgs extends ru
  * Fields of the StationAnchor model
  */
 export interface StationAnchorFieldRefs {
-  readonly interpolationFactor: Prisma.FieldRef<"StationAnchor", 'Float'>
+  readonly interpolation_factor: Prisma.FieldRef<"StationAnchor", 'Float'>
   readonly station_id: Prisma.FieldRef<"StationAnchor", 'String'>
   readonly shape_id: Prisma.FieldRef<"StationAnchor", 'String'>
 }

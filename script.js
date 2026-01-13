@@ -505,8 +505,6 @@ function addLineSegments(line) {
             const station_id = platform.parent_station_id;
             const station = subway.stations[station_id];
             if (station === undefined) return;
-            // const route = subway.routes.find(({ id }) => id === route_id);
-            // if (route === undefined) return;
             switch (effect) {
                 case 'AccessibilityIssue':
                     // TODO (hi prio)
@@ -549,27 +547,35 @@ function addLineSegments(line) {
         const pointsPerAlert = {};
         stops.forEach((platformId, i) => {
             if (i === 0) return;
-            /** @type {string} */
-            const prevStationId = subway.platforms[stops[i - 1]].parent_station_id;
-            // const prevStation = subway.stations[prevStationId];
-            const prevStationAlerts = alerts.perStation[prevStationId];
-            if (!prevStationAlerts) return;
-            /** @type {string} */
-            const stationId = subway.platforms[platformId].parent_station_id;
-            // const station = subway.stations[stationId];
-            const stationAlerts = alerts.perStation[stationId];
-            if (!stationAlerts) return;
-            // const point = [station.latitude, station.longitude];
             const segment = segments[i - 1].map(({ latitude, longitude }) => [latitude, longitude]);
-            stationAlerts
-                .filter(({ id }) => prevStationAlerts.some(({ id: prevId }) => id === prevId))
-                .forEach(({ id }) => {
-                    if (id in pointsPerAlert) {
-                        pointsPerAlert[id].push(segment);
-                    } else {
-                        pointsPerAlert[id] = [segment];
-                    }
-                });
+            // DEBUG
+            if (false) {
+                if (!('debug' in pointsPerAlert)) {
+                    pointsPerAlert['debug'] = [];
+                }
+                pointsPerAlert['debug'].push(segment);
+            } else {
+                /** @type {string} */
+                const prevStationId = subway.platforms[stops[i - 1]].parent_station_id;
+                // const prevStation = subway.stations[prevStationId];
+                const prevStationAlerts = alerts.perStation[prevStationId];
+                if (!prevStationAlerts) return;
+                /** @type {string} */
+                const stationId = subway.platforms[platformId].parent_station_id;
+                // const station = subway.stations[stationId];
+                const stationAlerts = alerts.perStation[stationId];
+                if (!stationAlerts) return;
+                // const point = [station.latitude, station.longitude];
+                stationAlerts
+                    .filter(({ id }) => prevStationAlerts.some(({ id: prevId }) => id === prevId))
+                    .forEach(({ id }) => {
+                        if (id in pointsPerAlert) {
+                            pointsPerAlert[id].push(segment);
+                        } else {
+                            pointsPerAlert[id] = [segment];
+                        }
+                    });
+            }
         });
         Object.values(pointsPerAlert).forEach(points => {
             allSegmentPolylines.push(L.polyline(points, {
@@ -710,9 +716,6 @@ function addStationMarkers(line) {
     // DEBUG
     if (false) {
         subway.routes.forEach(({ id, color, shape }) => {
-            if (id === '1') {
-                console.log(`[${shape.slice(162, 197).map(({ latitude, longitude }) => `[${longitude}, ${latitude}]`).join(', ')}]`);
-            }
             shape.forEach(({ latitude, longitude }, i) => {
                 const debugMarker = L.circleMarker([latitude, longitude], {
                     radius: 6,

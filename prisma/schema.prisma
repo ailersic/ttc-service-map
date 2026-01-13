@@ -25,7 +25,7 @@ model Station {
 }
 
 model StationAnchor {
-    interpolationFactor Float
+    interpolation_factor Float
 
     station    Station  @relation(fields: [station_id], references: [id])
     station_id String
@@ -103,7 +103,7 @@ model Shape {
     shape_points ShapePoint[]
     routes       Route[]
 
-    stationAnchors StationAnchor[]
+    station_anchors StationAnchor[]
 }
 
 model ShapePoint {
