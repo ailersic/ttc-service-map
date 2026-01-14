@@ -214,6 +214,10 @@ export default class TtcApi {
         });
     }
 
+    // TODO: Since this can take a few minutes, we should consider responding with 503
+    //       and a Retry-After of 5 minutes if reloading GTFS schedule data is needed.
+    //       The client could handle this pretty easily.
+    // see: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/503
     safeLoadGtfs(forceReload: boolean = false) {
         return this.loadGtfsPromise || (
             this.loadGtfsPromise = this._loadGtfs(forceReload)
