@@ -3,7 +3,7 @@ name = "ttc-service-map"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
-pages_build_output_dir = "."
+pages_build_output_dir = "./public"
 
 [[d1_databases]]
 binding = "DB"
