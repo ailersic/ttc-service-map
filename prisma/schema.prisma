@@ -1,9 +1,6 @@
 generator client {
     provider = "prisma-client-js"
-    // runtime  = "workerd"
-    // runtime  = "edge"
     runtime = "cloudflare"
-    // previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
