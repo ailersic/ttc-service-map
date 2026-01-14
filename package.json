@@ -1,40 +1,47 @@
 {
   "name": "ttc-service-map",
   "version": "2026.1.13.1",
-  "description": "A web application to visualize TTC service disruptions on a map.",
+  "description": "A network status map for the Toronto Transit Commission.",
+  "author": "Andrew F. Ilersich <andrew.ilersich@mail.utoronto.ca> (https://www.ilersich.com/)",
+  "contributors": [
+    "Kevin Xu <wenkai.xu@mail.utoronto.ca> (https://github.com/KevinUTAT)",
+    "Anthony Ilersich <antonio.ilersich@gmail.com>"
+  ],
+  "license": "GPL-3.0-only",
   "type": "module",
   "main": "api/index.js",
-  "author": "Andrew F. Ilersich",
-  "contributors": ["Anthony Ilersich"],
-  "license": "GPL-3.0-only",
   "dependencies": {
-    "@prisma/adapter-pg": "^7.1.0",
+    "@prisma/adapter-d1": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "csv-parse": "^6.1.0",
     "dotenv": "^17.2.3",
-    "express": "^4.18.2",
-    "pg": "^8.16.3",
-    "prisma": "^7.1.0",
-    "protobufjs": "^8.0.0",
+    "prisma": "^7.2.0",
     "stream-transform": "^3.4.0",
     "unzipper": "^0.12.3"
   },
   "scripts": {
-    "start": "node build/api/index.js",
-    "dev": "npm run build && npm start",
-    "build": "tsc",
-    "build:watch": "tsc -w",
-    "rebuild": "npm run db:rebuild && npm run build",
-    "db:migrate": "echo '' | npx prisma migrate dev",
+    "start": "npm run dev",
+    "dev": "cd build && npx wrangler pages dev ./public",
+    "dev:debug": "npm run dev -- --log-level=debug",
+    "build": "tsc -b && node scripts/postBuild.js",
+    "build:watch": "tsc -b -w",
+    "rebuild": "npm i && node scripts/postInstall.js && npm run db:genTypes && npm run pb:generate && npm run build",
+    "db:genInitScript": "npx prisma migrate diff --from-empty --to-schema ./prisma/schema.prisma --script > ./prisma/migrations/init.sql",
+    "db:init:local": "npm run db:genInitScript && npx wrangler d1 execute ttcmapdb --local --file=./prisma/migrations/init.sql",
     "db:genTypes": "npx prisma generate",
     "db:update": "npm run db:migrate && npm run db:genTypes",
-    "db:rebuild": "npx prisma migrate reset && npm run db:update"
+    "db:rebuild": "npx prisma migrate reset && npm run db:update",
+    "pb:download": "curl -# -O https://raw.githubusercontent.com/google/transit/e62ea02efd8987cd6a5eaf8438de7feef9303857/gtfs-realtime/proto/gtfs-realtime.proto",
+    "pb:generate": "npx pbjs --keep-case -t static-module -w es6 -o generated/gtfs-realtime.js gtfs-realtime.proto && npx pbts -o generated/gtfs-realtime.d.ts generated/gtfs-realtime.js"
   },
   "devDependencies": {
-    "@types/express": "^5.0.6",
+    "@cloudflare/workers-types": "^4.20260114.0",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.0.3",
-    "@types/pg": "^8.16.0",
     "@types/unzipper": "^0.10.11",
-    "typescript": "^5.9.3"
+    "protobufjs-cli": "^2.0.0",
+    "replace-in-file": "^8.4.0",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.59.1"
   }
 }

@@ -1,10 +1,12 @@
 import "dotenv/config";
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from './generated/client.js';
+import { PrismaClient } from '@prisma/client';
+import { PrismaD1 } from '@prisma/adapter-d1';
+import { D1Database } from '@cloudflare/workers-types';
 
-const connectionString = `${process.env.DATABASE_URL}`
+export interface EnvWithDb {
+    DB: D1Database;
+};
 
-const adapter = new PrismaPg({ connectionString })
-const prisma = new PrismaClient({ adapter })
-
-export default prisma
+export default function connect(env: EnvWithDb) {
+    return new PrismaClient({ adapter: new PrismaD1(env.DB) });
+};

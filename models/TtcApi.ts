@@ -1,19 +1,12 @@
 import { parse } from 'csv-parse';
-import protobufjs from 'protobufjs';
 import { Writable } from 'stream';
 import { pipeline } from 'stream/promises';
 import unzipper from 'unzipper';
-import { RouteType } from '../prisma/generated/client.ts';
-import {
-    PlatformCreateManyInput,
-    RouteCreateManyInput,
-    RouteStopCreateManyInput,
-    ServiceCreateManyInput,
-    StationAnchorCreateManyInput
-} from '../prisma/generated/models.ts';
-import prisma from '../prisma/prisma.js';
 import geometry from '../utils/geometry.ts';
 import Gtfs from './Gtfs.ts';
+import { RouteType, Prisma, PrismaClient } from '@prisma/client';
+import { transit_realtime } from '../generated/gtfs-realtime.js';
+
 
 export type Direction = 0 | 1;
 
@@ -70,18 +63,20 @@ export default class TtcApi {
     // Unclear which dataset should be preferred, but the "merged" dataset is bigger
     // private readonly gtfsPackageId = 'ttc-routes-and-schedules';
     private readonly gtfsPackageId = 'merged-gtfs-ttc-routes-and-schedules';
-    private readonly gtfsProtoFileUrl = 'https://raw.githubusercontent.com/google/transit/e62ea02efd8987cd6a5eaf8438de7feef9303857/gtfs-realtime/proto/gtfs-realtime.proto';
     private readonly gtfsAlertUrl = 'https://gtfsrt.ttc.ca/alerts/all?format=binary';
 
     private readonly lineIds = ['1', '2', '3', '4', '5', '6'];
 
-    private loadGtfsSchedulePromise: Promise<void> | null = null;
-    private gtfsRealtime: protobufjs.Type | null = null;
+    private loadGtfsPromise: Promise<void> | null = null;
+    private prisma: PrismaClient;
 
-    constructor() { }
+    constructor(prisma: PrismaClient) {
+        this.prisma = prisma;
+    }
 
     async getSubwayPlatforms() {
-        return prisma.platform.findMany({
+        await this.safeLoadGtfs();
+        return this.prisma.platform.findMany({
             where: {
                 parent_station_id: { not: null },
             },
@@ -100,7 +95,8 @@ export default class TtcApi {
     }
 
     async getSubwayStations() {
-        return prisma.station.findMany({
+        await this.safeLoadGtfs();
+        return this.prisma.station.findMany({
             orderBy: {
                 id: 'asc',
             },
@@ -116,7 +112,8 @@ export default class TtcApi {
     }
 
     async getSubwayRoutes() {
-        return prisma.route.findMany({
+        await this.safeLoadGtfs();
+        return this.prisma.route.findMany({
             where: {
                 id: { in: this.lineIds },
             },
@@ -217,30 +214,44 @@ export default class TtcApi {
         });
     }
 
-    loadGtfs(forceReload: boolean = false) {
-        return this.loadGtfsSchedulePromise = this._loadGtfs(forceReload).then(() => { this.loadGtfsSchedulePromise = null });
+    safeLoadGtfs(forceReload: boolean = false) {
+        return this.loadGtfsPromise || (
+            this.loadGtfsPromise = this._loadGtfs(forceReload)
+                .then(() => { this.loadGtfsPromise = null })
+        );
     }
 
     getGtfsStaticPromise() {
-        return this.loadGtfsSchedulePromise;
+        return this.loadGtfsPromise;
     }
 
     async regenerateStations() {
-        await prisma.platform.updateMany({ data: { parent_station_id: { set: null } } });
-        await prisma.stationAnchor.deleteMany();
-        await prisma.station.deleteMany();
+        await this.prisma.platform.updateMany({ data: { parent_station_id: { set: null } } });
+        await this.prisma.stationAnchor.deleteMany();
+        await this.prisma.station.deleteMany();
         await this._generateStations();
     }
 
     async getAlerts(): Promise<AlertCollection> {
-        if (this.gtfsRealtime === null) {
-            await this._loadGtfsRtProtoDefs();
-        }
         // This fetch is pretty slow, >2 seconds, and no clear way to speed it up.
         // Client should not wait for this before rendering.
         const feedRes = await fetch(this.gtfsAlertUrl);
-        const feed = await feedRes.body!.getReader().read().then(result => Buffer.from(result.value!));
-        const feedMessage = this.gtfsRealtime!.decode(feed).toJSON() as Gtfs.Realtime.FeedMessage;
+        const feedReader = feedRes.body!.getReader();
+        const chunks = [];
+        while (true) {
+            const { value, done } = await feedReader.read();
+            if (done) {
+                break;
+            }
+            chunks.push(value);
+        }
+        const feed = new Uint8Array(chunks.reduce((total, { byteLength }) => total + byteLength, 0));
+        let offset = 0;
+        chunks.forEach(c => {
+            feed.set(c, offset);
+            offset += c.byteLength;
+        });
+        const feedMessage = transit_realtime.FeedMessage.decode(feed);
         const result = {
             timestamp: Number(feedMessage.header.timestamp) * 1000, // seconds to ms
             alerts: (await Promise.all(
@@ -248,7 +259,7 @@ export default class TtcApi {
                     .map(async ({ id, alert }) => {
 
                         // discard feed entities without an alert
-                        if (alert === undefined) return null;
+                        if (!alert) return null;
 
                         const {
                             active_period,
@@ -257,8 +268,8 @@ export default class TtcApi {
                             informed_entity,
                         } = alert;
 
-                        const cause = alert.cause || Gtfs.Realtime.Cause.Unknown;
-                        const effect = alert.effect || Gtfs.Realtime.Effect.Unknown;
+                        // const cause = alert.cause || transit_realtime.Alert.Cause.UNKNOWN_CAUSE;
+                        const effect = alert.effect || transit_realtime.Alert.Effect.UNKNOWN_EFFECT;
 
                         // discard alerts that are not active
                         if (active_period && !active_period.some(({ start, end }) => (
@@ -268,16 +279,16 @@ export default class TtcApi {
 
                         return {
                             id,
-                            header: this._toEnglish(header_text),
-                            description: this._toEnglish(description_text),
+                            header: this._toEnglish(header_text!),
+                            description: this._toEnglish(description_text!),
                             effect: this._mapGtfsEffectToApi(effect),
-                            criteria: informed_entity
+                            criteria: informed_entity!
                                 .filter(({ trip }) => !trip)
                                 .map(({ direction_id, route_id, route_type, stop_id }) => ({
-                                    direction: this._mapGtfsDirectionToApi(direction_id),
-                                    route_id,
-                                    route_type: route_type ? this._mapGtfsRouteTypeToApi(route_type) : undefined,
-                                    platform_id: stop_id,
+                                    direction: direction_id ? this._mapGtfsDirectionToApi(direction_id.toString() as Gtfs.Schedule.Direction) : undefined,
+                                    route_id: route_id || undefined,
+                                    route_type: route_type ? this._mapGtfsRouteTypeToApi(route_type.toString() as Gtfs.Schedule.RouteType) : undefined,
+                                    platform_id: stop_id || undefined,
                                 })),
                         };
                     }))
@@ -288,15 +299,12 @@ export default class TtcApi {
 
     private async _loadGtfs(forceReload: boolean) {
         const start = Date.now();
-        if (this.gtfsRealtime === null) {
-            await this._loadGtfsRtProtoDefs();
-        }
         const res = await fetch(this.gtfsPackageUrl + this.gtfsPackageId);
         const data = await res.json();
         const lastRefreshed = new Date(data.result.last_refreshed as string);
         console.log('last refreshed:', lastRefreshed.toLocaleDateString());
         if (!forceReload) {
-            const agency = await prisma.agency.findFirst();
+            const agency = await this.prisma.agency.findFirst();
             if (agency && agency.last_updated > lastRefreshed) {
                 console.log(agency.name, 'already up to date');
                 return;
@@ -308,7 +316,7 @@ export default class TtcApi {
         const dir = await unzipper.Open.buffer(Buffer.from(buffer));
         console.log(dir.files.map(file => file.path));
         // It's faster to just wipe the db and recreate everything
-        const tables: (keyof typeof prisma)[] = [
+        const tables: (Exclude<keyof typeof this.prisma, `\$${string}` | symbol>)[] = [
             'service',
             'routeStop',
             'route',
@@ -320,8 +328,8 @@ export default class TtcApi {
         ];
         for (let k of tables) {
             console.log('delete', k);
-            // @ts-expect-error -- signatures of deleteMany on each table don't match, but they all have no-arg signatures
-            await prisma[k].deleteMany();
+            const delegate = this.prisma[k];
+            await (delegate.deleteMany as () => Prisma.PrismaPromise<Prisma.BatchPayload>)();
         }
         const tripStopCountLookup: {
             // route_id
@@ -358,7 +366,7 @@ export default class TtcApi {
                         agency_name: name,
                         agency_url: url
                     }]: Gtfs.Schedule.Agency[]) => {
-                        await prisma.agency.upsert({
+                        await this.prisma.agency.upsert({
                             create: { id, name, url },
                             update: { name, url, last_updated: new Date() },
                             where: { id },
@@ -368,8 +376,8 @@ export default class TtcApi {
 
                 case 'calendar.txt':
                     await this._consumeCsv(file, async (calendarServices: Gtfs.Schedule.CalendarService[]) => {
-                        await prisma.service.createMany({
-                            data: calendarServices.map(({ service_id }): ServiceCreateManyInput => ({
+                        await this.prisma.service.createMany({
+                            data: calendarServices.map(({ service_id }): Prisma.ServiceCreateManyInput => ({
                                 id: service_id,
                             })),
                         });
@@ -381,8 +389,8 @@ export default class TtcApi {
 
                 case 'routes.txt':
                     await this._consumeCsv(file, async (routes: Gtfs.Schedule.Route[]) => {
-                        await prisma.route.createMany({
-                            data: routes.map(({ route_id, route_long_name, route_short_name, route_type, route_color, route_text_color, route_sort_order }): RouteCreateManyInput => ({
+                        await this.prisma.route.createMany({
+                            data: routes.map(({ route_id, route_long_name, route_short_name, route_type, route_color, route_text_color, route_sort_order }): Prisma.RouteCreateManyInput => ({
                                 id: route_id,
                                 long_name: route_long_name,
                                 short_name: route_short_name,
@@ -417,9 +425,9 @@ export default class TtcApi {
                             });
                         });
                     });
-                    const { count: shapeCount } = await prisma.shape.createMany({ data: Object.keys(pointsByShape).map(id => ({ id })) });
+                    const { count: shapeCount } = await this.prisma.shape.createMany({ data: Object.keys(pointsByShape).map(id => ({ id })) });
                     console.log(shapeCount, 'shapes');
-                    const { count: shapePointCount } = await prisma.shapePoint.createMany({
+                    const { count: shapePointCount } = await this.prisma.shapePoint.createMany({
                         data: Object.entries(pointsByShape)
                             .map(([shape_id, points]) => geometry.reducePolyLine({
                                 points: points.sort(({ sequence: a }, { sequence: b }) => a - b),
@@ -439,9 +447,9 @@ export default class TtcApi {
 
                 case 'stops.txt':
                     await this._consumeCsv(file, async (stops: Gtfs.Schedule.Stop[]) => {
-                        await prisma.platform.createMany({
+                        await this.prisma.platform.createMany({
                             data: stops
-                                .map(({ stop_id, stop_lat, stop_lon, stop_name, stop_code }): PlatformCreateManyInput => ({
+                                .map(({ stop_id, stop_lat, stop_lon, stop_name, stop_code }): Prisma.PlatformCreateManyInput => ({
                                     id: stop_id,
                                     latitude: Number(stop_lat),
                                     longitude: Number(stop_lon),
@@ -506,14 +514,14 @@ export default class TtcApi {
                         }));
                     console.log('updating', updateArgs.length, 'routes');
                     for (const args of updateArgs) {
-                        await prisma.route.update(args);
+                        await this.prisma.route.update(args);
                     }
                     console.log('done');
 
                     console.log('creating RouteStop...');
                     const keepIdLookup: { [k in string]?: boolean } = {};
                     trip_ids_to_keep.forEach(trip_id => keepIdLookup[trip_id] = true);
-                    let data: RouteStopCreateManyInput[] = [];
+                    let data: Prisma.RouteStopCreateManyInput[] = [];
                     await this._consumeCsv<Gtfs.Schedule.StopTime>(file, async (stopTimes) => {
                         data = data.concat(stopTimes
                             .filter(row => keepIdLookup[row.trip_id])
@@ -529,7 +537,7 @@ export default class TtcApi {
                             }));
                     });
                     console.log(data.length, 'route stops');
-                    await prisma.routeStop.createMany({ data });
+                    await this.prisma.routeStop.createMany({ data });
                     console.log('done');
 
                     break;
@@ -544,27 +552,16 @@ export default class TtcApi {
 
         let totalRows = 0;
         for (let k of tables) {
-            // @ts-expect-error -- signatures of count on each table don't match, but they all have no-arg signatures
-            const count = await prisma[k].count();
+            const delegate = this.prisma[k];
+            const count = await (delegate.count as () => Prisma.PrismaPromise<number>)();
             totalRows += count;
             console.log(`${String(k)}:`, count, 'rows');
         }
         console.log('total:', totalRows, 'rows');
     }
 
-    private async _loadGtfsRtProtoDefs() {
-        const protoRes = await fetch(this.gtfsProtoFileUrl);
-        let protoFile = "";
-        await protoRes.body!.pipeTo(new WritableStream({
-            write(chunk) {
-                protoFile += Buffer.from(chunk).toString('utf8');
-            },
-        }));
-        this.gtfsRealtime = protobufjs.parse(protoFile, { keepCase: true }).root.lookupType('FeedMessage');
-    }
-
     private async _generateStations() {
-        const stationPlatforms = await prisma.platform.findMany({
+        const stationPlatforms = await this.prisma.platform.findMany({
             select: {
                 id: true,
                 name: true,
@@ -650,7 +647,7 @@ export default class TtcApi {
                 };
             }
         });
-        const anchors: StationAnchorCreateManyInput[] = [];
+        const anchors: Prisma.StationAnchorCreateManyInput[] = [];
         const stations = Object.entries(stationMap).map(([station_id, { name, children }]) => {
             const average = { latitude: 0, longitude: 0 };
             children.forEach(p => {
@@ -708,9 +705,9 @@ export default class TtcApi {
             s.latitude = Math.round(latitude * 1e6) / 1e6;
             s.longitude = Math.round(longitude * 1e6) / 1e6;
         });
-        await prisma.station.createMany({ data: stations });
-        await prisma.stationAnchor.createMany({ data: anchors });
-        await Promise.all(stations.map(({ id: station_id }) => prisma.platform.updateMany({
+        await this.prisma.station.createMany({ data: stations });
+        await this.prisma.stationAnchor.createMany({ data: anchors });
+        await Promise.all(stations.map(({ id: station_id }) => this.prisma.platform.updateMany({
             where: { id: { in: stationMap[station_id].children.map(({ id }) => id) } },
             data: { parent_station_id: { set: station_id } },
         })));
@@ -752,7 +749,7 @@ export default class TtcApi {
     }
 
     private _toTitleCase(name: string): string {
-        const noCap = ['a', 'an', 'and', 'at', 'of', 'the', 'to'];
+        const noCap = ['a', 'an', 'and', 'at', 'in', 'of', 'on', 'the', 'to'];
         const allCap = ['TMU'];
         return name.replace(/\s+/g, ' ').replace(
             /[A-Z']+/ig,
@@ -805,23 +802,43 @@ export default class TtcApi {
     }
 
     private _toEnglish(ts: undefined): undefined;
-    private _toEnglish(ts: Gtfs.Realtime.TranslatedString): string;
-    private _toEnglish(ts: Gtfs.Realtime.TranslatedString | undefined): string | undefined;
-    private _toEnglish(ts: Gtfs.Realtime.TranslatedString | undefined): string | undefined {
-        return ts
+    private _toEnglish(ts: transit_realtime.ITranslatedString): string;
+    private _toEnglish(ts: transit_realtime.ITranslatedString | undefined): string | undefined;
+    private _toEnglish(ts: transit_realtime.ITranslatedString | undefined): string | undefined {
+        return ts && ts.translation
             ? ts.translation.find(({ language }) => !language || language === 'en')!.text
             : undefined;
     }
 
     private _mapGtfsEffectToApi(effect: undefined): undefined;
-    private _mapGtfsEffectToApi(effect: Gtfs.Realtime.Effect): Alert.Effect;
-    private _mapGtfsEffectToApi(effect: Gtfs.Realtime.Effect | undefined): Alert.Effect | undefined;
-    private _mapGtfsEffectToApi(effect: Gtfs.Realtime.Effect | undefined): Alert.Effect | undefined {
-        if (effect) {
-            return Alert.Effect[Object.keys(Gtfs.Realtime.Effect)
-                .find(k => Gtfs.Realtime.Effect[k as keyof typeof Gtfs.Realtime.Effect] === effect) as keyof typeof Alert.Effect];
-        } else {
-            return undefined;
+    private _mapGtfsEffectToApi(effect: transit_realtime.Alert.Effect): Alert.Effect;
+    private _mapGtfsEffectToApi(effect: transit_realtime.Alert.Effect | undefined): Alert.Effect | undefined;
+    private _mapGtfsEffectToApi(effect: transit_realtime.Alert.Effect | undefined): Alert.Effect | undefined {
+        switch (effect) {
+            case transit_realtime.Alert.Effect.NO_SERVICE:
+                return Alert.Effect.NoService;
+            case transit_realtime.Alert.Effect.REDUCED_SERVICE:
+                return Alert.Effect.ReducedService;
+            case transit_realtime.Alert.Effect.SIGNIFICANT_DELAYS:
+                return Alert.Effect.SignificantDelay;
+            case transit_realtime.Alert.Effect.DETOUR:
+                return Alert.Effect.Detour;
+            case transit_realtime.Alert.Effect.ADDITIONAL_SERVICE:
+                return Alert.Effect.AdditionalService;
+            case transit_realtime.Alert.Effect.MODIFIED_SERVICE:
+                return Alert.Effect.ModifiedService;
+            case transit_realtime.Alert.Effect.OTHER_EFFECT:
+                return Alert.Effect.Other;
+            case transit_realtime.Alert.Effect.UNKNOWN_EFFECT:
+                return Alert.Effect.Unknown;
+            case transit_realtime.Alert.Effect.STOP_MOVED:
+                return Alert.Effect.StopMoved;
+            case transit_realtime.Alert.Effect.NO_EFFECT:
+                return Alert.Effect.None;
+            case transit_realtime.Alert.Effect.ACCESSIBILITY_ISSUE:
+                return Alert.Effect.AccessibilityIssue;
+            default:
+                return undefined;
         }
     }
 };

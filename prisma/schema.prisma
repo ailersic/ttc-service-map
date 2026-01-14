@@ -1,10 +1,13 @@
 generator client {
-    provider = "prisma-client"
-    output   = "./generated"
+    provider = "prisma-client-js"
+    // runtime  = "workerd"
+    // runtime  = "edge"
+    runtime = "cloudflare"
+    // previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-    provider = "postgresql"
+    provider = "sqlite"
 }
 
 model Agency {

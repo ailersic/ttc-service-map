@@ -1,0 +1,10 @@
+name = "ttc-service-map"
+
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ttcmapdb"
+database_id = "44f8e533-ac92-4a09-9cee-8fa3c68b8de3"
+preview_database_id = "DB"

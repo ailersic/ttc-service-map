@@ -8,5 +8,11 @@
         "esModuleInterop": true,
         "rewriteRelativeImportExtensions": true,
         "strict": true,
-    }
+        "declaration": false,
+    },
+    "exclude": [
+        "build",
+        "public",
+        "scripts",
+    ],
 }

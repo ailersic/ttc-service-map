@@ -1,5 +1,7 @@
+.DS_Store
 .env
 .vercel
 .vscode
+.wrangler
 build
 node_modules

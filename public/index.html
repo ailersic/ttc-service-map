@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTCmap.ca - TTC Network Service Map</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script>
+        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="canonical" href="https://www.ttcmap.ca/">
+
+    <!-- Leaflet CSS and JS (for the map) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script type="text/javascript" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- MapLibre GL JS (still required to handle the rendering) -->
+    <script type="text/javascript" src="//unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.js"></script>
+    <link href="//unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.css" rel="stylesheet" />
+
+    <!-- Mapbox GL Leaflet -->
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.0/leaflet-maplibre-gl.js"></script>
+
+    <!-- Protomaps Leaflet -->
+    <script src="https://unpkg.com/pmtiles@4.3.0/dist/pmtiles.js"></script>
+    <script src="https://unpkg.com/protomaps-leaflet@5.0.1/dist/protomaps-leaflet.js"></script>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M6HN6DHVVM"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-M6HN6DHVVM');
+    </script>
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8655146723176313"
+     crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+    <script src="icons.js"></script>
+    <script src="script.js"></script>
+
+    <h1>TTCMAP.CA</h1>
+
+    <h2 id="subheading">Last updated: Loading... <button class="small-button refresh-button" onClick="window.location.reload()"><i class="fas fa-rotate-right"></i></button></h2>
+    
+    <div id="map"></div>
+
+    <div id="loading-modal" class="modal">
+        <div id="loading-modal-content" class="modal-content"> <!-- Show loading svg animation -->
+            <img src="loading.svg" alt="Loading...">
+            <p>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a></p>
+        </div>
+    </div>
+
+    <div id="about-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p>TTCmap.ca is an independently-run real-time network status map for the TTC subway system. It combines long-term service changes and short-term disruptions in one place, making it easier to see if anything affects your trip. The alerts shown include the TTC's <a href="https://www.ttc.ca/service-alerts">live service alerts</a> and <a href="https://www.ttc.ca/riding-the-ttc/Updates/Reduced-Speed-Zones">reduced speed zones.</a> Refer to those links if TTCmap is not working properly.<br><br>Because this website only shows official TTC service announcements, there may be short-term disruptions that go unreported and are not shown here. This website is not affiliated with the TTC or the City of Toronto.<br><br>If you have any suggestions or notice any issues, feel free to <a href="mailto:info@ttcmap.ca">contact us!</a> If you're a developer, you can find this project on <a href="https://github.com/ailersic/ttc-service-map">Github.</a></p>
+        </div>
+    </div>
+
+    <div class="button-container">
+        <button id="about-button" class="button">
+            About
+        </button>
+        <a href="mailto:info@ttcmap.ca">
+            <button id="contact-button" class="button">
+                Contact
+            </button>
+        </a>
+        <a href="https://ko-fi.com/ttcmap">
+            <button id="donate-button" class="button">
+                <img src="kofi_symbol.png" style="max-height: 1em;"> Donate
+            </button>
+        </a>
+    </div>
+
+    <!-- Banner ad -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8655146723176313"
+        crossorigin="anonymous"></script>
+    <ins class="adsbygoogle bottombanner"
+        style="display:block;"
+        data-ad-client="ca-pub-8655146723176313"
+        data-ad-slot="4693449043"></ins>
+    <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+
+    <script>
+        // Get the modal
+        var modal = document.getElementById("about-modal");
+
+        // Get the button that opens the modal
+        var btn = document.getElementById("about-button");
+
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close")[0];
+
+        // When the user clicks on the button, open the modal
+        btn.onclick = function() {
+            modal.style.display = "flex";
+        }
+
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        } 
+    </script>
+
+    <script>
+        let map;
+
+        async function initMap() {
+            await loadSubway();
+            await loadAlerts();
+
+            var map = L.map('map', {
+                maxBounds: [[43.201, -80.161], [44.182, -78.717]], // Toronto area bounds
+                maxBoundsViscosity: 1.0, // Prevents panning outside bounds
+                minZoom: 12, // Minimum zoom level
+                maxZoom: 17, // Maximum zoom level
+            }).setView([43.6699990, -79.3909390], 13);
+            
+            // connect to pmtiles hosted on cloudflare
+            var layer = protomapsL.leafletLayer({
+                url:'https://tiles.ttcmap.ca/toronto.pmtiles',
+                flavor: 'light',
+            });
+            layer.addTo(map);
+
+            // Create legend with service reduction types
+            const legend = document.createElement("div");
+            legend.id = "legend";
+            
+            const header = document.createElement("div");
+            header.id = "legend-header";
+            header.innerHTML = `<h3>LEGEND<span><button class="small-button legend-button">+</button></span></h3>`;
+            legend.appendChild(header);
+
+            const content = document.createElement("div");
+            content.id = "legend-content";
+            content.style.display = "none"; // Initially hidden
+
+            for (const serviceReductionType of serviceReductionTypes) {
+                const icon = serviceReductionType.icon;
+                const name = serviceReductionType.name;
+
+                size = 48;
+                svg = `<svg width="${size}" height="${size}" viewBox="${-size/2} ${-size/2} ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                    <g transform="scale(${icon.scale})">
+                    <path d="${icon.path}" 
+                    stroke="${icon.strokeColor}" 
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="${icon.strokeWeight / icon.scale}" 
+                    fill="${icon.fillColor}"/>
+                    </g>
+                    </svg>`;
+
+                const typeDiv = document.createElement("div");
+                //typeDiv.innerHTML = `${svg} <span style="font-size:1.5em; ">${name}</span>`;
+                typeDiv.innerHTML = `<div style="display: flex; align-items: center; gap: 8px; margin: 5px 0;">
+                    <div style="flex-shrink: 0;">${svg}</div>
+                    <div style="flex: 1; font-size: 1.3em; word-wrap: break-word; width: 70px;">${name}</div>
+                    <button class="small-button view-button" style="margin-right: 10px;"><i class="fa-regular fa-eye"></i></button>
+                </div>`
+                const viewButton = typeDiv.querySelector(".view-button");
+                viewButton.addEventListener("click", () => {
+                    const typeIdx = serviceReductionTypes.findIndex(type => type.name === name);
+                    if (serviceReductionTypes[typeIdx].view) {
+                        serviceReductionTypes[typeIdx].view = false;
+                        viewButton.innerHTML = `<i class="fa-regular fa-eye-slash"></i>`;
+                        refreshMap(map); // Refresh the map to hide this type
+                    } else {
+                        serviceReductionTypes[typeIdx].view = true;
+                        viewButton.innerHTML = `<i class="fa-regular fa-eye"></i>`;
+                        refreshMap(map); // Refresh the map to show this type
+                    }
+                });
+                content.appendChild(typeDiv);
+            }
+
+            const mapHeight = map.getContainer().clientHeight;
+            content.style.maxHeight = `${mapHeight * 0.6}px`; // Set max height to 60% of the map height
+            content.style.overflowY = "auto"; // Enable scrolling if content exceeds max height
+            legend.appendChild(content);
+
+            const legendButton = header.querySelector(".legend-button");
+            legendButton.addEventListener("click", () => {
+                if (content.style.display === "none") {
+                    content.style.display = "block";
+                    legendButton.innerHTML = `−`;
+                } else {
+                    content.style.display = "none";
+                    legendButton.innerHTML = `+`;
+                }
+            });
+
+            // Add the legend to the map
+            const legendControl = L.control({ position: 'bottomleft' });
+            legendControl.onAdd = function () {
+                // Prevent map dragging when interacting with the legend
+                L.DomEvent.disableClickPropagation(legend);
+                L.DomEvent.disableScrollPropagation(legend);
+
+                // Crucial for mobile: prevent touch from propagating to the map
+                legend.addEventListener('touchstart', function(e) {
+                    e.stopPropagation();
+                }, { passive: true });
+
+                legend.addEventListener('touchmove', function(e) {
+                    e.stopPropagation();
+                }, { passive: true });
+
+                return legend;
+            };
+            legendControl.addTo(map);
+
+            async function fetchAndPlotAlerts() {
+                // const response = await fetch('/api/fetch');
+                // const alertsjson = await response.json();
+                await loadAlerts();
+
+                // Clear existing service reductions
+                lines.forEach(line => line.clearServiceReductions());
+
+                //lines[0].addServiceReduction("Osgoode", "Osgoode", "Bypass", "Bypassing Osgoode because a disgruntled lawyer is holding the station hostage.");
+                //lines[0].addServiceReduction("Wellesley", "Wellesley", "Accessibility alert", "Broken elevator lel");
+                
+                lines[2].addServiceReduction("Kennedy", "McCowan", "No service", "Permanently closed.");
+
+                // alertsjson.alerts.forEach(alert => {
+                //     if (alert.lineIdx < 0 || alert.lineIdx >= lines.length || alert.lineIdx === null) {
+                //         console.error(`Invalid line index ${alert.lineIdx} for alert:`, alert);
+                //     } else {
+                //         lines[alert.lineIdx].addServiceReduction(alert.startStation, alert.endStation, alert.effectDesc, alert.description);
+                //     }
+                // });
+
+                // const lastUpdatedDate = new Date(alertsjson.lastUpdated);
+                const lastUpdatedDate = new Date(alerts.fromApi.timestamp);
+                const options = {
+                    timeZone: 'America/Toronto',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                };
+                
+                document.getElementById("subheading").innerHTML = `Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)} <button class="small-button refresh-button" onClick="window.location.reload()"><i class="fas fa-rotate-right"></i></button>`;
+                document.getElementById("loading-modal").style.display = "none"; // Hide loading modal
+
+                refreshMap(map);
+            }
+
+            fetchAndPlotAlerts(); // Initial fetch and plot
+            const interval = setInterval(fetchAndPlotAlerts, 300000); // Refresh every 5 minutes
+        }
+
+        initMap();
+    </script>
+</body>
+</html>
