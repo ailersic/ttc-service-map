@@ -7,7 +7,7 @@ export default defineConfig({
   migrations: {
     path: './migrations',
   },
-  datasource: {
-    url: `file:${listLocalDatabases().pop()}`,
-  },
+//   datasource: {
+//     url: `file:${listLocalDatabases().pop()}`,
+//   },
 });
