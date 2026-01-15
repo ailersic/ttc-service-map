@@ -7,7 +7,6 @@ import Gtfs from './Gtfs.ts';
 import { RouteType, Prisma, PrismaClient } from '@prisma/client';
 import { transit_realtime } from '../generated/gtfs-realtime.js';
 
-
 export type Direction = 0 | 1;
 
 export type SubwayPlatformCollection = Awaited<ReturnType<TtcApi['getSubwayPlatforms']>>;
@@ -75,7 +74,6 @@ export default class TtcApi {
     }
 
     async getSubwayPlatforms() {
-        await this.safeLoadGtfs();
         return this.prisma.platform.findMany({
             where: {
                 parent_station_id: { not: null },
@@ -95,7 +93,6 @@ export default class TtcApi {
     }
 
     async getSubwayStations() {
-        await this.safeLoadGtfs();
         return this.prisma.station.findMany({
             orderBy: {
                 id: 'asc',
@@ -112,7 +109,6 @@ export default class TtcApi {
     }
 
     async getSubwayRoutes() {
-        await this.safeLoadGtfs();
         return this.prisma.route.findMany({
             where: {
                 id: { in: this.lineIds },
@@ -363,187 +359,28 @@ export default class TtcApi {
         ];
         for (let file of dir.files.sort((a, b) => loadOrder.indexOf(a.path) - loadOrder.indexOf(b.path))) {
             switch (file.path) {
-
                 case 'agency.txt':
-                    await this._consumeCsv(file, async ([{
-                        agency_id: id,
-                        agency_name: name,
-                        agency_url: url
-                    }]: Gtfs.Schedule.Agency[]) => {
-                        await this.prisma.agency.upsert({
-                            create: { id, name, url },
-                            update: { name, url, last_updated: new Date() },
-                            where: { id },
-                        })
-                    });
+                    await this._consumeAgency(file);
                     break;
-
                 case 'calendar.txt':
-                    await this._consumeCsv(file, async (calendarServices: Gtfs.Schedule.CalendarService[]) => {
-                        await this.prisma.service.createMany({
-                            data: calendarServices.map(({ service_id }): Prisma.ServiceCreateManyInput => ({
-                                id: service_id,
-                            })),
-                        });
-                    });
+                    await this._consumeCalendar(file);
                     break;
-
                 case 'calendar_dates.txt':
                     break;
-
                 case 'routes.txt':
-                    await this._consumeCsv(file, async (routes: Gtfs.Schedule.Route[]) => {
-                        await this.prisma.route.createMany({
-                            data: routes.map(({ route_id, route_long_name, route_short_name, route_type, route_color, route_text_color, route_sort_order }): Prisma.RouteCreateManyInput => ({
-                                id: route_id,
-                                long_name: route_long_name,
-                                short_name: route_short_name,
-                                type: this._mapGtfsRouteTypeToApi(route_type),
-                                color: `#${route_color}` || this._getDefaultRouteColor(route_id),
-                                text_color: `#${route_text_color}` || '#ffffff',
-                                sort_order: ((n) => isNaN(n) ? undefined : n)(Number(route_sort_order)),
-                            })),
-                        });
-                    });
+                    await this._consumeRoutes(file);
                     break;
-
                 case 'shapes.txt':
-                    const pointsByShape: {
-                        [k in string]: {
-                            latitude: number;
-                            longitude: number;
-                            sequence: number;
-                            dist_traveled?: number;
-                            shape_id: string;
-                        }[];
-                    } = {};
-                    await this._consumeCsv(file, async (shapePoints: Gtfs.Schedule.ShapePoint[]) => {
-                        shapePoints.forEach(({ shape_id, shape_pt_lat, shape_pt_lon, shape_pt_sequence, shape_dist_traveled }) => {
-                            pointsByShape[shape_id] = pointsByShape[shape_id] || [];
-                            pointsByShape[shape_id].push({
-                                latitude: Number(shape_pt_lat),
-                                longitude: Number(shape_pt_lon),
-                                sequence: Number(shape_pt_sequence),
-                                dist_traveled: shape_dist_traveled && Number(shape_dist_traveled),
-                                shape_id,
-                            });
-                        });
-                    });
-                    const { count: shapeCount } = await this.prisma.shape.createMany({ data: Object.keys(pointsByShape).map(id => ({ id })) });
-                    console.log(shapeCount, 'shapes');
-                    const { count: shapePointCount } = await this.prisma.shapePoint.createMany({
-                        data: Object.entries(pointsByShape)
-                            .map(([shape_id, points]) => geometry.reducePolyLine({
-                                points: points.sort(({ sequence: a }, { sequence: b }) => a - b),
-                                x: 'longitude', y: 'latitude',
-                                iterations: 10,
-                                tolerance: 1.4e-4, // ~16.7m N/S, ~12.2m E/W, see: https://www.omnicalculator.com/other/latitude-longitude-distance
-                            }).map(({ longitude, latitude, sequence, dist_traveled }) => ({
-                                latitude,
-                                longitude,
-                                sequence,
-                                dist_traveled,
-                                shape_id,
-                            }))).flat(),
-                    });
-                    console.log(shapePointCount, 'shape points');
+                    await this._consumeShapes(file);
                     break;
-
                 case 'stops.txt':
-                    await this._consumeCsv(file, async (stops: Gtfs.Schedule.Stop[]) => {
-                        await this.prisma.platform.createMany({
-                            data: stops
-                                .map(({ stop_id, stop_lat, stop_lon, stop_name, stop_code }): Prisma.PlatformCreateManyInput => ({
-                                    id: stop_id,
-                                    latitude: Number(stop_lat),
-                                    longitude: Number(stop_lon),
-                                    name: this._toTitleCase(stop_name!),
-                                    code: stop_code || null,
-                                })),
-                        });
-                    });
+                    await this._consumeStops(file);
                     break;
-
                 case 'trips.txt':
-                    await this._consumeCsv<Gtfs.Schedule.Trip>(file, async (trips) => {
-                        trips.forEach(({ route_id, trip_id, direction_id, shape_id }) => {
-                            if (tripStopCountLookup[route_id] === undefined) {
-                                tripStopCountLookup[route_id] = {
-                                    '0': {},
-                                    '1': {},
-                                };
-                            }
-                            tripStopCountLookup[route_id][direction_id || '0'][trip_id] = 0;
-                            routeAndDirectionByTripId[trip_id] = [route_id, direction_id || '0'];
-                            tripShapeLookup[trip_id] = shape_id!;
-                        });
-                    });
+                    await this._consumeTrips(file, tripStopCountLookup, routeAndDirectionByTripId, tripShapeLookup);
                     break;
-
                 case 'stop_times.txt':
-
-                    console.log('counting stops by trip...');
-                    await this._consumeCsv<Gtfs.Schedule.StopTime>(file, stopTimes => {
-                        stopTimes.forEach(row => {
-                            const trip_id = row.trip_id;
-                            const [route_id, direction] = routeAndDirectionByTripId[trip_id];
-                            tripStopCountLookup[route_id][direction][trip_id]++;
-                        });
-                    });
-                    console.log('done');
-
-                    console.log('selecting maximal trips...');
-                    const trip_ids_to_keep: string[] = [];
-                    Object.entries(tripStopCountLookup).forEach(([route_id, lookupByDirection]) => {
-                        Object.entries(lookupByDirection).forEach(([direction, counts]) => {
-                            const [trip_id] = Object.entries(counts).reduce(
-                                ([max_trip_id, max_count], [trip_id, count]) => {
-                                    if (count > max_count) {
-                                        return [trip_id, count];
-                                    } else {
-                                        return [max_trip_id, max_count];
-                                    }
-                                }, ['', 0]);
-                            trip_ids_to_keep.push(trip_id);
-                        });
-                    });
-                    console.log('done');
-
-                    console.log('linking Route to Shape...');
-                    const updateArgs = trip_ids_to_keep
-                        .filter(trip_id => routeAndDirectionByTripId[trip_id][1] === '0')
-                        .map(trip_id => ({
-                            data: { shape_id: tripShapeLookup[trip_id] },
-                            where: { id: routeAndDirectionByTripId[trip_id][0] },
-                        }));
-                    console.log('updating', updateArgs.length, 'routes');
-                    for (const args of updateArgs) {
-                        await this.prisma.route.update(args);
-                    }
-                    console.log('done');
-
-                    console.log('creating RouteStop...');
-                    const keepIdLookup: { [k in string]?: boolean } = {};
-                    trip_ids_to_keep.forEach(trip_id => keepIdLookup[trip_id] = true);
-                    let data: Prisma.RouteStopCreateManyInput[] = [];
-                    await this._consumeCsv<Gtfs.Schedule.StopTime>(file, async (stopTimes) => {
-                        data = data.concat(stopTimes
-                            .filter(row => keepIdLookup[row.trip_id])
-                            .map(row => {
-                                const [route_id, direction] = routeAndDirectionByTripId[row.trip_id];
-                                return {
-                                    route_id,
-                                    direction: Number(direction),
-                                    platform_id: row.stop_id,
-                                    sequence: Number(row.stop_sequence),
-                                    distance_along_shape: Number(row.shape_dist_traveled!),
-                                };
-                            }));
-                    });
-                    console.log(data.length, 'route stops');
-                    await this.prisma.routeStop.createMany({ data });
-                    console.log('done');
-
+                    await this._consumeStopTimes(file, tripStopCountLookup, routeAndDirectionByTripId, tripShapeLookup);
                     break;
             }
         }
@@ -553,15 +390,222 @@ export default class TtcApi {
         console.log('done')
 
         console.log('loaded GTFS in', Math.round((Date.now() - start) / 100) / 10, 'seconds');
+    }
 
-        let totalRows = 0;
-        for (let k of tables) {
-            const delegate = this.prisma[k];
-            const count = await (delegate.count as () => Prisma.PrismaPromise<number>)();
-            totalRows += count;
-            console.log(`${String(k)}:`, count, 'rows');
+    private async _consumeAgency(file: unzipper.File) {
+        await this._consumeCsv(file, async ([{
+            agency_id: id,
+            agency_name: name,
+            agency_url: url
+        }]: Gtfs.Schedule.Agency[]) => {
+            await this.prisma.agency.upsert({
+                create: { id, name, url },
+                update: { name, url, last_updated: new Date() },
+                where: { id },
+            })
+        });
+    }
+
+    private async _consumeCalendar(file: unzipper.File) {
+        await this._consumeCsv(file, async (calendarServices: Gtfs.Schedule.CalendarService[]) => {
+            await this.prisma.service.createMany({
+                data: calendarServices.map(({ service_id }): Prisma.ServiceCreateManyInput => ({
+                    id: service_id,
+                })),
+            });
+        });
+    }
+
+    private async _consumeRoutes(file: unzipper.File) {
+        await this._consumeCsv(file, async (routes: Gtfs.Schedule.Route[]) => {
+            await this.prisma.route.createMany({
+                data: routes.map(({ route_id, route_long_name, route_short_name, route_type, route_color, route_text_color, route_sort_order }): Prisma.RouteCreateManyInput => ({
+                    id: route_id,
+                    long_name: route_long_name,
+                    short_name: route_short_name,
+                    type: this._mapGtfsRouteTypeToApi(route_type),
+                    color: `#${route_color}` || this._getDefaultRouteColor(route_id),
+                    text_color: `#${route_text_color}` || '#ffffff',
+                    sort_order: ((n) => isNaN(n) ? undefined : n)(Number(route_sort_order)),
+                })),
+            });
+        });
+    }
+
+    // SLOW
+    private async _consumeShapes(file: unzipper.File) {
+        const pointsByShape: {
+            [k in string]: {
+                latitude: number;
+                longitude: number;
+                sequence: number;
+                dist_traveled?: number;
+                shape_id: string;
+            }[];
+        } = {};
+        await this._consumeCsv(file, async (shapePoints: Gtfs.Schedule.ShapePoint[]) => {
+            shapePoints.forEach(({ shape_id, shape_pt_lat, shape_pt_lon, shape_pt_sequence, shape_dist_traveled }) => {
+                (pointsByShape[shape_id] || (pointsByShape[shape_id] = [])).push({
+                    latitude: Number(shape_pt_lat),
+                    longitude: Number(shape_pt_lon),
+                    sequence: Number(shape_pt_sequence),
+                    dist_traveled: shape_dist_traveled && Number(shape_dist_traveled),
+                    shape_id,
+                });
+            });
+        });
+        const { count: shapeCount } = await this.prisma.shape.createMany({ data: Object.keys(pointsByShape).map(id => ({ id })) });
+        console.log(shapeCount, 'shapes');
+        const { count: shapePointCount } = await this.prisma.shapePoint.createMany({
+            data: Object.entries(pointsByShape)
+                .map(([shape_id, points]) => geometry.reducePolyLine({
+                    points: points.sort(({ sequence: a }, { sequence: b }) => a - b),
+                    x: 'longitude', y: 'latitude',
+                    iterations: 10,
+                    tolerance: 1.4e-4, // ~16.7m N/S, ~12.2m E/W, see: https://www.omnicalculator.com/other/latitude-longitude-distance
+                }).map(({ longitude, latitude, sequence, dist_traveled }) => ({
+                    latitude,
+                    longitude,
+                    sequence,
+                    dist_traveled,
+                    shape_id,
+                }))).flat(),
+        });
+        console.log(shapePointCount, 'shape points');
+    }
+
+    // SLOW
+    private async _consumeStops(file: unzipper.File) {
+        await this._consumeCsv(file, async (stops: Gtfs.Schedule.Stop[]) => {
+            await this.prisma.platform.createMany({
+                data: stops
+                    .map(({ stop_id, stop_lat, stop_lon, stop_name, stop_code }): Prisma.PlatformCreateManyInput => ({
+                        id: stop_id,
+                        latitude: Number(stop_lat),
+                        longitude: Number(stop_lon),
+                        name: this._toTitleCase(stop_name!),
+                        code: stop_code || null,
+                    })),
+            });
+        });
+    }
+
+    // SlOW
+    private async _consumeTrips(
+        file: unzipper.File,
+        tripStopCountLookup: {
+            // route_id
+            [k in string]: {
+                [k in Gtfs.Schedule.Direction]: {
+                    // trip_id
+                    [k in string]: number;
+                };
+            };
+        },
+        routeAndDirectionByTripId: {
+            [k in string]: [string, Gtfs.Schedule.Direction];
+        },
+        tripShapeLookup: {
+            // trip_id : shape_id
+            [k in string]: string;
+        },
+    ) {
+        await this._consumeCsv<Gtfs.Schedule.Trip>(file, async (trips) => {
+            trips.forEach(({ route_id, trip_id, direction_id, shape_id }) => {
+                if (tripStopCountLookup[route_id] === undefined) {
+                    tripStopCountLookup[route_id] = {
+                        '0': {},
+                        '1': {},
+                    };
+                }
+                tripStopCountLookup[route_id][direction_id || '0'][trip_id] = 0;
+                routeAndDirectionByTripId[trip_id] = [route_id, direction_id || '0'];
+                tripShapeLookup[trip_id] = shape_id!;
+            });
+        });
+    }
+
+    // SlOW
+    private async _consumeStopTimes(
+        file: unzipper.File,
+        tripStopCountLookup: {
+            // route_id
+            [k in string]: {
+                [k in Gtfs.Schedule.Direction]: {
+                    // trip_id
+                    [k in string]: number;
+                };
+            };
+        },
+        routeAndDirectionByTripId: {
+            [k in string]: [string, Gtfs.Schedule.Direction];
+        },
+        tripShapeLookup: {
+            // trip_id : shape_id
+            [k in string]: string;
+        },
+    ) {
+        console.log('counting stops by trip...');
+        await this._consumeCsv<Gtfs.Schedule.StopTime>(file, stopTimes => {
+            stopTimes.forEach(row => {
+                const trip_id = row.trip_id;
+                const [route_id, direction] = routeAndDirectionByTripId[trip_id];
+                tripStopCountLookup[route_id][direction][trip_id]++;
+            });
+        });
+        console.log('done');
+
+        console.log('selecting maximal trips...');
+        const trip_ids_to_keep: string[] = [];
+        Object.entries(tripStopCountLookup).forEach(([route_id, lookupByDirection]) => {
+            Object.entries(lookupByDirection).forEach(([direction, counts]) => {
+                const [trip_id] = Object.entries(counts).reduce(
+                    ([max_trip_id, max_count], [trip_id, count]) => {
+                        if (count > max_count) {
+                            return [trip_id, count];
+                        } else {
+                            return [max_trip_id, max_count];
+                        }
+                    }, ['', 0]);
+                trip_ids_to_keep.push(trip_id);
+            });
+        });
+        console.log('done');
+
+        console.log('linking Route to Shape...');
+        const updateArgs = trip_ids_to_keep
+            .filter(trip_id => routeAndDirectionByTripId[trip_id][1] === '0')
+            .map(trip_id => ({
+                data: { shape_id: tripShapeLookup[trip_id] },
+                where: { id: routeAndDirectionByTripId[trip_id][0] },
+            }));
+        console.log('updating', updateArgs.length, 'routes');
+        for (const args of updateArgs) {
+            await this.prisma.route.update(args);
         }
-        console.log('total:', totalRows, 'rows');
+        console.log('done');
+
+        console.log('creating RouteStop...');
+        const keepIdLookup: { [k in string]?: boolean } = {};
+        trip_ids_to_keep.forEach(trip_id => keepIdLookup[trip_id] = true);
+        let data: Prisma.RouteStopCreateManyInput[] = [];
+        await this._consumeCsv<Gtfs.Schedule.StopTime>(file, async (stopTimes) => {
+            data = data.concat(stopTimes
+                .filter(row => keepIdLookup[row.trip_id])
+                .map(row => {
+                    const [route_id, direction] = routeAndDirectionByTripId[row.trip_id];
+                    return {
+                        route_id,
+                        direction: Number(direction),
+                        platform_id: row.stop_id,
+                        sequence: Number(row.stop_sequence),
+                        distance_along_shape: Number(row.shape_dist_traveled!),
+                    };
+                }));
+        });
+        console.log(data.length, 'route stops');
+        await this.prisma.routeStop.createMany({ data });
+        console.log('done');
     }
 
     private async _generateStations() {
@@ -724,6 +768,7 @@ export default class TtcApi {
         const kB = file.uncompressedSize / 1024;
         const MB = kB / 1024;
         console.log(`${file.path} (${(MB < 1 ? `${kB.toFixed(1)} kB` : `${MB.toFixed(1)} MB`)})`);
+        const start = Date.now();
         const parser = parse();
         let keys: (keyof T)[] | undefined;
         let rows: T[] = [];
@@ -750,6 +795,7 @@ export default class TtcApi {
             }
         });
         await pipeline(file.stream(), parser, consumer);
+        console.log(`${file.path} read in ${((Date.now() - start) / 1000).toFixed(1)} seconds`);
     }
 
     private _toTitleCase(name: string): string {

@@ -9,7 +9,7 @@ pages_build_output_dir = "./public"
 binding = "DB"
 database_name = "ttcmapdb"
 database_id = "44f8e533-ac92-4a09-9cee-8fa3c68b8de3"
-preview_database_id = "DB"
+remote = true
 
 [limits]
 cpu_ms = 300_000

@@ -21,7 +21,7 @@ model Station {
     longitude Float
 
     platforms Platform[]
-    anchors StationAnchor[]
+    anchors   StationAnchor[]
 }
 
 model StationAnchor {
