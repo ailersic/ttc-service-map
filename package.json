@@ -27,7 +27,7 @@
     "prebuild": "npm run db:genTypes && npm run pb:generate",
     "build": "tsc -b",
     "postbuild": "node scripts/postBuild.js",
-    "build:remote": "wrangler pages secret put CLOUDFLARE_API_TOKEN && npm run db:migrate:remote && npm run build",
+    "build:remote": "npm run db:migrate:remote && npm run build",
     "build:watch": "tsc -b -w",
     "rebuild": "npm ci && npm run build",
     "db:diff": "npx prisma migrate diff --from-config-datasource --to-schema ./prisma/schema.prisma",
