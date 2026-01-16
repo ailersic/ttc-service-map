@@ -110,9 +110,7 @@ export default class TtcApi {
 
     async getSubwayRoutes() {
         return this.prisma.route.findMany({
-            where: {
-                id: { in: this.lineIds },
-            },
+            where: { id: { in: this.lineIds } },
             select: {
                 id: true,
                 short_name: true,

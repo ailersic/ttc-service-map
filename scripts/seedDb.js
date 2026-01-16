@@ -117,6 +117,8 @@ const prisma = new PrismaClient({
     adapter: mockAdapterFactory,
 });
 
+const lineIds = ['1', '2', '3', '4', '5', '6'];
+
 async function loadGtfs() {
     const start = Date.now();
     const gtfsPackageUrl = 'https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/package_show?id=';
@@ -234,18 +236,19 @@ async function consumeRoutes(file) {
                 long_name: route_long_name,
                 short_name: route_short_name,
                 type: mapGtfsRouteTypeToApi(route_type),
-                color: `#${route_color}` || getDefaultRouteColor(route_id),
-                text_color: `#${route_text_color}` || '#ffffff',
+                color: `#${route_color || '000000'}`,
+                text_color: `#${route_text_color || 'ffffff'}`,
                 sort_order: ((n) => isNaN(n) ? undefined : n)(Number(route_sort_order)),
             })),
         });
     });
 }
 
-// SLOW
+// ~12s
 async function consumeShapes(file, pointsByShape) {
     await consumeCsv(file, async (shapePoints) => {
         shapePoints.forEach(({ shape_id, shape_pt_lat, shape_pt_lon, shape_pt_sequence, shape_dist_traveled }) => {
+            // console.log('push', shape_id, `#${shape_pt_sequence}`);
             (pointsByShape[shape_id] || (pointsByShape[shape_id] = [])).push({
                 latitude: Number(shape_pt_lat),
                 longitude: Number(shape_pt_lon),
@@ -255,25 +258,20 @@ async function consumeShapes(file, pointsByShape) {
             });
         });
     });
-    await prisma.shape.createMany({ data: Object.keys(pointsByShape).map(id => ({ id })) });
-    await prisma.shapePoint.createMany({
-        data: Object.entries(pointsByShape)
-            .map(([shape_id, points]) => geometry.reducePolyLine({
-                points: points.sort(({ sequence: a }, { sequence: b }) => a - b),
-                x: 'longitude', y: 'latitude',
-                iterations: 10,
-                tolerance: 1.4e-4, // ~16.7m N/S, ~12.2m E/W, see: https://www.omnicalculator.com/other/latitude-longitude-distance
-            }).map(({ longitude, latitude, sequence, dist_traveled }) => ({
-                latitude,
-                longitude,
-                sequence,
-                dist_traveled,
-                shape_id,
-            }))).flat(),
+    Object.entries(pointsByShape).forEach(([id, points]) => {
+        pointsByShape[id] = geometry.reducePolyLine({
+            points,
+            x: 'longitude', y: 'latitude',
+            iterations: 10,
+            tolerance: 1.4e-4, // ~16.7m N/S, ~12.2m E/W, see: https://www.omnicalculator.com/other/latitude-longitude-distance
+        });
     });
+    Object.values(pointsByShape).forEach(points => points.sort((a, b) => a.sequence - b.sequence));
+    await prisma.shape.createMany({ data: Object.keys(pointsByShape).map(id => ({ id })) });
+    await prisma.shapePoint.createMany({ data: Object.values(pointsByShape).flat() });
 }
 
-// SLOW
+// ~45s
 async function consumeStops(file, stationPlatforms) {
     await consumeCsv(file, async (stops) => {
         const data = stops.map(({ stop_id, stop_lat, stop_lon, stop_name, stop_code }) => ({
@@ -290,7 +288,7 @@ async function consumeStops(file, stationPlatforms) {
     });
 }
 
-// SlOW
+// ~2s
 async function consumeTrips(
     file,
     tripStopCountLookup,
@@ -312,7 +310,7 @@ async function consumeTrips(
     });
 }
 
-// SlOW
+// ~160s
 async function consumeStopTimes(
     file,
     tripStopCountLookup,
@@ -365,7 +363,7 @@ async function consumeStopTimes(
     const keepIdLookup = {};
     trip_ids_to_keep.forEach(trip_id => keepIdLookup[trip_id] = true);
     let data = [];
-    await consumeCsv(file, async (stopTimes) => {
+    await consumeCsv(file, (stopTimes) => {
         data = data.concat(stopTimes
             .filter(row => keepIdLookup[row.trip_id])
             .map(row => {
@@ -380,15 +378,16 @@ async function consumeStopTimes(
                 };
             }));
     });
-    data.forEach(({ direction, platform_id, trip_id }) => {
-        // console.log('hello', direction, platform_id, trip_id);
-        if (direction === 0) {
+    data.forEach(({ direction, platform_id, trip_id, route_id }) => {
+        if (lineIds.includes(route_id) && direction === 0) {
             const shape_id = tripShapeLookup[trip_id];
             const points = pointsByShape[shape_id];
             const platform = stationPlatforms.find(({ id }) => id === platform_id);
             if (platform) {
+                if (platform.shape) {
+                    console.error('platform', platform.id, 'already has shape', platform.shape.id, 'but trying to put shape', shape_id);
+                }
                 platform.shape = { id: shape_id, points };
-                console.log('goodbye', shape_id, points.length, platform);
             }
         }
     });
@@ -501,15 +500,19 @@ async function generateStations(stationPlatforms) {
         children.forEach(({ shape }) => {
             shape && (shapes[shape.id] = shape);
         });
-        console.log('found', Object.keys(shapes).length, 'shapes for', station_id);
+        // console.log('found', Object.keys(shapes).length, 'shapes for', station_id);
         const interpolationFactorsPerShape = {};
         const current = { ...average };
         const delta = { latitude: Infinity, longitude: Infinity };
         // Converge onto nearest intersection of shapes
+        // console.log('converging', station_id, 'onto', Object.keys(shapes).length, 'shapes from', children.length, 'children');
+        // console.log('from', current);
         let it = 0;
         for (; it < 100 && (delta.latitude > 1e-8 || delta.longitude > 1e-8); it++) {
+            // console.log('\tit:', it);
             const avgOnShapes = Object.values(shapes)
                 .reduce((avg, shape) => {
+                    // console.log('\t\tshape:', shape.id);
                     const {
                         point: [closestLongitude, closestLatitude],
                         t: interpolationFactor,
@@ -527,6 +530,7 @@ async function generateStations(stationPlatforms) {
             current.latitude = avgOnShapes.latitude;
             current.longitude = avgOnShapes.longitude;
         }
+        // console.log('converged to', current);
         anchors.push(...Object.entries(interpolationFactorsPerShape).map(([shape_id, interpolation_factor]) => ({
             interpolation_factor,
             shape_id,
