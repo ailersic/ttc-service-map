@@ -1,16 +1,19 @@
+import { PagesFunction, Response } from '@cloudflare/workers-types';
+import Logger from '../../utils/Logger.ts';
+
 // API endpoint
-export default async function onRequestGet(context) {
+export const onRequestGet: PagesFunction = async (context) => {
     try {
-        const alerts = [];
+        const alerts: any[] = [];
 
         const liveAlertResponse = await fetch('https://alerts.ttc.ca/api/alerts/live-alerts');
         const jsonData = await liveAlertResponse.json();
         // const jsonData = require(path.join(__dirname, '..', 'local-test-alerts.json')); // For testing with local file
-        // console.log('Fetched test alerts data.');
-        console.log(`Found ${jsonData.routes.length} route alerts, ${jsonData.accessibility.length} accessibility alerts.`);
+        // Logger.info('Fetched test alerts data.');
+        Logger.info(`Found ${jsonData.routes.length} route alerts, ${jsonData.accessibility.length} accessibility alerts.`);
 
         // Select each alert item
-        jsonData.routes.forEach(route => {
+        jsonData.routes.forEach((route: any) => {
             let lineIdx = -1;
             let description = "";
 
@@ -38,7 +41,7 @@ export default async function onRequestGet(context) {
             }
             // if everything is null, skip this route
             else {
-                console.log("Skipping route alert with no description.");
+                Logger.info("Skipping route alert with no description.");
                 return;
             }
 
@@ -73,7 +76,7 @@ export default async function onRequestGet(context) {
             });
         });
 
-        jsonData.accessibility.forEach(access => {
+        jsonData.accessibility.forEach((access: any) => {
             let lineIdx = -1;
 
             // if access.title is null and access.description is not null, use access.description
@@ -86,7 +89,7 @@ export default async function onRequestGet(context) {
             }
             // if both are null, skip this accessibility alert
             else if (!access.title && !access.description) {
-                console.log("Skipping accessibility alert with no title or description.");
+                Logger.info("Skipping accessibility alert with no title or description.");
                 return;
             }
 
@@ -114,8 +117,8 @@ export default async function onRequestGet(context) {
             });
         });
 
-        console.log(`Scraping complete. Found ${alerts.length} relevant alerts.`);
-        return new Response(JSON.stringify({ 
+        Logger.info(`Scraping complete. Found ${alerts.length} relevant alerts.`);
+        return new global.Response(JSON.stringify({ 
             alerts, 
             lastUpdated: jsonData.lastUpdated 
         }), {
@@ -125,11 +128,11 @@ export default async function onRequestGet(context) {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET'
             }
-        });
+        }) as unknown as Response;
       
     } catch (error) {
         console.error('Scraping error:', error);
-        return new Response(JSON.stringify({
+        return new global.Response(JSON.stringify({
             error: 'Scraping error'
         }), {
             status: 500,
@@ -138,6 +141,6 @@ export default async function onRequestGet(context) {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET'
             }
-        });
+        }) as unknown as Response;
     }
 }

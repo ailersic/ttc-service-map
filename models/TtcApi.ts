@@ -6,6 +6,8 @@ import geometry from '../utils/geometry.ts';
 import Gtfs from './Gtfs.ts';
 import { RouteType, Prisma, PrismaClient } from '@prisma/client';
 import { transit_realtime } from '../generated/gtfs-realtime.js';
+import Logger from '../utils/Logger.ts';
+import Stopwatch from '../utils/Stopwatch.ts';
 
 export type Direction = 0 | 1;
 
@@ -74,42 +76,46 @@ export default class TtcApi {
     }
 
     async getSubwayPlatforms() {
-        return this.prisma.platform.findMany({
-            where: {
-                parent_station_id: { not: null },
-            },
-            orderBy: {
-                id: 'asc',
-            },
-        }).then(result => {
-            const dict: {
-                [k in string]: Omit<typeof result[0], 'id'>;
-            } = {};
-            result.forEach(({ id, ...rest }) => {
-                dict[id] = rest;
-            });
-            return dict;
+        const sw = new Stopwatch();
+        Logger.info('TtcApi.getSubwayPlatforms()');
+        const result = await this.prisma.platform.findMany({
+            where: { parent_station_id: { not: null } },
+            orderBy: { id: 'asc' },
         });
+        Logger.info('Loaded from DB in', sw.lap(), 'ms');
+        const dict: {
+            [k in string]: Omit<typeof result[0], 'id'>;
+        } = {};
+        result.forEach(({ id, ...rest }) => {
+            dict[id] = rest;
+        });
+        Logger.info('Mapped to client format in', sw.lap(), 'ms');
+        Logger.info('TtcApi.getSubwayPlatforms() completed in', sw.totalElapsed(), 'ms');
+        return dict;
     }
 
     async getSubwayStations() {
-        return this.prisma.station.findMany({
-            orderBy: {
-                id: 'asc',
-            },
-        }).then(result => {
-            const dict: {
-                [k in string]: Omit<typeof result[0], 'id'>;
-            } = {};
-            result.forEach(({ id, ...rest }) => {
-                dict[id] = rest;
-            });
-            return dict;
+        const sw = new Stopwatch();
+        Logger.info('TtcApi.getSubwayStations()');
+        const result = await this.prisma.station.findMany({
+            orderBy: { id: 'asc' },
         });
+        Logger.info('Loaded from DB in', sw.lap(), 'ms');
+        const dict: {
+            [k in string]: Omit<typeof result[0], 'id'>;
+        } = {};
+        result.forEach(({ id, ...rest }) => {
+            dict[id] = rest;
+        });
+        Logger.info('Mapped to client format in', sw.lap(), 'ms');
+        Logger.info('TtcApi.getSubwayStations() completed in', sw.totalElapsed(), 'ms');
+        return dict;
     }
 
     async getSubwayRoutes() {
-        return this.prisma.route.findMany({
+        const sw = new Stopwatch();
+        Logger.info('TtcApi.getSubwayRoutes()');
+        const result = await this.prisma.route.findMany({
             where: { id: { in: this.lineIds } },
             select: {
                 id: true,
@@ -162,50 +168,53 @@ export default class TtcApi {
                     },
                 },
             },
-        }).then(result => {
-            return result.map(({ id, short_name, long_name, color, route_stops, shape }) => {
-                const points = [...shape!.shape_points];
-                // Insert stations as points so the shape doesn't drift away
-                shape!.station_anchors.forEach(({ interpolation_factor, station: { latitude, longitude } }) => {
-                    if (interpolation_factor % 1 !== 0) {
-                        points.splice(Math.ceil(interpolation_factor), 0, { latitude, longitude });
-                    }
-                });
-                return {
-                    id, short_name, long_name, color,
-                    stops: route_stops.map(({ platform }) => platform.id),
-                    segments: route_stops.reduce((segments, { platform }, i, a) => {
-                        const thisAnchor = platform.parent_station?.anchors
-                            .find(({ shape_id }) => shape_id === shape?.id)?.interpolation_factor!;
-                        if (i > 0) {
-                            const prevAnchor = a[i - 1].platform.parent_station?.anchors
-                                .find(({ shape_id }) => shape_id === shape?.id)?.interpolation_factor!;
-                            segments.push(
-                                geometry.reducePolyLine({
-                                    points: geometry.smoothenPolyLine(
-                                        geometry.slicePolyLine(
-                                            shape!.shape_points.map(({ latitude, longitude }) => [longitude, latitude]),
-                                            prevAnchor,
-                                            thisAnchor,
-                                        ),
-                                        1e-4,
-                                    ),
-                                    tolerance: 1e-6,
-                                }).map(([longitude, latitude]) => ({ latitude, longitude })),
-                            );
-                        }
-                        return segments;
-                    }, [] as { latitude: number, longitude: number }[][]),
-                    shape: geometry.reducePolyLine({
-                        points: geometry.smoothenPolyLine(
-                            points.map(({ latitude, longitude }) => [longitude, latitude]),
-                            1e-4,
-                        ),
-                        tolerance: 1e-6,
-                    }).map(([longitude, latitude]) => ({ latitude, longitude })),
-                };
-            });
         });
+        Logger.info('Loaded from DB in', sw.lap(), 'ms');
+        const mapped = result.map(({ id, short_name, long_name, color, route_stops, shape }) => {
+            const points = [...shape!.shape_points];
+            // Insert stations as points so the shape doesn't drift away
+            shape!.station_anchors.forEach(({ interpolation_factor, station: { latitude, longitude } }) => {
+                if (interpolation_factor % 1 !== 0) {
+                    points.splice(Math.ceil(interpolation_factor), 0, { latitude, longitude });
+                }
+            });
+            return {
+                id, short_name, long_name, color,
+                stops: route_stops.map(({ platform }) => platform.id),
+                segments: route_stops.reduce((segments, { platform }, i, a) => {
+                    const thisAnchor = platform.parent_station?.anchors
+                        .find(({ shape_id }) => shape_id === shape?.id)?.interpolation_factor!;
+                    if (i > 0) {
+                        const prevAnchor = a[i - 1].platform.parent_station?.anchors
+                            .find(({ shape_id }) => shape_id === shape?.id)?.interpolation_factor!;
+                        segments.push(
+                            geometry.reducePolyLine({
+                                points: geometry.smoothenPolyLine(
+                                    geometry.slicePolyLine(
+                                        shape!.shape_points.map(({ latitude, longitude }) => [longitude, latitude]),
+                                        prevAnchor,
+                                        thisAnchor,
+                                    ),
+                                    1e-4,
+                                ),
+                                tolerance: 1e-6,
+                            }).map(([longitude, latitude]) => ({ latitude, longitude })),
+                        );
+                    }
+                    return segments;
+                }, [] as { latitude: number, longitude: number }[][]),
+                shape: geometry.reducePolyLine({
+                    points: geometry.smoothenPolyLine(
+                        points.map(({ latitude, longitude }) => [longitude, latitude]),
+                        1e-4,
+                    ),
+                    tolerance: 1e-6,
+                }).map(([longitude, latitude]) => ({ latitude, longitude })),
+            };
+        });
+        Logger.info('Mapped to client format in', sw.lap(), 'ms');
+        Logger.info('TtcApi.getSubwayRoutes() completed in', sw.totalElapsed(), 'ms');
+        return mapped;
     }
 
     // TODO: Since this can take a few minutes, we should consider responding with 503
@@ -231,9 +240,12 @@ export default class TtcApi {
     }
 
     async getAlerts(): Promise<AlertCollection> {
+        const sw = new Stopwatch;
+        Logger.info('TtcApi.getAlerts()');
         // This fetch is pretty slow, >2 seconds, and no clear way to speed it up.
         // Client should not wait for this before rendering.
         const feedRes = await fetch(this.gtfsAlertUrl);
+        Logger.info('Got alerts from TTC in', sw.lap(), 'ms');
         const feedReader = feedRes.body!.getReader();
         const chunks = [];
         while (true) {
@@ -250,6 +262,7 @@ export default class TtcApi {
             offset += c.byteLength;
         });
         const feedMessage = transit_realtime.FeedMessage.decode(feed);
+        Logger.info('Parsed alerts in', sw.lap(), 'ms');
         const result = {
             timestamp: Number(feedMessage.header.timestamp) * 1000, // seconds to ms
             alerts: (await Promise.all(
@@ -292,6 +305,8 @@ export default class TtcApi {
                     }))
             ).filter((alert): alert is NonNullable<typeof alert> => !!alert),
         };
+        Logger.info('Mapped alerts in', sw.lap(), 'ms');
+        Logger.info('TtcApi.getAlerts() completed in', sw.totalElapsed(), 'ms');
         return result;
     }
 
@@ -300,11 +315,11 @@ export default class TtcApi {
         const res = await fetch(this.gtfsPackageUrl + this.gtfsPackageId);
         const data = await res.json();
         const lastRefreshed = new Date(data.result.last_refreshed as string);
-        console.log('last refreshed:', lastRefreshed.toLocaleDateString());
+        Logger.info('last refreshed:', lastRefreshed.toLocaleDateString());
         if (!forceReload) {
             const agency = await this.prisma.agency.findFirst();
             if (agency && agency.last_updated > lastRefreshed) {
-                console.log(agency.name, 'already up to date');
+                Logger.info(agency.name, 'already up to date');
                 return;
             }
         }
@@ -312,7 +327,7 @@ export default class TtcApi {
         const zipRes = await fetch(zipUrl);
         const buffer = await zipRes.arrayBuffer();
         const dir = await unzipper.Open.buffer(Buffer.from(buffer));
-        console.log(dir.files.map(file => file.path));
+        Logger.info(dir.files.map(file => file.path));
         // It's faster to just wipe the db and recreate everything
         const tables: (Exclude<keyof typeof this.prisma, `\$${string}` | symbol>)[] = [
             'service',
@@ -325,7 +340,7 @@ export default class TtcApi {
             'station',
         ];
         for (let k of tables) {
-            console.log('delete', k);
+            Logger.info('delete', k);
             const delegate = this.prisma[k];
             await (delegate.deleteMany as () => Prisma.PrismaPromise<Prisma.BatchPayload>)();
         }
@@ -383,11 +398,11 @@ export default class TtcApi {
             }
         }
 
-        console.log('generating stations...');
+        Logger.info('generating stations...');
         await this._generateStations();
-        console.log('done')
+        Logger.info('done')
 
-        console.log('loaded GTFS in', Math.round((Date.now() - start) / 100) / 10, 'seconds');
+        Logger.info('loaded GTFS in', Math.round((Date.now() - start) / 100) / 10, 'seconds');
     }
 
     private async _consumeAgency(file: unzipper.File) {
@@ -453,7 +468,7 @@ export default class TtcApi {
             });
         });
         const { count: shapeCount } = await this.prisma.shape.createMany({ data: Object.keys(pointsByShape).map(id => ({ id })) });
-        console.log(shapeCount, 'shapes');
+        Logger.info(shapeCount, 'shapes');
         const { count: shapePointCount } = await this.prisma.shapePoint.createMany({
             data: Object.entries(pointsByShape)
                 .map(([shape_id, points]) => geometry.reducePolyLine({
@@ -469,7 +484,7 @@ export default class TtcApi {
                     shape_id,
                 }))).flat(),
         });
-        console.log(shapePointCount, 'shape points');
+        Logger.info(shapePointCount, 'shape points');
     }
 
     // SLOW
@@ -543,7 +558,7 @@ export default class TtcApi {
             [k in string]: string;
         },
     ) {
-        console.log('counting stops by trip...');
+        Logger.info('counting stops by trip...');
         await this._consumeCsv<Gtfs.Schedule.StopTime>(file, stopTimes => {
             stopTimes.forEach(row => {
                 const trip_id = row.trip_id;
@@ -551,9 +566,9 @@ export default class TtcApi {
                 tripStopCountLookup[route_id][direction][trip_id]++;
             });
         });
-        console.log('done');
+        Logger.info('done');
 
-        console.log('selecting maximal trips...');
+        Logger.info('selecting maximal trips...');
         const trip_ids_to_keep: string[] = [];
         Object.entries(tripStopCountLookup).forEach(([route_id, lookupByDirection]) => {
             Object.entries(lookupByDirection).forEach(([direction, counts]) => {
@@ -568,22 +583,22 @@ export default class TtcApi {
                 trip_ids_to_keep.push(trip_id);
             });
         });
-        console.log('done');
+        Logger.info('done');
 
-        console.log('linking Route to Shape...');
+        Logger.info('linking Route to Shape...');
         const updateArgs = trip_ids_to_keep
             .filter(trip_id => routeAndDirectionByTripId[trip_id][1] === '0')
             .map(trip_id => ({
                 data: { shape_id: tripShapeLookup[trip_id] },
                 where: { id: routeAndDirectionByTripId[trip_id][0] },
             }));
-        console.log('updating', updateArgs.length, 'routes');
+        Logger.info('updating', updateArgs.length, 'routes');
         for (const args of updateArgs) {
             await this.prisma.route.update(args);
         }
-        console.log('done');
+        Logger.info('done');
 
-        console.log('creating RouteStop...');
+        Logger.info('creating RouteStop...');
         const keepIdLookup: { [k in string]?: boolean } = {};
         trip_ids_to_keep.forEach(trip_id => keepIdLookup[trip_id] = true);
         let data: Prisma.RouteStopCreateManyInput[] = [];
@@ -601,9 +616,9 @@ export default class TtcApi {
                     };
                 }));
         });
-        console.log(data.length, 'route stops');
+        Logger.info(data.length, 'route stops');
         await this.prisma.routeStop.createMany({ data });
-        console.log('done');
+        Logger.info('done');
     }
 
     private async _generateStations() {
@@ -713,7 +728,7 @@ export default class TtcApi {
             const interpolationFactorsPerShape: {
                 [k in string]: number;
             } = {};
-            // console.log('found', Object.keys(shapes).length, 'shapes for', name, '-', Object.keys(shapes));
+            // Logger.info('found', Object.keys(shapes).length, 'shapes for', name, '-', Object.keys(shapes));
             const current = { ...average };
             const delta = { latitude: Infinity, longitude: Infinity };
             // Converge onto nearest intersection of shapes
@@ -765,7 +780,7 @@ export default class TtcApi {
     ) {
         const kB = file.uncompressedSize / 1024;
         const MB = kB / 1024;
-        console.log(`${file.path} (${(MB < 1 ? `${kB.toFixed(1)} kB` : `${MB.toFixed(1)} MB`)})`);
+        Logger.info(`${file.path} (${(MB < 1 ? `${kB.toFixed(1)} kB` : `${MB.toFixed(1)} MB`)})`);
         const start = Date.now();
         const parser = parse();
         let keys: (keyof T)[] | undefined;
@@ -793,7 +808,7 @@ export default class TtcApi {
             }
         });
         await pipeline(file.stream(), parser, consumer);
-        console.log(`${file.path} read in ${((Date.now() - start) / 1000).toFixed(1)} seconds`);
+        Logger.info(`${file.path} read in ${((Date.now() - start) / 1000).toFixed(1)} seconds`);
     }
 
     private _toTitleCase(name: string): string {
