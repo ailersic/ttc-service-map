@@ -1,5 +1,5 @@
 export default class Logger {
     static info(...data: any[]) {
-        console.log(`[${new Date().toISOString()}] -`, ...data);
+        console.info([`[${new Date().toISOString()}] -`, ...data].map(item => ''+item).join(' '));
     }
 };
