@@ -439,7 +439,9 @@ const alerts = {
 };
 
 async function loadAlerts() {
+    const start = Date.now();
     alerts.fromApi = await fetch('/api/alerts').then(res => res.json());
+    console.log('loadAlerts() in', Date.now() - start, 'ms');
 }
 
 const Layers = {
@@ -526,53 +528,55 @@ function addLineSegments(line) {
             allSegmentPolylines.push(transitPolyLine);
         });
 
-    console.warn('got', alerts.fromApi.alerts.length, 'alerts from api');
-    alerts.fromApi.alerts.forEach(({ id, effect, criteria, header, description }) =>
-        criteria.forEach(({ direction, platform_id, route_id, route_type }) => {
-            // We currently only pay attention to alerts with:
-            // - a defined platform with a parent station
-            if (platform_id === undefined) return;
-            const platform = subway.platforms[platform_id];
-            if (platform === undefined || platform.parent_station_id === null) return;
-            const station_id = platform.parent_station_id;
-            const station = subway.stations[station_id];
-            if (station === undefined) return;
-            switch (effect) {
-                case 'AccessibilityIssue':
-                    // TODO (hi prio)
-                    break;
-                case 'AdditionalService':
-                    // TODO
-                    break;
-                case 'Detour':
-                    // TODO (hi prio)
-                    break;
-                case 'ModifiedService':
-                    // TODO
-                    break;
-                case 'NoService':
-                    // TODO
-                    break;
-                case 'ReducedService':
-                    // TODO
-                    break;
-                case 'SignificantDelay':
-                    const newAlert = { id, effect, header, description };
-                    if (station_id in alerts.perStation) {
-                        if (alerts.perStation[station_id].some(({ id: existing_id }) => existing_id === id)) {
-                            return;
+    if (alerts.fromApi.alerts) {
+        console.warn('got', alerts.fromApi.alerts.length, 'alerts from api');
+        alerts.fromApi.alerts.forEach(({ id, effect, criteria, header, description }) =>
+            criteria.forEach(({ direction, platform_id, route_id, route_type }) => {
+                // We currently only pay attention to alerts with:
+                // - a defined platform with a parent station
+                if (platform_id === undefined) return;
+                const platform = subway.platforms[platform_id];
+                if (platform === undefined || platform.parent_station_id === null) return;
+                const station_id = platform.parent_station_id;
+                const station = subway.stations[station_id];
+                if (station === undefined) return;
+                switch (effect) {
+                    case 'AccessibilityIssue':
+                        // TODO (hi prio)
+                        break;
+                    case 'AdditionalService':
+                        // TODO
+                        break;
+                    case 'Detour':
+                        // TODO (hi prio)
+                        break;
+                    case 'ModifiedService':
+                        // TODO
+                        break;
+                    case 'NoService':
+                        // TODO
+                        break;
+                    case 'ReducedService':
+                        // TODO
+                        break;
+                    case 'SignificantDelay':
+                        const newAlert = { id, effect, header, description };
+                        if (station_id in alerts.perStation) {
+                            if (alerts.perStation[station_id].some(({ id: existing_id }) => existing_id === id)) {
+                                return;
+                            }
+                            alerts.perStation[station_id].push(newAlert);
+                        } else {
+                            alerts.perStation[station_id] = [newAlert];
                         }
-                        alerts.perStation[station_id].push(newAlert);
-                    } else {
-                        alerts.perStation[station_id] = [newAlert];
-                    }
-                    break;
-                default:
-                    console.warn('Unsupported Alert.Effect:', effect);
-                    return;
+                        break;
+                    default:
+                        console.warn('Unsupported Alert.Effect:', effect);
+                        return;
+                }
             }
-        }
-        ));
+            ));
+    }
 
     subway.routes.forEach(({ stops, segments }) => {
         /** @type {{ [k in string]: [number, number][] }} */

@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TTCmap.ca - TTC Network Service Map</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
     <script>
         window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
@@ -33,7 +35,7 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-M6HN6DHVVM"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
+        function gtag() { dataLayer.push(arguments); }
         gtag('js', new Date());
 
         gtag('config', 'G-M6HN6DHVVM');
@@ -41,18 +43,20 @@
 
     <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8655146723176313"
-     crossorigin="anonymous"></script>
+        crossorigin="anonymous"></script>
 
-    <link rel="stylesheet" href="style.css"/>
+    <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
     <script src="icons.js"></script>
     <script src="script.js"></script>
 
     <h1>TTCMAP.CA</h1>
 
-    <h2 id="subheading">Last updated: Loading... <button class="small-button refresh-button" onClick="window.location.reload()"><i class="fas fa-rotate-right"></i></button></h2>
-    
+    <h2 id="subheading">Last updated: Loading... <button class="small-button refresh-button"
+            onClick="window.location.reload()"><i class="fas fa-rotate-right"></i></button></h2>
+
     <div id="map"></div>
 
     <div id="loading-modal" class="modal">
@@ -65,7 +69,17 @@
     <div id="about-modal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <p>TTCmap.ca is an independently-run real-time network status map for the TTC subway system. It combines long-term service changes and short-term disruptions in one place, making it easier to see if anything affects your trip. The alerts shown include the TTC's <a href="https://www.ttc.ca/service-alerts">live service alerts</a> and <a href="https://www.ttc.ca/riding-the-ttc/Updates/Reduced-Speed-Zones">reduced speed zones.</a> Refer to those links if TTCmap is not working properly.<br><br>Because this website only shows official TTC service announcements, there may be short-term disruptions that go unreported and are not shown here. This website is not affiliated with the TTC or the City of Toronto.<br><br>If you have any suggestions or notice any issues, feel free to <a href="mailto:info@ttcmap.ca">contact us!</a> If you're a developer, you can find this project on <a href="https://github.com/ailersic/ttc-service-map">Github.</a></p>
+            <p>TTCmap.ca is an independently-run real-time network status map for the TTC subway system. It combines
+                long-term service changes and short-term disruptions in one place, making it easier to see if anything
+                affects your trip. The alerts shown include the TTC's <a href="https://www.ttc.ca/service-alerts">live
+                    service alerts</a> and <a
+                    href="https://www.ttc.ca/riding-the-ttc/Updates/Reduced-Speed-Zones">reduced speed zones.</a> Refer
+                to those links if TTCmap is not working properly.<br><br>Because this website only shows official TTC
+                service announcements, there may be short-term disruptions that go unreported and are not shown here.
+                This website is not affiliated with the TTC or the City of Toronto.<br><br>If you have any suggestions
+                or notice any issues, feel free to <a href="mailto:info@ttcmap.ca">contact us!</a> If you're a
+                developer, you can find this project on <a
+                    href="https://github.com/ailersic/ttc-service-map">Github.</a></p>
         </div>
     </div>
 
@@ -88,9 +102,7 @@
     <!-- Banner ad -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8655146723176313"
         crossorigin="anonymous"></script>
-    <ins class="adsbygoogle bottombanner"
-        style="display:block;"
-        data-ad-client="ca-pub-8655146723176313"
+    <ins class="adsbygoogle bottombanner" style="display:block;" data-ad-client="ca-pub-8655146723176313"
         data-ad-slot="4693449043"></ins>
     <script>
         (adsbygoogle = window.adsbygoogle || []).push({});
@@ -107,17 +119,17 @@
         var span = document.getElementsByClassName("close")[0];
 
         // When the user clicks on the button, open the modal
-        btn.onclick = function() {
+        btn.onclick = function () {
             modal.style.display = "flex";
         }
 
         // When the user clicks on <span> (x), close the modal
-        span.onclick = function() {
+        span.onclick = function () {
             modal.style.display = "none";
         }
 
         // When the user clicks anywhere outside of the modal, close it
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             if (event.target == modal) {
                 modal.style.display = "none";
             }
@@ -128,8 +140,9 @@
         let map;
 
         async function initMap() {
-            await loadSubway();
-            await loadAlerts();
+            const start = Date.now();
+            console.info('initMap()');
+            const subwayPromise = loadSubway();
 
             var map = L.map('map', {
                 maxBounds: [[43.201, -80.161], [44.182, -78.717]], // Toronto area bounds
@@ -137,10 +150,10 @@
                 minZoom: 12, // Minimum zoom level
                 maxZoom: 17, // Maximum zoom level
             }).setView([43.6699990, -79.3909390], 13);
-            
+
             // connect to pmtiles hosted on cloudflare
             var layer = protomapsL.leafletLayer({
-                url:'https://tiles.ttcmap.ca/toronto.pmtiles',
+                url: 'https://tiles.ttcmap.ca/toronto.pmtiles',
                 flavor: 'light',
             });
             layer.addTo(map);
@@ -148,7 +161,7 @@
             // Create legend with service reduction types
             const legend = document.createElement("div");
             legend.id = "legend";
-            
+
             const header = document.createElement("div");
             header.id = "legend-header";
             header.innerHTML = `<h3>LEGEND<span><button class="small-button legend-button">+</button></span></h3>`;
@@ -163,7 +176,7 @@
                 const name = serviceReductionType.name;
 
                 size = 48;
-                svg = `<svg width="${size}" height="${size}" viewBox="${-size/2} ${-size/2} ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                svg = `<svg width="${size}" height="${size}" viewBox="${-size / 2} ${-size / 2} ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
                     <g transform="scale(${icon.scale})">
                     <path d="${icon.path}" 
                     stroke="${icon.strokeColor}" 
@@ -221,11 +234,11 @@
                 L.DomEvent.disableScrollPropagation(legend);
 
                 // Crucial for mobile: prevent touch from propagating to the map
-                legend.addEventListener('touchstart', function(e) {
+                legend.addEventListener('touchstart', function (e) {
                     e.stopPropagation();
                 }, { passive: true });
 
-                legend.addEventListener('touchmove', function(e) {
+                legend.addEventListener('touchmove', function (e) {
                     e.stopPropagation();
                 }, { passive: true });
 
@@ -234,6 +247,9 @@
             legendControl.addTo(map);
 
             async function fetchAndPlotAlerts() {
+                const start = Date.now();
+                console.info('fetchAndPlotAlerts()');
+
                 // const response = await fetch('/api/fetch');
                 // const alertsjson = await response.json();
                 await loadAlerts();
@@ -243,8 +259,8 @@
 
                 //lines[0].addServiceReduction("Osgoode", "Osgoode", "Bypass", "Bypassing Osgoode because a disgruntled lawyer is holding the station hostage.");
                 //lines[0].addServiceReduction("Wellesley", "Wellesley", "Accessibility alert", "Broken elevator lel");
-                
-                lines[2].addServiceReduction("Kennedy", "McCowan", "No service", "Permanently closed.");
+
+                // lines[2].addServiceReduction("Kennedy", "McCowan", "No service", "Permanently closed.");
 
                 // alertsjson.alerts.forEach(alert => {
                 //     if (alert.lineIdx < 0 || alert.lineIdx >= lines.length || alert.lineIdx === null) {
@@ -264,18 +280,26 @@
                     minute: '2-digit',
                     hour12: true,
                 };
-                
+
                 document.getElementById("subheading").innerHTML = `Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)} <button class="small-button refresh-button" onClick="window.location.reload()"><i class="fas fa-rotate-right"></i></button>`;
                 document.getElementById("loading-modal").style.display = "none"; // Hide loading modal
 
                 refreshMap(map);
+                console.info('fetchAndPlotAlerts() finished in', Date.now() - start, 'ms');
             }
 
             fetchAndPlotAlerts(); // Initial fetch and plot
             const interval = setInterval(fetchAndPlotAlerts, 300000); // Refresh every 5 minutes
+
+            if (subway.routes.length === 0) {
+                await subwayPromise;
+            }
+            refreshMap(map);
+            console.info('initMap() finished in', Date.now() - start, 'ms');
         }
 
         initMap();
     </script>
 </body>
+
 </html>
