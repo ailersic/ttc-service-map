@@ -434,13 +434,19 @@ async function loadSubway() {
  */
 /** @type {AlertInfo} */
 const alerts = {
-    fromApi: {},
+    fromApi: {
+        subway: null,
+        streetcar: null,
+        bus: null,
+        accessibility: null,
+        stop: null,
+    },
     perStation: {},
 };
 
 async function loadAlerts() {
     const start = Date.now();
-    alerts.fromApi = await fetch('/api/alerts').then(res => res.json());
+    alerts.fromApi.subway = await fetch('/api/subway/alerts').then(res => res.json());
     console.log('loadAlerts() in', Date.now() - start, 'ms');
 }
 
@@ -528,9 +534,9 @@ function addLineSegments(line) {
             allSegmentPolylines.push(transitPolyLine);
         });
 
-    if (alerts.fromApi.alerts) {
-        console.warn('got', alerts.fromApi.alerts.length, 'alerts from api');
-        alerts.fromApi.alerts.forEach(({ id, effect, criteria, header, description }) =>
+    if (alerts.fromApi.subway) {
+        console.warn('got', alerts.fromApi.subway.alerts.length, 'alerts from api');
+        alerts.fromApi.subway.alerts.forEach(({ id, effect, criteria, header, description }) =>
             criteria.forEach(({ direction, platform_id, route_id, route_type }) => {
                 // We currently only pay attention to alerts with:
                 // - a defined platform with a parent station

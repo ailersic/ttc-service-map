@@ -64,7 +64,14 @@ export default class TtcApi {
     // Unclear which dataset should be preferred, but the "merged" dataset is bigger
     // private readonly gtfsPackageId = 'ttc-routes-and-schedules';
     private readonly gtfsPackageId = 'merged-gtfs-ttc-routes-and-schedules';
-    private readonly gtfsAlertUrl = 'https://gtfsrt.ttc.ca/alerts/all?format=binary';
+    private readonly gtfsAlertUrls = {
+        all: 'https://gtfsrt.ttc.ca/alerts/all?format=binary',
+        subway: 'https://gtfsrt.ttc.ca/alerts/subway?format=binary',
+        streetcar: 'https://gtfsrt.ttc.ca/alerts/streetcar?format=binary',
+        bus: 'https://gtfsrt.ttc.ca/alerts/bus?format=binary',
+        accessibility: 'https://gtfsrt.ttc.ca/alerts/accessibility?format=binary',
+        stops: 'https://gtfsrt.ttc.ca/alerts/stops?format=binary',
+    };
 
     private readonly lineIds = ['1', '2', '3', '4', '5', '6'];
 
@@ -217,6 +224,11 @@ export default class TtcApi {
         return mapped;
     }
 
+    async getSubwayAlerts(): Promise<AlertCollection> {
+        Logger.info('getSubwayAlerts()');
+        return this._getAlerts(this.gtfsAlertUrls.subway);
+    }
+
     // TODO: Since this can take a few minutes, we should consider responding with 503
     //       and a Retry-After of 5 minutes if reloading GTFS schedule data is needed.
     //       The client could handle this pretty easily.
@@ -239,12 +251,12 @@ export default class TtcApi {
         await this._generateStations();
     }
 
-    async getAlerts(): Promise<AlertCollection> {
+    private async _getAlerts(url: string): Promise<AlertCollection> {
         const sw = new Stopwatch;
-        Logger.info('TtcApi.getAlerts()');
+        Logger.info('TtcApi._getAlerts()');
         // This fetch is pretty slow, >2 seconds, and no clear way to speed it up.
         // Client should not wait for this before rendering.
-        const feedRes = await fetch(this.gtfsAlertUrl);
+        const feedRes = await fetch(url);
         Logger.info('Got alerts from TTC in', sw.lap(), 'ms');
         const feedReader = feedRes.body!.getReader();
         const chunks = [];
@@ -306,7 +318,7 @@ export default class TtcApi {
             ).filter((alert): alert is NonNullable<typeof alert> => !!alert),
         };
         Logger.info('Mapped alerts in', sw.lap(), 'ms');
-        Logger.info('TtcApi.getAlerts() completed in', sw.totalElapsed(), 'ms');
+        Logger.info('TtcApi._getAlerts() completed in', sw.totalElapsed(), 'ms');
         return result;
     }
 
