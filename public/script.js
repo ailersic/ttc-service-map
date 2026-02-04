@@ -1,43 +1,34 @@
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
     ('ontouchstart' in window);
 
-class Station {
+/*class Station {
     constructor(name, lat, lng) {
         this.name = name;
         this.lat = lat;
         this.lng = lng;
     }
-}
+}*/
 
-class ServiceReduction {
-    constructor(startStationIdx, endStationIdx, typeIdx, description, direction) {
-        this.startStationIdx = startStationIdx;
-        this.endStationIdx = endStationIdx;
-        this.typeIdx = typeIdx;
-        this.description = description;
-        this.direction = direction;
-    }
-}
-
-class ServiceReductionType {
-    constructor(name, icon) {
-        this.name = name;
+class ServiceAlertType {
+    constructor(short_name, long_name, icon) {
+        this.short_name = short_name;
+        this.long_name = long_name;
         this.icon = icon;
-        this.view = true;
     }
 }
 
-const serviceReductionTypes = [
-    new ServiceReductionType("Delays", snail),
-    new ServiceReductionType("Bypass", noentry),
-    new ServiceReductionType("No service", cross),
-    new ServiceReductionType("Planned alert", clock),
-    new ServiceReductionType("Elevator alert", accessibility),
-    new ServiceReductionType("Service restored", check),
-    new ServiceReductionType("Other alert", exclamation),
-    new ServiceReductionType("Multiple alerts", multiple)
-]
+const serviceAlertTypes = {
+    Delays: new ServiceAlertType("Delays", "Delays", snail),
+    Bypass: new ServiceAlertType("Bypass", "Bypass", noentry),
+    Closure: new ServiceAlertType("Closure", "No service", cross),
+    Planned: new ServiceAlertType("Planned", "Planned alert", clock),
+    Accessibility: new ServiceAlertType("Access.", "Accessibility alert", accessibility),
+    Restored: new ServiceAlertType("Restored", "Service restored", check),
+    Other: new ServiceAlertType("Other", "Other alert", exclamation),
+    Multiple: new ServiceAlertType("Multiple", "Multiple alerts", multiple)
+}
 
+/*
 class Line {
     constructor(name, colour, stations) {
         this.name = name;
@@ -406,7 +397,7 @@ var lines = [
         ]
     )
 ];
-
+*/
 
 /**
  * @typedef {Object} SubwayInfo
@@ -421,10 +412,31 @@ const subway = {
     routes: [],
 };
 
+const visibility = {
+    routes: {},
+    alerts: {},
+}
+
 async function loadSubway() {
     subway.platforms = await fetch('/api/subway/platforms').then(res => res.json());
     subway.stations = await fetch('/api/subway/stations').then(res => res.json());
     subway.routes = await fetch('/api/subway/routes').then(res => res.json());
+}
+
+function setVisibilityDefaults() {
+    subway.routes.forEach(route => {
+        visibility.routes[route.id] = true;
+    });
+
+    // Example: hide Line 2 by default
+    //visibility.routes['2'] = false;
+
+    Object.values(serviceAlertTypes).forEach(alertType => {
+        visibility.alerts[alertType.short_name] = true;
+    });
+
+    // Example: hide Planned alerts by default
+    //visibility.alerts[serviceAlertTypes.Planned.short_name] = false;
 }
 
 /**
@@ -441,12 +453,13 @@ const alerts = {
         accessibility: null,
         stop: null,
     },
-    perStation: {},
+    byRouteAndAlertType: {/* [route_id]: { [alert_type]: { [alert_id]: ... } } */},
 };
 
 async function loadAlerts() {
     const start = Date.now();
     alerts.fromApi.subway = await fetch('/api/subway/alerts').then(res => res.json());
+    assembleAlerts();
     console.log('loadAlerts() in', Date.now() - start, 'ms');
 }
 
@@ -460,9 +473,9 @@ const Layers = {
 };
 
 var allSegmentPolylines = [];
-var allReductionPolylines = [];
+var allAlertPolylines = [];
 var allStationMarkers = [];
-var allReductionMarkers = [];
+var allAlertMarkers = [];
 
 var currentInfoWindow = null;
 
@@ -470,85 +483,71 @@ function refreshMap(map) {
     // Clear existing markers and polylines
     allSegmentPolylines.forEach(polyline => polyline.remove());
     allStationMarkers.forEach(marker => marker.remove());
-    allReductionPolylines.forEach(polyline => polyline.remove());
-    allReductionMarkers.forEach(marker => marker.remove());
+    allAlertPolylines.forEach(polyline => polyline.remove());
+    allAlertMarkers.forEach(marker => marker.remove());
 
     allSegmentPolylines = [];
     allStationMarkers = [];
-    allReductionPolylines = [];
-    allReductionMarkers = [];
+    allAlertPolylines = [];
+    allAlertMarkers = [];
 
     // Re-render all lines
     renderLines();
 
-    // Connect the two Spadinas
-    const spadina1 = subway.stations['spadina-station-1'];
-    const spadina2 = subway.stations['spadina-station-2'];
-    const spadinaTunnel = L.polyline([
-        [spadina1.latitude, spadina1.longitude],
-        [spadina2.latitude, spadina2.longitude],
-    ], {
-        color: "#000",
-        weight: 4,
-        opacity: 1.0,
-        zIndex: Layers.Top,
-    });
+    // Connect the two Spadinas if both line 1 and line 2 are visible
+    if (visibility.routes['1'] && visibility.routes['2']) {
+        const spadina1 = subway.stations['spadina-station-1'];
+        const spadina2 = subway.stations['spadina-station-2'];
+        const spadinaTunnel = L.polyline([
+            [spadina1.latitude, spadina1.longitude],
+            [spadina2.latitude, spadina2.longitude],
+        ], {
+            color: "#000",
+            weight: 6,
+            opacity: 1.0,
+            zIndex: Layers.Top,
+        });
 
-    // spadinaTunnel.addTo(map);
-    allSegmentPolylines.push(spadinaTunnel);
+        allSegmentPolylines.push(spadinaTunnel);
+    }
 
     allSegmentPolylines.forEach(polyline => polyline.addTo(map));
-    // allReductionPolylines.forEach(polyline => polyline.addTo(map));
+    allAlertPolylines.forEach(polyline => polyline.addTo(map));
     allStationMarkers.forEach(marker => marker.addTo(map));
-    // allReductionMarkers.forEach(marker => marker.addTo(map));
+    allAlertMarkers.forEach(marker => marker.addTo(map));
 }
 
 function renderLines() {
-    lines.forEach(line => {
-        addLineSegments(line);
-    });
-    lines.forEach(line => {
-        addServiceReductions(line);
-    });
-    lines.forEach(line => {
-        addStationMarkers(line);
-    });
+    addLineSegments();
+    addStationMarkers();
+    addServiceAlerts();
 }
 
-function addLineSegments(line) {
-    let normalServiceSegments = [[]];
-    let reducedServiceSegments = [[]];
-    let iseg = 0;
-    let isegRed = 0;
-    let lastStationNormal = true;
-
-    subway.routes
-        .sort(({ id }, _) => id === '2' ? -1 : 0) // draw line 2 first
-        .forEach(({ color, shape }) => {
-            const transitPolyLine = L.polyline(shape.map(({ latitude, longitude }) => [latitude, longitude]), {
-                color,
-                weight: 16,
-                opacity: 0.8,
-                zIndex: Layers.SubwayLine,
-            });
-            allSegmentPolylines.push(transitPolyLine);
-        });
-
+function assembleAlerts() {
+    alerts.byRouteAndAlertType = {};
+    // subway alerts
     if (alerts.fromApi.subway) {
         console.warn('got', alerts.fromApi.subway.alerts.length, 'alerts from api');
+        // for each route and each alert type, process the alerts and append to alerts.byRouteAndAlertType
         alerts.fromApi.subway.alerts.forEach(({ id, effect, criteria, header, description }) =>
             criteria.forEach(({ direction, platform_id, route_id, route_type }) => {
                 // We currently only pay attention to alerts with:
                 // - a defined platform with a parent station
+
                 if (platform_id === undefined) return;
                 const platform = subway.platforms[platform_id];
                 if (platform === undefined || platform.parent_station_id === null) return;
                 const station_id = platform.parent_station_id;
                 const station = subway.stations[station_id];
                 if (station === undefined) return;
+
+                console.warn(`Platform ${platform_id} at station ${station.name} on route ${route_id} has alert ${id} with effect ${effect}`);
+
+                let alert_type = serviceAlertTypes.Other; // default
+
                 switch (effect) {
                     case 'AccessibilityIssue':
-                        // TODO (hi prio)
+                        alert_type = serviceAlertTypes.Accessibility;
                         break;
                     case 'AdditionalService':
                         // TODO
@@ -560,199 +559,188 @@ function addLineSegments(line) {
                         // TODO
                         break;
                     case 'NoService':
-                        // TODO
+                        alert_type = serviceAlertTypes.Closure;
                         break;
                     case 'ReducedService':
-                        // TODO
+                        if (header.toLowerCase().includes("there will be no")) {
+                            alert_type = serviceAlertTypes.Planned;
+                        }
                         break;
                     case 'SignificantDelay':
-                        const newAlert = { id, effect, header, description };
-                        if (station_id in alerts.perStation) {
-                            if (alerts.perStation[station_id].some(({ id: existing_id }) => existing_id === id)) {
-                                return;
-                            }
-                            alerts.perStation[station_id].push(newAlert);
-                        } else {
-                            alerts.perStation[station_id] = [newAlert];
-                        }
+                        alert_type = serviceAlertTypes.Delays;
                         break;
                     default:
                         console.warn('Unsupported Alert.Effect:', effect);
                         return;
                 }
-            }
-            ));
-    }
 
-    subway.routes.forEach(({ stops, segments }) => {
-        /** @type {{ [k in string]: [number, number][] }} */
-        const pointsPerAlert = {};
-        stops.forEach((platformId, i) => {
-            if (i === 0) return;
-            const segment = segments[i - 1].map(({ latitude, longitude }) => [latitude, longitude]);
-            // DEBUG
-            if (false) {
-                if (!('debug' in pointsPerAlert)) {
-                    pointsPerAlert['debug'] = [];
+                const newAlert = { alert_type, header, description, stations: [station_id] };
+
+                alerts.byRouteAndAlertType[route_id] = alerts.byRouteAndAlertType[route_id] || {};
+                alerts.byRouteAndAlertType[route_id][alert_type.short_name] = alerts.byRouteAndAlertType[route_id][alert_type.short_name] || {};
+                
+                if (!(id in alerts.byRouteAndAlertType[route_id][alert_type.short_name])) {
+                    alerts.byRouteAndAlertType[route_id][alert_type.short_name][id] = newAlert;
+                } else {
+                    alerts.byRouteAndAlertType[route_id][alert_type.short_name][id].stations.push(station_id);
                 }
-                pointsPerAlert['debug'].push(segment);
-            } else {
-                /** @type {string} */
-                const prevStationId = subway.platforms[stops[i - 1]].parent_station_id;
-                // const prevStation = subway.stations[prevStationId];
-                const prevStationAlerts = alerts.perStation[prevStationId];
-                if (!prevStationAlerts) return;
-                /** @type {string} */
-                const stationId = subway.platforms[platformId].parent_station_id;
-                // const station = subway.stations[stationId];
-                const stationAlerts = alerts.perStation[stationId];
-                if (!stationAlerts) return;
-                // const point = [station.latitude, station.longitude];
-                stationAlerts
-                    .filter(({ id }) => prevStationAlerts.some(({ id: prevId }) => id === prevId))
-                    .forEach(({ id }) => {
-                        if (id in pointsPerAlert) {
-                            pointsPerAlert[id].push(segment);
-                        } else {
-                            pointsPerAlert[id] = [segment];
+            }
+        ));
+
+        // if any alert has a station list with a gap, fill in the missing stations
+        Object.entries(alerts.byRouteAndAlertType).forEach(([route_id, alertTypes]) => {
+            const route = subway.routes.find(r => r.id === route_id);
+            if (!route) return;
+            const stationOrder = route.stops.map(p => subway.platforms[p]?.parent_station_id).filter(Boolean);
+            Object.values(alertTypes).forEach(alerts =>
+                Object.values(alerts).forEach(alert => {
+                    const indices = alert.stations.map(s => stationOrder.indexOf(s)).filter(i => i >= 0).sort((a,b) => a-b);
+                    if (indices.length > 1) {
+                        for (let i = indices[0]; i <= indices[indices.length-1]; i++) {
+                            if (stationOrder[i] && !alert.stations.includes(stationOrder[i])) alert.stations.push(stationOrder[i]);
                         }
-                    });
-            }
+                    }
+                })
+            );
         });
-        Object.values(pointsPerAlert).forEach(points => {
-            allSegmentPolylines.push(L.polyline(points, {
-                color: 'rgba(100, 100, 100, 1)',
-                weight: 6,
-                opacity: 1.0,
-                dashArray: '5, 15', // Create a dashed line
-                zIndex: Layers.AlertOverlay,
-            }));
-        });
-    });
-
-    /*
-    for (let i = 0; i < line.stations.length; i++) {
-        let normalServiceFlag = true;
-        for (let j = 0; j < line.serviceReductions.length; j++) {
-            if (i >= line.serviceReductions[j].startStationIdx &&
-                i < line.serviceReductions[j].endStationIdx &&
-                serviceReductionTypes[line.serviceReductions[j].typeIdx].view) {
-                normalServiceFlag = false;
-            }
-        }
-
-        if (lastStationNormal == normalServiceFlag) {
-            if (normalServiceFlag) {
-                normalServiceSegments[iseg].push(i);
-            } else {
-                reducedServiceSegments[isegRed].push(i);
-            }
-        }
-        else {
-            if (normalServiceFlag) {
-                iseg++;
-                normalServiceSegments.push([]);
-            }
-            else {
-                isegRed++;
-                reducedServiceSegments.push([]);
-            }
-            normalServiceSegments[iseg].push(i);
-            reducedServiceSegments[isegRed].push(i);
-        }
-
-        lastStationNormal = normalServiceFlag;
     }
-
-    // Create polylines for normal service segments
-    // These show infoboxes on mouseover
-    for (let i = 0; i < normalServiceSegments.length; i++) {
-        if (normalServiceSegments[i].length > 1) {
-            let transitPolyLine = L.polyline(normalServiceSegments[i].map(idx => [
-                line.stations[idx].lat,
-                line.stations[idx].lng
-            ]), {
-                color: line.colour,
-                weight: 6,
-                opacity: 1.0
-            });
-
-            let startStationName = line.stations[normalServiceSegments[i][0]].name;
-            let endStationName = line.stations[normalServiceSegments[i][normalServiceSegments[i].length - 1]].name;
-
-            // Create a tooltip for the polyline
-            const lineInfoWindow = L.tooltip({
-                direction: 'top',
-                sticky: true,
-                className: 'line-tooltip',
-                offset: [0, 0]
-            });
-            lineInfoWindow.setContent(`
-                <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
-                    <div style="font-size: 14px; text-align: center;">${line.name}</div>
-                    <div style="font-size: 12px; margin-top: 4px; margin-bottom: 4px; text-align: center;">
-                        Normal service from ${startStationName} to ${endStationName}
-                    </div>
-                </div>
-            `);
-            transitPolyLine.bindTooltip(lineInfoWindow);
-
-            // Store the polyline in the global array
-            allSegmentPolylines.push(transitPolyLine);
-        }
-    }
-
-    let reducedServiceColour = "rgb(100, 100, 100)"; // Default colour for reduced service segments
-
-    // Create polylines for reduced service segments
-    // These are dashed lines that do not have infoboxes
-    for (let i = 0; i < reducedServiceSegments.length; i++) {
-        if (reducedServiceSegments[i].length > 1) {
-            let transitPolyLine = L.polyline(reducedServiceSegments[i].map(idx => [
-                line.stations[idx].lat,
-                line.stations[idx].lng
-            ]), {
-                color: reducedServiceColour,
-                weight: 6,
-                opacity: 1.0,
-                dashArray: '5, 15' // Create a dashed line
-            });
-
-            // Store the polyline in the global array
-            allSegmentPolylines.push(transitPolyLine);
-        }
-    }
-    */
 }
 
-function addStationMarkers(line) {
-    Object.values(subway.stations).forEach(({ latitude, longitude, name }) => {
-        const stationMarker = L.circleMarker([latitude, longitude], {
-            radius: 8,
-            color: '#000',
-            fillColor: '#fff',
-            fillOpacity: 1,
-            weight: 5,
-            opacity: 1,
-            zIndex: Layers.StationMarker,
+
+function addLineSegments() {
+    subway.routes.forEach(({ id: route_id, long_name: route_name, stops, segments, color }) => {
+        if (!visibility.routes[route_id]) return;
+
+        normalSegments = [];
+        alertSegments = [];
+        lastSegmentAlert = false;
+
+        stops.forEach((platformId, i) => {
+            if (i >= segments.length) return;
+            const segmentLatLngs = segments[i].map(({ latitude, longitude }) => [latitude, longitude]);
+            const s1 = subway.platforms[platformId]?.parent_station_id;
+            const s2 = subway.platforms[stops[i + 1]]?.parent_station_id;
+            let isAlertSegment = false;
+
+            // Check if this segment is affected by any alerts
+            Object.entries(alerts.byRouteAndAlertType[route_id] || {}).forEach(([alert_type_name, alertGroup]) => {
+                if (!visibility.alerts[alert_type_name]) return;
+                Object.values(alertGroup).forEach(alert => {
+                    if (alert.stations.includes(s1) && alert.stations.includes(s2)) {
+                        isAlertSegment = true;
+                    }
+                });
+            });
+
+            if (isAlertSegment == lastSegmentAlert && (normalSegments.length > 0 || alertSegments.length > 0)) {
+                // continue the current segment
+                if (isAlertSegment) {
+                    alertSegments[alertSegments.length - 1].segment.push(...segmentLatLngs);
+                    alertSegments[alertSegments.length - 1].s2 = s2;
+                } else {
+                    normalSegments[normalSegments.length - 1].segment.push(...segmentLatLngs);
+                    normalSegments[normalSegments.length - 1].s2 = s2;
+                }
+            } else {
+                // start a new segment
+                if (isAlertSegment) {
+                    alertSegments.push({ segment: [...segmentLatLngs], s1, s2 });
+                } else {
+                    normalSegments.push({ segment: [...segmentLatLngs], s1, s2 });
+                }
+                lastSegmentAlert = isAlertSegment;
+            }
         });
 
-        // Create an info window for the station marker
-        const stationInfoWindow = L.tooltip({
-            direction: 'top',
-            sticky: false,
-            className: 'station-tooltip',
-            offset: [0, 0]
-        });
-        stationInfoWindow.setContent(`
-            <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
-                <div style="font-size: 14px; text-align: center;">${name}</div>
-            </div>
-        `);
-        stationMarker.bindTooltip(stationInfoWindow);
+        console.warn(`Route ${route_name} (${route_id}): ${normalSegments.length} normal segments, ${alertSegments.length} alert segments`);
 
-        // Store the marker in the global array
-        allStationMarkers.push(stationMarker);
+        if (normalSegments.length) {
+            // For each normal segment, make a tooltip polyline
+            normalSegments.forEach(({segment, s1, s2}) => {
+                const transitPolyLine = L.polyline(segment, {
+                    color,
+                    weight: 16,
+                    opacity: 0.8,
+                    zIndex: Layers.SubwayLine,
+                });
+                const lineInfoWindow = L.tooltip({
+                    direction: 'top',
+                    sticky: true,
+                    className: 'line-tooltip',
+                    offset: [0, 0]
+                });
+                lineInfoWindow.setContent(`
+                    <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
+                        <div style="font-size: 14px; text-align: center;">${route_name}</div>
+                        <div style="font-size: 12px; margin-top: 4px; margin-bottom: 4px; text-align: center;">
+                            Normal service from ${subway.stations[s1]?.name || 'Unknown Station'} to ${subway.stations[s2]?.name || 'Unknown Station'}
+                        </div>
+                    </div>
+                `);
+                transitPolyLine.bindTooltip(lineInfoWindow);
+                allSegmentPolylines.push(transitPolyLine);
+            });
+        }
+
+        if (alertSegments.length) {
+            alertSegments.forEach(({segment, s1, s2}) => {
+                const alertPolyLine = L.polyline(segment, {
+                    color: 'rgba(100, 100, 100, 1)',
+                    weight: 6,
+                    opacity: 1.0,
+                    dashArray: '5, 15',
+                    zIndex: Layers.AlertOverlay,
+                });
+                allSegmentPolylines.push(alertPolyLine);
+            });
+        }
+    });
+}
+
+function addStationMarkers() {
+    subway.routes.forEach(({ id: route_id, long_name: route_name, stops }) => {
+        if (!visibility.routes[route_id]) return;
+
+        stops.forEach(platformId => {
+            const platform = subway.platforms[platformId];
+            if (!platform || !platform.parent_station_id) return;
+            const station = subway.stations[platform.parent_station_id];
+            if (!station) return;
+
+            const { name, latitude, longitude } = station;
+
+            // Check if we already added this station marker
+            if (allStationMarkers.some(marker => {
+                const latlng = marker.getLatLng();
+                return latlng.lat === latitude && latlng.lng === longitude;
+            })) {
+                return;
+            }
+
+            const stationMarker = L.circleMarker([latitude, longitude], {
+                radius: 8,
+                color: '#000',
+                fillColor: '#fff',
+                fillOpacity: 1,
+                weight: 5,
+                opacity: 1,
+                zIndex: Layers.StationMarker,
+            });
+            // Create an info window for the station marker
+            const stationInfoWindow = L.tooltip({
+                direction: 'top',
+                sticky: false,
+                className: 'station-tooltip',
+                offset: [0, 0]
+            });
+            stationInfoWindow.setContent(`
+                <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
+                    <div style="font-size: 14px; text-align: center;">${name}</div>
+                </div>
+            `);
+            stationMarker.bindTooltip(stationInfoWindow);
+            allStationMarkers.push(stationMarker);
+        });
     });
 
     // DEBUG
@@ -798,43 +786,217 @@ function getHeading(latlng1, latlng2) {
     return (toDeg(angle) + 360) % 360;  // normalize to 0-360
 }
 
-function addServiceReductions(line) {
-    // Check if any service reductions of the same type overlap, and combine them if they are
+function getMidpointAlongCurve(latlngs) {
+    let totalDistance = 0;
+    const distances = [];
+
+    for (let i = 1; i < latlngs.length; i++) {
+        const dist = latlngs[i - 1].distanceTo(latlngs[i]);
+        distances.push(dist);
+        totalDistance += dist;
+    }
+
+    const halfDistance = totalDistance / 2;
+    let accumulatedDistance = 0;
+
+    for (let i = 0; i < distances.length; i++) {
+        if (accumulatedDistance + distances[i] >= halfDistance) {
+            const overshoot = halfDistance - accumulatedDistance;
+            const ratio = overshoot / distances[i];
+
+            const lat = latlngs[i].lat + ratio * (latlngs[i + 1].lat - latlngs[i].lat);
+            const lng = latlngs[i].lng + ratio * (latlngs[i + 1].lng - latlngs[i].lng);
+            return L.latLng(lat, lng);
+        }
+        accumulatedDistance += distances[i];
+    }
+
+    return latlngs[latlngs.length - 1];
+}
+
+function addServiceAlerts() {
+    processedAlerts = {};
+
+    // for each route
+    subway.routes.forEach(({ id: route_id, long_name: route_name, stops, segments }) => {
+        if (!visibility.routes[route_id]) return;
+        processedAlerts[route_id] = {};
+
+        // for each alert type in that route
+        Object.entries(alerts.byRouteAndAlertType[route_id] || {}).forEach(([alertGroupKey, alertGroup]) => {
+            if (!visibility.alerts[alertGroupKey]) return;
+            processedAlerts[route_id][alertGroupKey] = {};
+            
+            // for each alert in that type
+            Object.entries(alertGroup).forEach(([alertKey, alert]) => {
+                // if two alerts of the same alert_type have overlapping stations, merge them
+                let merged = false;
+                Object.values(processedAlerts[route_id][alertGroupKey]).forEach(existingAlert => {
+                    const intersection = existingAlert.stations.filter(station => alert.stations.includes(station));
+                    if (intersection.length > 0) {
+                        // merge
+                        existingAlert.stations = Array.from(new Set([...existingAlert.stations, ...alert.stations]));
+                        existingAlert.header += "\n<hr>\n" + alert.header;
+                        merged = true;
+                    }
+                });
+                if (!merged) {
+                    processedAlerts[route_id][alertGroupKey][alertKey] = { ...alert };
+                }
+            });
+        });
+    });
+
+    // Now, for each processed alert, create markers and polylines
+    subway.routes.forEach(({ id: route_id, long_name: route_name, stops, segments }) => {
+        if (!visibility.routes[route_id]) return;
+        Object.entries(processedAlerts[route_id] || {}).forEach(([alertGroupKey, alertGroup]) => {
+            if (!visibility.alerts[alertGroupKey]) return;
+            Object.values(alertGroup).forEach(alert => {
+                // Create an info window for the alert
+                let alertInfoWindow = L.tooltip({
+                    direction: 'top',
+                    sticky: true,
+                    className: 'alert-tooltip',
+                    offset: [0, 0]
+                });
+                
+                let stationString = "";
+                // If the start and end stations are the same, we show "at <station name>"
+                // Otherwise, we show "from <start station> to <end station>"
+                if (alert.stations.length === 1) {
+                    stationString = `at ${subway.stations[alert.stations[0]].name}`;
+                } else {
+                    const start_station_name = subway.stations[alert.stations.reduce((a, b) => {
+                        return stops.findIndex(p => subway.platforms[p]?.parent_station_id === a) <
+                               stops.findIndex(p => subway.platforms[p]?.parent_station_id === b) ? a : b;
+                    })].name;
+                    const end_station_name = subway.stations[alert.stations.reduce((a, b) => {
+                        return stops.findIndex(p => subway.platforms[p]?.parent_station_id === a) >
+                               stops.findIndex(p => subway.platforms[p]?.parent_station_id === b) ? a : b;
+                    })].name;
+                    stationString = `from ${start_station_name} to ${end_station_name}`;
+                }
+
+                alertInfoWindow.setContent(`
+                    <div style="color: black; text-align: center; margin-right: 0px; margin-left: 0px;">
+                        <div style="font-size: 14px; font-weight: bold; text-align: center;">${route_name}</div>
+                        <div style="font-size: 12px; margin-top: 4px; text-align: center;">
+                            ${alert.alert_type.long_name} ${stationString}
+                        </div>
+                        <div style="font-size: 12px; color: #666; margin-top: 4px; margin-bottom: 4px; text-align: center;">
+                            ${alert.header}
+                        </div>
+                    </div>
+                `);
+
+                const alertSegs = [];
+                if (alert.stations.length >= 2) {
+                    // Highlight segment for each alert
+                    stops.forEach((platformId, i) => {
+                        if (i >= segments.length) return;
+                        const s1 = subway.platforms[platformId]?.parent_station_id;
+                        const s2 = subway.platforms[stops[i + 1]]?.parent_station_id;
+                        if (alert.stations.includes(s1) && alert.stations.includes(s2)) {
+                            const segmentLatLngs = segments[i].map(({ latitude, longitude }) => [latitude, longitude]);
+                            alertSegs.push(...segmentLatLngs);
+                        }
+                    });
+                }
+
+                const icon = alert.alert_type.icon;
+                const alertIcon = L.divIcon({
+                    className: 'my-custom-svg-icon', // Optional: for CSS styling
+                    html: `<svg width="${24 * icon.scale}" height="${24 * icon.scale}" viewBox="${-12 * icon.scale} ${-12 * icon.scale} ${24 * icon.scale} ${24 * icon.scale}" xmlns="http://www.w3.org/2000/svg">
+                        <g transform="scale(${icon.scale})">
+                        <path d="${icon.path}" 
+                        stroke="${icon.strokeColor}" 
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="${icon.strokeWeight / icon.scale}" 
+                        fill="${icon.fillColor}"/>
+                        </g>
+                        </svg>`,
+                    iconSize: [48, 48], // Set the size of your SVG
+                    iconAnchor: [24, 24], // Point of the icon corresponding to marker's location
+                    tooltipAnchor: [0, -18] // Point from which the tooltip should open relative to the iconAnchor
+                });
+
+                let marker_latlng = null;
+
+                // plot icons at midpoint of segment if alert.stations.length >= 2, else at station
+                if (alertSegs.length >= 2) {
+                    const midpoint = getMidpointAlongCurve(alertSegs.map(([lat, lng]) => L.latLng(lat, lng)));
+                    marker_latlng = midpoint;
+                } else {
+                    // If there's only one station in the alert, place the marker at that station
+                    const firstStationId = alert.stations[0];
+                    const firstStation = subway.stations[firstStationId];
+                    marker_latlng = L.latLng(firstStation.latitude, firstStation.longitude);
+                }
+
+                let alertMarker = L.marker([marker_latlng.lat, marker_latlng.lng], {
+                    icon: alertIcon,
+                    zIndex: Layers.AlertMarker,
+                });
+
+                alertMarker.bindTooltip(alertInfoWindow);
+                allAlertMarkers.push(alertMarker);
+
+                if (alertSegs.length) {
+                    const alertPolyLine = L.polyline(alertSegs, {
+                        color: alert.alert_type.icon.strokeColor,
+                        weight: 20,
+                        opacity: 0.5,
+                        zIndex: Layers.AlertOverlay + 1,
+                    });
+
+                    alertPolyLine.bindTooltip(alertInfoWindow);
+
+                    // Store the polyline in the global array
+                    allAlertPolylines.push(alertPolyLine);
+                }
+            })
+        });
+    });
+}
+
+function addServiceAlertsOld(line) {
+    // Check if any service alerts of the same type overlap, and combine them if they are
     let i1 = 0;
-    while (i1 < line.serviceReductions.length) {
+    while (i1 < line.serviceAlerts.length) {
         let i2 = 0;
         while (i2 < i1) {
-            if (!serviceReductionTypes[line.serviceReductions[i1].typeIdx].view ||
-                !serviceReductionTypes[line.serviceReductions[i2].typeIdx].view) {
+            if (!serviceAlertTypes[line.serviceAlerts[i1].typeIdx].view ||
+                !serviceAlertTypes[line.serviceAlerts[i2].typeIdx].view) {
                 i2++;
                 continue;
             }
 
-            let i1Start = line.serviceReductions[i1].startStationIdx;
-            let i1End = line.serviceReductions[i1].endStationIdx;
-            let i2Start = line.serviceReductions[i2].startStationIdx;
-            let i2End = line.serviceReductions[i2].endStationIdx;
-
+            let i1Start = line.serviceAlerts[i1].startStationIdx;
+            let i1End = line.serviceAlerts[i1].endStationIdx;
+            let i2Start = line.serviceAlerts[i2].startStationIdx;
+            let i2End = line.serviceAlerts[i2].endStationIdx;
             if (((i1Start >= i2Start && i1Start <= i2End) || // i1 starts inside i2
                 (i1End >= i2Start && i1End <= i2End) || // i1 ends inside i2
                 (i2Start >= i1Start && i2Start <= i1End) || // i2 starts inside i1
                 (i2End >= i1Start && i2End <= i1End)) && // i2 ends inside i1
-                (line.serviceReductions[i1].typeIdx === line.serviceReductions[i2].typeIdx)) {
+                (line.serviceAlerts[i1].typeIdx === line.serviceAlerts[i2].typeIdx)) {
 
-                // If the service reduction is adjacent to a previous one and the same type, combine them
-                line.serviceReductions[i1].startStationIdx = Math.min(line.serviceReductions[i1].startStationIdx, line.serviceReductions[i2].startStationIdx);
-                line.serviceReductions[i1].endStationIdx = Math.max(line.serviceReductions[i1].endStationIdx, line.serviceReductions[i2].endStationIdx);
+                // If the service alert is adjacent to a previous one and the same type, combine them
+                line.serviceAlerts[i1].startStationIdx = Math.min(line.serviceAlerts[i1].startStationIdx, line.serviceAlerts[i2].startStationIdx);
+                line.serviceAlerts[i1].endStationIdx = Math.max(line.serviceAlerts[i1].endStationIdx, line.serviceAlerts[i2].endStationIdx);
 
                 // Combine descriptions
-                line.serviceReductions[i1].description += `<hr>${line.serviceReductions[i2].description}`;
+                line.serviceAlerts[i1].description += `<hr>${line.serviceAlerts[i2].description}`;
 
                 // Combine directions
-                if (line.serviceReductions[i1].direction != line.serviceReductions[i2].direction) {
-                    line.serviceReductions[i1].direction = "both";
+                if (line.serviceAlerts[i1].direction != line.serviceAlerts[i2].direction) {
+                    line.serviceAlerts[i1].direction = "both";
                 }
 
-                // Remove the previous service reduction
-                line.delServiceReduction(i2);
+                // Remove the previous service alert
+                line.delServiceAlert(i2);
                 i1 = 0; // Adjust index since we removed an item
                 break; // Exit the loop since we modified the array
             }
@@ -843,36 +1005,35 @@ function addServiceReductions(line) {
         i1++;
     }
 
-    // Check if any service reductions cover the same stations, and combine them if they do
+    // Check if any service alerts cover the same stations, and combine them if they do
     i1 = 0;
-    while (i1 < line.serviceReductions.length) {
+    while (i1 < line.serviceAlerts.length) {
         let i2 = 0;
         while (i2 < i1) {
-            if (!serviceReductionTypes[line.serviceReductions[i1].typeIdx].view ||
-                !serviceReductionTypes[line.serviceReductions[i2].typeIdx].view) {
+            if (!serviceAlertTypes[line.serviceAlerts[i1].typeIdx].view ||
+                !serviceAlertTypes[line.serviceAlerts[i2].typeIdx].view) {
                 i2++;
                 continue;
             }
 
-            if (line.serviceReductions[i1].startStationIdx === line.serviceReductions[i2].startStationIdx &&
-                line.serviceReductions[i1].endStationIdx === line.serviceReductions[i2].endStationIdx) {
+            if (line.serviceAlerts[i1].startStationIdx === line.serviceAlerts[i2].startStationIdx &&
+                line.serviceAlerts[i1].endStationIdx === line.serviceAlerts[i2].endStationIdx) {
 
-                // If the service reduction is the same as a previous one, combine them
-                line.serviceReductions[i1].description += `<hr>${line.serviceReductions[i2].description}`;
-
+                // If the service alert is the same as a previous one, combine them
+                line.serviceAlerts[i1].description += `<hr>${line.serviceAlerts[i2].description}`;
                 // Combine directions
-                if (line.serviceReductions[i1].direction != line.serviceReductions[i2].direction) {
-                    line.serviceReductions[i1].direction = "both";
+                if (line.serviceAlerts[i1].direction != line.serviceAlerts[i2].direction) {
+                    line.serviceAlerts[i1].direction = "both";
                 }
 
-                // If service reduction types differ
-                if (line.serviceReductions[i2].typeIdx != line.serviceReductions[i1].typeIdx) {
-                    let noServiceIdx = serviceReductionTypes.findIndex(type => type.name === "No service");
-                    let restoredIdx = serviceReductionTypes.findIndex(type => type.name === "Service restored");
+                // If service alert types differ
+                if (line.serviceAlerts[i2].typeIdx != line.serviceAlerts[i1].typeIdx) {
+                    let noServiceIdx = serviceAlertTypes.findIndex(type => type.short_name === "Closure");
+                    let restoredIdx = serviceAlertTypes.findIndex(type => type.short_name === "Restored");
 
                     // If one of them is "No service", set the combined alert to that
-                    if (line.serviceReductions[i2].typeIdx === noServiceIdx || line.serviceReductions[i1].typeIdx === noServiceIdx) {
-                        line.serviceReductions[i1].typeIdx = noServiceIdx;
+                    if (line.serviceAlerts[i2].typeIdx === noServiceIdx || line.serviceAlerts[i1].typeIdx === noServiceIdx) {
+                        line.serviceAlerts[i1].typeIdx = noServiceIdx;
                     }
 
                     // If one of them is "Service restored", set the combined alert to the other one
@@ -883,12 +1044,12 @@ function addServiceReductions(line) {
 
                     // Otherwise, set the combined alert to "Multiple alerts"
                     else {
-                        line.serviceReductions[i1].typeIdx = serviceReductionTypes.findIndex(type => type.name === "Multiple alerts");
+                        line.serviceAlerts[i1].typeIdx = serviceAlertTypes.findIndex(type => type.short_name === "Multiple");
                     }
                 }
 
-                // Remove the previous service reduction
-                line.delServiceReduction(i2);
+                // Remove the previous service alert
+                line.delServiceAlert(i2);
                 i1 = 0; // Adjust index since we removed an item
                 break; // Exit the loop since we modified the array
             }
@@ -897,37 +1058,37 @@ function addServiceReductions(line) {
         i1++;
     }
 
-    // Create polylines for service reductions
-    // These show infoboxes on mouseover with information about the service reduction
-    for (let i = 0; i < line.serviceReductions.length; i++) {
-        if (!serviceReductionTypes[line.serviceReductions[i].typeIdx].view) {
-            continue; // Skip service reductions that are not set to be viewed
+    // Create polylines for service alerts
+    // These show infoboxes on mouseover with information about the service alert
+    for (let i = 0; i < line.serviceAlerts.length; i++) {
+        if (!serviceAlertTypes[line.serviceAlerts[i].typeIdx].view) {
+            continue; // Skip service alerts that are not set to be viewed
         }
 
         const stationIdxs = [];
-        for (let j = line.serviceReductions[i].startStationIdx; j <= line.serviceReductions[i].endStationIdx; j++) {
+        for (let j = line.serviceAlerts[i].startStationIdx; j <= line.serviceAlerts[i].endStationIdx; j++) {
             stationIdxs.push(j);
         }
-        let serviceReductionType = serviceReductionTypes[line.serviceReductions[i].typeIdx];
+        let serviceAlertType = serviceAlertTypes[line.serviceAlerts[i].typeIdx];
 
         let directionIcon = bothwaysarrow;
-        if (line.serviceReductions[i].direction === "forward") {
+        if (line.serviceAlerts[i].direction === "forward") {
             directionIcon = forwardarrow;
-        } else if (line.serviceReductions[i].direction === "reverse") {
+        } else if (line.serviceAlerts[i].direction === "reverse") {
             directionIcon = reversearrow;
         }
 
-        let serviceReductionPolyLine = L.polyline(stationIdxs.map(idx => [
+        let serviceAlertPolyLine = L.polyline(stationIdxs.map(idx => [
             line.stations[idx].lat,
             line.stations[idx].lng
         ]), {
-            color: serviceReductionType.icon.strokeColor,
+            color: serviceAlertType.icon.strokeColor,
             weight: 12,
             opacity: 0.5,
             zIndex: Layers.AlertOverlay,
         });
 
-        let serviceReductionHighlightPolyLine = L.polyline(stationIdxs.map(idx => [
+        let serviceAlertHighlightPolyLine = L.polyline(stationIdxs.map(idx => [
             line.stations[idx].lat,
             line.stations[idx].lng
         ]), {
@@ -938,11 +1099,11 @@ function addServiceReductions(line) {
         });
 
         // Store the polyline in the global array
-        allReductionPolylines.push(serviceReductionPolyLine);
-        allReductionPolylines.push(serviceReductionHighlightPolyLine);
+        allAlertPolylines.push(serviceAlertPolyLine);
+        allAlertPolylines.push(serviceAlertHighlightPolyLine);
 
         // get midpoint of the polyline for the marker
-        const path = serviceReductionPolyLine.getLatLngs();
+        const path = serviceAlertPolyLine.getLatLngs();
         let midLat = path[0].lat;
         let midLng = path[0].lng;
         let rotAngle = 0;
@@ -968,15 +1129,15 @@ function addServiceReductions(line) {
         let stationString = "";
         // If the start and end stations are the same, we show "at <station name>"
         // Otherwise, we show "from <start station> to <end station>"
-        if (line.serviceReductions[i].startStationIdx === line.serviceReductions[i].endStationIdx) {
-            stationString = `at ${line.stations[line.serviceReductions[i].startStationIdx].name}`;
+        if (line.serviceAlerts[i].startStationIdx === line.serviceAlerts[i].endStationIdx) {
+            stationString = `at ${line.stations[line.serviceAlerts[i].startStationIdx].name}`;
         } else {
-            stationString = `from ${line.stations[line.serviceReductions[i].startStationIdx].name} to ${line.stations[line.serviceReductions[i].endStationIdx].name}`;
+            stationString = `from ${line.stations[line.serviceAlerts[i].startStationIdx].name} to ${line.stations[line.serviceAlerts[i].endStationIdx].name}`;
         }
 
         // Create a marker at the midpoint of the polyline
-        const icon = serviceReductionType.icon;
-        const serviceReductionIcon = L.divIcon({
+        const icon = serviceAlertType.icon;
+        const serviceAlertIcon = L.divIcon({
             className: 'my-custom-svg-icon', // Optional: for CSS styling
             html: `<svg width="${24 * icon.scale}" height="${24 * icon.scale}" viewBox="${-12 * icon.scale} ${-12 * icon.scale} ${24 * icon.scale} ${24 * icon.scale}" xmlns="http://www.w3.org/2000/svg">
                 <g transform="scale(${icon.scale})">
@@ -993,42 +1154,41 @@ function addServiceReductions(line) {
             tooltipAnchor: [0, -18] // Point from which the tooltip should open relative to the iconAnchor
         });
 
-        // Bind the info window to the service reduction marker
-        let serviceReductionInfoWindow = L.tooltip({
+        // Bind the info window to the service alert marker
+        let serviceAlertInfoWindow = L.tooltip({
             direction: 'top',
             sticky: false,
-            className: 'service-reduction-tooltip',
+            className: 'service-alert-tooltip',
             offset: [0, 0]
         });
 
-        serviceReductionInfoWindow.setContent(`
+        serviceAlertInfoWindow.setContent(`
             <div style="color: black; text-align: center; margin-right: 0px; margin-left: 0px;">
                 <div style="font-size: 14px; font-weight: bold; text-align: center;">${line.name}</div>
                 <div style="font-size: 12px; margin-top: 4px; text-align: center;">
-                    ${serviceReductionType.name} ${stationString}
+                    ${serviceAlertType.long_name} ${stationString}
                 </div>
                 <div style="font-size: 12px; color: #666; margin-top: 4px; margin-bottom: 4px; text-align: center;">
-                    ${line.serviceReductions[i].description}
+                    ${line.serviceAlerts[i].description}
                 </div>
             </div>
         `);
 
-        let serviceReductionMarker = L.marker([midLat, midLng], {
-            icon: serviceReductionIcon,
+        let serviceAlertMarker = L.marker([midLat, midLng], {
+            icon: serviceAlertIcon,
             zIndex: Layers.AlertMarker,
         });
-        serviceReductionMarker.bindTooltip(serviceReductionInfoWindow);
-
-        serviceReductionMarker.on('tooltipopen', function () {
-            serviceReductionHighlightPolyLine.setStyle({ opacity: 1 });
+        serviceAlertMarker.bindTooltip(serviceAlertInfoWindow);
+        serviceAlertMarker.on('tooltipopen', function () {
+            serviceAlertHighlightPolyLine.setStyle({ opacity: 1 });
         });
-        serviceReductionMarker.on('tooltipclose', function () {
-            serviceReductionHighlightPolyLine.setStyle({ opacity: 0 });
+        serviceAlertMarker.on('tooltipclose', function () {
+            serviceAlertHighlightPolyLine.setStyle({ opacity: 0 });
         });
 
         const scaleRGB = c => c.replace(/\d+/g, n => Math.round(n * 0.75));
         directionIcon.rotation = rotAngle; // Set the rotation of the direction marker
-        directionIcon.strokeColor = scaleRGB(serviceReductionType.icon.strokeColor); // Set the stroke color of the direction marker
+        directionIcon.strokeColor = scaleRGB(serviceAlertType.icon.strokeColor); // Set the stroke color of the direction marker
         directionIcon.fillColor = directionIcon.strokeColor; // Set the fill color of the direction marker
 
         let directionMarkerIcon = L.divIcon({
@@ -1053,7 +1213,7 @@ function addServiceReductions(line) {
         });
 
         // Store the marker in the global array
-        allReductionMarkers.push(serviceReductionMarker);
-        allReductionMarkers.push(directionMarker);
+        allAlertMarkers.push(serviceAlertMarker);
+        allAlertMarkers.push(directionMarker);
     }
 }

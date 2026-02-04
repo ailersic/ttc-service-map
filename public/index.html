@@ -158,7 +158,7 @@
             });
             layer.addTo(map);
 
-            // Create legend with service reduction types
+            // Create legend with service alert types
             const legend = document.createElement("div");
             legend.id = "legend";
 
@@ -171,9 +171,9 @@
             content.id = "legend-content";
             content.style.display = "none"; // Initially hidden
 
-            for (const serviceReductionType of serviceReductionTypes) {
-                const icon = serviceReductionType.icon;
-                const name = serviceReductionType.name;
+            Object.entries(serviceAlertTypes).forEach(([key, serviceAlertType]) => {
+                const icon = serviceAlertType.icon;
+                const name = serviceAlertType.short_name;
 
                 size = 48;
                 svg = `<svg width="${size}" height="${size}" viewBox="${-size / 2} ${-size / 2} ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
@@ -196,19 +196,18 @@
                 </div>`
                 const viewButton = typeDiv.querySelector(".view-button");
                 viewButton.addEventListener("click", () => {
-                    const typeIdx = serviceReductionTypes.findIndex(type => type.name === name);
-                    if (serviceReductionTypes[typeIdx].view) {
-                        serviceReductionTypes[typeIdx].view = false;
+                    if (visibility.alerts[serviceAlertType.short_name]) {
+                        visibility.alerts[serviceAlertType.short_name] = false;
                         viewButton.innerHTML = `<i class="fa-regular fa-eye-slash"></i>`;
                         refreshMap(map); // Refresh the map to hide this type
                     } else {
-                        serviceReductionTypes[typeIdx].view = true;
+                        visibility.alerts[serviceAlertType.short_name] = true;
                         viewButton.innerHTML = `<i class="fa-regular fa-eye"></i>`;
                         refreshMap(map); // Refresh the map to show this type
                     }
                 });
                 content.appendChild(typeDiv);
-            }
+            });
 
             const mapHeight = map.getContainer().clientHeight;
             content.style.maxHeight = `${mapHeight * 0.6}px`; // Set max height to 60% of the map height
@@ -254,22 +253,6 @@
                 // const alertsjson = await response.json();
                 await loadAlerts();
 
-                // Clear existing service reductions
-                lines.forEach(line => line.clearServiceReductions());
-
-                //lines[0].addServiceReduction("Osgoode", "Osgoode", "Bypass", "Bypassing Osgoode because a disgruntled lawyer is holding the station hostage.");
-                //lines[0].addServiceReduction("Wellesley", "Wellesley", "Accessibility alert", "Broken elevator lel");
-
-                // lines[2].addServiceReduction("Kennedy", "McCowan", "No service", "Permanently closed.");
-
-                // alertsjson.alerts.forEach(alert => {
-                //     if (alert.lineIdx < 0 || alert.lineIdx >= lines.length || alert.lineIdx === null) {
-                //         console.error(`Invalid line index ${alert.lineIdx} for alert:`, alert);
-                //     } else {
-                //         lines[alert.lineIdx].addServiceReduction(alert.startStation, alert.endStation, alert.effectDesc, alert.description);
-                //     }
-                // });
-
                 // const lastUpdatedDate = new Date(alertsjson.lastUpdated);
                 const lastUpdatedDate = new Date(alerts.fromApi.subway.timestamp);
                 const options = {
@@ -288,6 +271,8 @@
                 console.info('fetchAndPlotAlerts() finished in', Date.now() - start, 'ms');
             }
 
+            await subwayPromise;
+            setVisibilityDefaults();
             fetchAndPlotAlerts(); // Initial fetch and plot
             const interval = setInterval(fetchAndPlotAlerts, 300000); // Refresh every 5 minutes
 
