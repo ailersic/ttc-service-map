@@ -23,7 +23,7 @@ const serviceAlertTypes = {
     Closure: new ServiceAlertType("Closure", "No service", cross),
     Planned: new ServiceAlertType("Planned", "Planned alert", clock),
     Accessibility: new ServiceAlertType("Access.", "Accessibility alert", accessibility),
-    Restored: new ServiceAlertType("Restored", "Service restored", check),
+    //Restored: new ServiceAlertType("Restored", "Service restored", check),
     Other: new ServiceAlertType("Other", "Other alert", exclamation),
     Multiple: new ServiceAlertType("Multiple", "Multiple alerts", multiple)
 }
@@ -609,7 +609,8 @@ function assembleAlerts() {
 
 function addLineSegments() {
     subway.routes.forEach(({ id: route_id, long_name: route_name, stops, segments, color }) => {
-        if (!visibility.routes[route_id]) return;
+        let visOpacity = 0.8;
+        if (!visibility.routes[route_id]) visOpacity = 0.1;
 
         normalSegments = [];
         alertSegments = [];
@@ -660,24 +661,39 @@ function addLineSegments() {
                 const transitPolyLine = L.polyline(segment, {
                     color,
                     weight: 16,
-                    opacity: 0.8,
+                    opacity: visOpacity,
                     zIndex: Layers.SubwayLine,
                 });
-                const lineInfoWindow = L.tooltip({
-                    direction: 'top',
-                    sticky: true,
-                    className: 'line-tooltip',
-                    offset: [0, 0]
-                });
-                lineInfoWindow.setContent(`
-                    <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
-                        <div style="font-size: 14px; text-align: center;">${route_name}</div>
-                        <div style="font-size: 12px; margin-top: 4px; margin-bottom: 4px; text-align: center;">
-                            Normal service from ${subway.stations[s1]?.name || 'Unknown Station'} to ${subway.stations[s2]?.name || 'Unknown Station'}
+                
+                if (!visibility.routes[route_id]) {
+                    // add listener for click to make line visible
+                    transitPolyLine.on('click', () => {
+                        visibility.routes[route_id] = true;
+                        // change visibility icon in legend too
+                        const viewButton = document.querySelector(`#route-visibility-button-${route_id}`);
+                        viewButton.innerHTML = `<i class="fa-regular fa-eye"></i>`;
+                        refreshMap(map);
+                    });
+                }
+                else {
+                    // Create an info window for the line segment
+                    const lineInfoWindow = L.tooltip({
+                        direction: 'top',
+                        sticky: true,
+                        className: 'line-tooltip',
+                        offset: [0, 0]
+                    });
+                    lineInfoWindow.setContent(`
+                        <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
+                            <div style="font-size: 14px; text-align: center;">${route_name}</div>
+                            <div style="font-size: 12px; margin-top: 4px; margin-bottom: 4px; text-align: center;">
+                                Normal service from ${subway.stations[s1]?.name || 'Unknown Station'} to ${subway.stations[s2]?.name || 'Unknown Station'}
+                            </div>
                         </div>
-                    </div>
-                `);
-                transitPolyLine.bindTooltip(lineInfoWindow);
+                    `);
+                    transitPolyLine.bindTooltip(lineInfoWindow);
+                }
+
                 allSegmentPolylines.push(transitPolyLine);
             });
         }
@@ -687,10 +703,22 @@ function addLineSegments() {
                 const alertPolyLine = L.polyline(segment, {
                     color: 'rgba(100, 100, 100, 1)',
                     weight: 6,
-                    opacity: 1.0,
+                    opacity: visOpacity,
                     dashArray: '5, 15',
                     zIndex: Layers.AlertOverlay,
                 });
+
+                if (!visibility.routes[route_id]) {
+                    // add listener for click to make line visible
+                    alertPolyLine.on('click', () => {
+                        visibility.routes[route_id] = true;
+                        // change visibility icon in legend too
+                        const viewButton = document.querySelector(`#route-visibility-button-${route_id}`);
+                        viewButton.innerHTML = `<i class="fa-regular fa-eye"></i>`;
+                        refreshMap(map);
+                    });
+                }
+
                 allSegmentPolylines.push(alertPolyLine);
             });
         }
