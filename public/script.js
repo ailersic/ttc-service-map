@@ -610,7 +610,7 @@ function assembleAlerts() {
 function addLineSegments() {
     subway.routes.forEach(({ id: route_id, long_name: route_name, stops, segments, color }) => {
         let visOpacity = 0.8;
-        if (!visibility.routes[route_id]) visOpacity = 0.1;
+        if (!visibility.routes[route_id]) visOpacity = 0.2;
 
         normalSegments = [];
         alertSegments = [];
