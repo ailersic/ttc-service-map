@@ -20,22 +20,23 @@ class ServiceReduction {
 }
 
 class ServiceReductionType {
-    constructor(name, icon) {
+    constructor(name, short_name, icon) {
         this.name = name;
+        this.short_name = short_name;
         this.icon = icon;
         this.view = true;
     }
 }
 
 const serviceReductionTypes = [
-    new ServiceReductionType("Delays", snail),
-    new ServiceReductionType("Bypass", noentry),
-    new ServiceReductionType("No service", cross),
-    new ServiceReductionType("Planned alert", clock),
-    new ServiceReductionType("Elevator alert", accessibility),
-    new ServiceReductionType("Service restored", check),
-    new ServiceReductionType("Other alert", exclamation),
-    new ServiceReductionType("Multiple alerts", multiple)
+    new ServiceReductionType("Delays", "Delays", snail),
+    new ServiceReductionType("Bypass", "Bypass", noentry),
+    new ServiceReductionType("No service", "Closure", cross),
+    new ServiceReductionType("Planned alert", "Planned", clock),
+    new ServiceReductionType("Elevator alert", "Elevator", accessibility),
+    new ServiceReductionType("Service restored", "Restored", check),
+    new ServiceReductionType("Other alert", "Other", exclamation),
+    new ServiceReductionType("Multiple alerts", "Multiple", multiple)
 ]
 
 class Line {
@@ -120,6 +121,10 @@ class Line {
         // If station name is "Bloor", change it to "Bloor-Yonge"
         if (startStation === "Bloor") { startStation = "Bloor-Yonge"; }
         if (endStation === "Bloor") { endStation = "Bloor-Yonge"; }
+
+        // If station name is "Don Valley", change it to "Don Valley (RIP Science Centre)"
+        if (startStation === "Don Valley") { startStation = "Don Valley (RIP Science Centre)"; }
+        if (endStation === "Don Valley") { endStation = "Don Valley (RIP Science Centre)"; }
 
         // If station name is "Yonge", change it to "Bloor-Yonge" if Line 2, or "Sheppard-Yonge" if Line 4
         if (startStation === "Yonge") {
@@ -230,7 +235,7 @@ class Line {
                         direction = "reverse";
                     }
                 }
-            } else if (this.name === "Line 2 - Bloor-Danforth" || this.name === "Line 4 - Sheppard") {
+            } else if (this.name === "Line 2 - Bloor-Danforth" || this.name === "Line 4 - Sheppard" || this.name === "Line 5 - Eglinton LRT" || this.name === "Line 6 - Finch West LRT") {
                 if (description.toLowerCase().includes("eastbound") && !description.toLowerCase().includes("westbound")) {
                     direction = "forward";
                 } else if (description.toLowerCase().includes("westbound") && !description.toLowerCase().includes("eastbound")) {
@@ -292,7 +297,7 @@ var lines = [
             new Station("Yorkdale", 43.7245980, -79.4474920),
             new Station("Lawrence West", 43.7152660, -79.4439145),
             new Station("Glencairn", 43.7085980, -79.4405415),
-            new Station("Cedarvale (formerly Eglinton West)", 43.6999980, -79.4364910),
+            new Station("Cedarvale (formerly Eglinton West)", 43.6989590, -79.4360080),
             new Station("St Clair West", 43.6845480, -79.4156400),
             new Station("Dupont", 43.6743490, -79.4068895),
             new Station("Spadina", 43.6696490, -79.4049890),
@@ -313,7 +318,7 @@ var lines = [
             new Station("Summerhill", 43.6826990, -79.3909890),
             new Station("St Clair", 43.6880490, -79.3932890),
             new Station("Davisville", 43.6976480, -79.3970900),
-            new Station("Eglinton", 43.7055980, -79.3986400),
+            new Station("Eglinton", 43.7064350, -79.3989755),
             new Station("Lawrence", 43.7259480, -79.4023900),
             new Station("York Mills", 43.7438480, -79.4060910),
             new Station("Sheppard-Yonge", 43.7612845, -79.4105167),
@@ -379,6 +384,37 @@ var lines = [
             new Station("Bessarion", 43.7692490, -79.3763285),
             new Station("Leslie", 43.7712980, -79.3658900),
             new Station("Don Mills", 43.7753975, -79.3463865)
+        ]
+    ),
+    new Line(
+        "Line 5 - Eglinton LRT",
+        " #E77817",
+        [
+            new Station("Mount Dennis", 43.6879318, -79.4861859),
+            new Station("Keelesdale", 43.6904666, -79.4747508),
+            new Station("Caledonia", 43.6923480, -79.4653890),
+            new Station("Fairbank", 43.6957670, -79.4494425),
+            new Station("Oakwood", 43.6974855, -79.4429580),
+            new Station("Cedarvale (formerly Eglinton West)", 43.6989590, -79.4360080),
+            new Station("Forest Hill", 43.7011990, -79.4253020),
+            new Station("Chaplin", 43.7029610, -79.4174035),
+            new Station("Avenue", 43.7048125, -79.4088950),
+            new Station("Eglinton", 43.7064350, -79.3989755),
+            new Station("Mount Pleasant", 43.7085845, -79.3904355),
+            new Station("Leaside", 43.7108765, -79.3766885),
+            new Station("Laird", 43.7132690, -79.3650305),
+            new Station("Sunnybrook Park", 43.7173085, -79.3491345),
+            new Station("Don Valley (RIP Science Centre)", 43.7200120, -79.3391780),
+            new Station("Aga Khan Park & Museum", 43.7224190, -79.3326920),
+            new Station("Wynford", 43.7240830, -79.3266600),
+            new Station("Sloane", 43.7259200, -79.3126800),
+            new Station("O'Connor", 43.7248255, -79.3017850),
+            new Station("Pharmacy", 43.7258405, -79.2967420),
+            new Station("Hakimi Lebovic", 43.7269970, -79.2915545),
+            new Station("Golden Mile", 43.7278655, -79.2876265),
+            new Station("Birchmount", 43.7301810, -79.2770540),
+            new Station("Ionview", 43.7313115, -79.2720925),
+            new Station("Kennedy", 43.7321527, -79.2635679)
         ]
     ),
     new Line(
@@ -511,8 +547,8 @@ function addLineSegments(line) {
                 line.stations[idx].lng
             ]), {
                 color: line.colour,
-                weight: 6,
-                opacity: 1.0
+                weight: 10,
+                opacity: 0.8
             });
 
             let startStationName = line.stations[normalServiceSegments[i][0]].name;

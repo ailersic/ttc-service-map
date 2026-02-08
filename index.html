@@ -157,11 +157,11 @@
 
             for (const serviceReductionType of serviceReductionTypes) {
                 const icon = serviceReductionType.icon;
-                const name = serviceReductionType.name;
+                const name = serviceReductionType.short_name;
 
-                size = 48;
-                svg = `<svg width="${size}" height="${size}" viewBox="${-size/2} ${-size/2} ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-                    <g transform="scale(${icon.scale})">
+                size = 32;
+                let svg = `<svg width="${size}" height="${size}" viewBox="${-size / 2} ${-size / 2} ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                    <g transform="scale(${icon.scale * (size / 48)})">
                     <path d="${icon.path}" 
                     stroke="${icon.strokeColor}" 
                     stroke-linecap="round"
@@ -175,12 +175,12 @@
                 //typeDiv.innerHTML = `${svg} <span style="font-size:1.5em; ">${name}</span>`;
                 typeDiv.innerHTML = `<div style="display: flex; align-items: center; gap: 8px; margin: 5px 0;">
                     <div style="flex-shrink: 0;">${svg}</div>
-                    <div style="flex: 1; font-size: 1.3em; word-wrap: break-word; width: 70px;">${name}</div>
+                    <div style="font-size: 1.0em; word-wrap: break-word; width: 60px;">${name}</div>
                     <button class="small-button view-button" style="margin-right: 10px;"><i class="fa-regular fa-eye"></i></button>
                 </div>`
                 const viewButton = typeDiv.querySelector(".view-button");
                 viewButton.addEventListener("click", () => {
-                    const typeIdx = serviceReductionTypes.findIndex(type => type.name === name);
+                    const typeIdx = serviceReductionTypes.findIndex(type => type.short_name === name);
                     if (serviceReductionTypes[typeIdx].view) {
                         serviceReductionTypes[typeIdx].view = false;
                         viewButton.innerHTML = `<i class="fa-regular fa-eye-slash"></i>`;
