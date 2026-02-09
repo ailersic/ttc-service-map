@@ -1,79 +1,101 @@
-Tunnel
-Wormhole
-Portal
-Promenade
-Walkway
-Path
-Crawlspace
-Duct
-Express
-Expressway
-Way
-Passage
-Conveyor Belt
-Pipe
-Tube
-Pipeline
-Bike Path
-Strip
-Vent
-Connection
-Freeway
-Superhighway
-Treadmill
-Cardio
-Fitness Program
-Busk
-Hike
-Detour
-Marathon
-Triathlon
-Jog
-Wander
 Adventure
-Trek
-Tour
-Speedway
-Golf Course
-Trail
-Beltline
-Warp Zone
-Music Hall
-Saunter
 Amble
-Ramble
-Stroll
-Jaunt
-Walkabout
-Pilgrimage
-Sashay
-Safari
-Junket
-Expedition
-Perambulation
-Peregrination
-Voyage
-Cruise
-Odyssey
-Quest
-Hop
-Jump
-Grand Tour
-Extension
-Sortie
-Parkway
+Beaten Path
+Beltline
+Bike Lane
+Bike Path
+Bobsled
+Bumble
+Busk
 Bypass
-Underpass
+Cardio
 Commute
-Slog
-Migration
-Traipse
-Trundle
+Connection
+Conveyor Belt
+Crawlspace
+Cross-Country
+Cruise
+Dash
+Desire Path
+Derby
+Detour
+Duct
+Expedition
+Express
+Express Lane
+Expressway
+Extension
+Fitness Program
+Freeway
 Gallivant
 Garden Path
+Golf Course
+Grand Tour
+Hike
+Hop
+Jaunt
+Jog
+Journey
+Jump
+Junket
+Link
+Marathon
 Meander
-Desire Path
+Migration
+Music Hall
+Odyssey
+Parkway
+Passage
+Path
+Perambulation
+Peregrination
+Pilgrimage
+Pipe
+Pipeline
+Portal
+Promenade
+Quest
+Raceway
+Rally
+Ramble
+Safari
+Sashay
+Saunter
+Skip
+Slog
+Sortie
+Speedway
+Step
+Strip
+Stroll
+Superhighway
+Teleporter
+Tour
+Trail
+Traipse
+Treadmill
+Trek
+Trek: Deep Space Nine
+Trek: Enterprise
+Trek: The Next Generation
+Trek: The Original Series
+Trek: Voyager
+Triathlon
+Trundle
+Tube
+Tunnel
 Turnpike
-Express Lane
-Bike Lane
-Beaten Path
+Underground
+Underpass
+Vent
+Voyage
+Walkabout
+Walkway
+Wander
+Warp
+Warp Zone
+Way
+Wormhole
+Zip
+Zipline
+Zoom
