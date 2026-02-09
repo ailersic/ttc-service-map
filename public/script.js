@@ -417,10 +417,23 @@ const visibility = {
     alerts: {},
 }
 
+var spadinaTunnelNames = [];
+
+function loadSpadinaTunnelNames() {
+    // load list of names from spadina.txt, make an array of strings corresponding to each line in the file, and assign to spadinaTunnelNames
+    fetch('/spadina.txt')
+        .then(response => response.text())
+        .then(text => {
+            spadinaTunnelNames = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+        });
+}
+
 async function loadSubway() {
     subway.platforms = await fetch('/api/subway/platforms').then(res => res.json());
     subway.stations = await fetch('/api/subway/stations').then(res => res.json());
     subway.routes = await fetch('/api/subway/routes').then(res => res.json());
+
+    loadSpadinaTunnelNames();
 }
 
 function setVisibilityDefaults() {
@@ -503,9 +516,28 @@ function refreshMap(map) {
             [spadina2.latitude, spadina2.longitude],
         ], {
             color: "#000",
-            weight: 6,
+            weight: 10,
             opacity: 1.0,
             zIndex: Layers.Top,
+        });
+
+        // Create an info window for the station marker
+        const spadinaTunnelInfoWindow = L.tooltip({
+            direction: 'top',
+            sticky: false,
+            className: 'spadina-tunnel-tooltip',
+            offset: [0, 0]
+        });
+        spadinaTunnel.bindTooltip(spadinaTunnelInfoWindow);
+        // listener for when tooltip opens
+        spadinaTunnel.on('tooltipopen', function(e) {
+            // set content to random name from list
+            const randomName = spadinaTunnelNames[Math.floor(Math.random() * spadinaTunnelNames.length)];
+            spadinaTunnelInfoWindow.setContent(`
+                <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
+                    <div style="font-size: 14px; text-align: center;">Spadina ${randomName}</div>
+                </div>
+            `);
         });
 
         allSegmentPolylines.push(spadinaTunnel);

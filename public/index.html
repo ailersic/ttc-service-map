@@ -242,6 +242,15 @@
             routeContent.id = "legend-content";
             routeContent.style.display = "none"; // Initially hidden
 
+
+            const titleDiv = document.createElement("div");
+            titleDiv.innerHTML = `<div style="display: flex; align-items: center; gap: 8px; margin: 5px 0;">
+                <div style="flex: 1; font-size: 1.2em; word-wrap: break-word; width: 70px;">Subway/LRT</div>
+                <button id="route-visibility-button-subways" class="small-button view-button" style="margin-right: 10px;"><i class="fa-regular fa-eye"></i></button>
+            </div>`
+            routeContent.appendChild(titleDiv);
+
+            // for each subway route, create an entry in the legend with route icon and visibility toggle button
             Object.entries(subway.routes).forEach(([key, route]) => {
                 console.warn(`Route ${route.short_name} with color ${route.color}`);
                 const color = route.color;
@@ -258,8 +267,9 @@
 
                 const entryDiv = document.createElement("div");
                 entryDiv.innerHTML = `<div style="display: flex; align-items: center; gap: 8px; margin: 5px 0;">
+                    <div style="flex: 1; font-size: 1.0em; word-wrap: break-word; width: 20px;"></div>
                     <div style="flex-shrink: 0;">${icon}</div>
-                    <div style="flex: 1; font-size: 1.0em; word-wrap: break-word; width: 45px;">Line ${number}</div>
+                    <div style="flex: 1; font-size: 1.0em; word-wrap: break-word; width: 25px;"></div>
                     <button id="route-visibility-button-${route.short_name}" class="small-button view-button" style="margin-right: 10px;"><i class="fa-regular fa-eye"></i></button>
                 </div>`
 
@@ -276,6 +286,31 @@
                     }
                 });
                 routeContent.appendChild(entryDiv);
+            });
+
+            const titleViewButton = titleDiv.querySelector(".view-button");
+            
+            titleViewButton.addEventListener("click", () => {
+                // set visibility for all routes to the same value based on the title button
+                Object.entries(subway.routes).forEach(([key, route]) => {
+                    const entryViewButton = routeContent.querySelector(`#route-visibility-button-${route.short_name}`);
+                    if (titleViewButton.innerHTML.includes("fa-eye-slash")) {
+                        visibility.routes[route.short_name] = true;
+                        entryViewButton.innerHTML = `<i class="fa-regular fa-eye"></i>`;
+                    } else {
+                        visibility.routes[route.short_name] = false;
+                        entryViewButton.innerHTML = `<i class="fa-regular fa-eye-slash"></i>`;
+                    }
+                });
+
+                // set title button too
+                if (titleViewButton.innerHTML.includes("fa-eye-slash")) {
+                    titleViewButton.innerHTML = `<i class="fa-regular fa-eye"></i>`;
+                } else {
+                    titleViewButton.innerHTML = `<i class="fa-regular fa-eye-slash"></i>`;
+                }
+                
+                refreshMap(map); // Refresh the map to show/hide all routes
             });
 
             routeContent.style.maxHeight = `${mapHeight * 0.6}px`; // Set max height to 60% of the map height
