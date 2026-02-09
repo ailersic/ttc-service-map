@@ -5,10 +5,13 @@ Beltline
 Bike Lane
 Bike Path
 Bobsled
+Boogaloo
 Bumble
+Bunker
 Busk
 Bypass
 Cardio
+Catwalk
 Commute
 Connection
 Conveyor Belt
@@ -16,8 +19,8 @@ Crawlspace
 Cross-Country
 Cruise
 Dash
-Desire Path
 Derby
+Desire Path
 Detour
 Duct
 Expedition
@@ -38,6 +41,7 @@ Jog
 Journey
 Jump
 Junket
+Kaiju Breach
 Link
 Marathon
 Meander
@@ -56,20 +60,27 @@ Portal
 Promenade
 Quest
 Raceway
+Rainbow Road
 Rally
 Ramble
+Rip in Spacetime
+Runway
 Safari
 Sashay
 Saunter
 Skip
+Slalom
 Slog
 Sortie
+Spadeena
 Speedway
+Sprint
 Step
 Strip
 Stroll
 Superhighway
 Teleporter
+The Path
 Tour
 Trail
 Traipse
@@ -94,8 +105,10 @@ Walkway
 Wander
 Warp
 Warp Zone
+Waterslide
 Way
 Wormhole
+Yellow Brick Road
 Zip
 Zipline
 Zoom
