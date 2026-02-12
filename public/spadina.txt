@@ -1,3 +1,7 @@
+2: Electric Boogaloo
+2: Judgement Day
+2: Spadiner
+2: The Squeakquel
 Adventure
 Amble
 Beaten Path
@@ -6,12 +10,16 @@ Bike Lane
 Bike Path
 Bobsled
 Boogaloo
+Break
 Bumble
 Bunker
 Busk
 Bypass
+Canal
 Cardio
 Catwalk
+Cave
+Channel
 Commute
 Connection
 Conveyor Belt
@@ -31,6 +39,7 @@ Extension
 Fitness Program
 Freeway
 Gallivant
+Gap
 Garden Path
 Golf Course
 Grand Tour
@@ -44,6 +53,7 @@ Junket
 Kaiju Breach
 Link
 Marathon
+March
 Meander
 Migration
 Music Hall
@@ -68,6 +78,8 @@ Runway
 Safari
 Sashay
 Saunter
+Shuffle
+Skate
 Skip
 Slalom
 Slog
@@ -76,6 +88,7 @@ Spadeena
 Speedway
 Sprint
 Step
+Stream
 Strip
 Stroll
 Superhighway
@@ -91,6 +104,7 @@ Trek: Enterprise
 Trek: The Next Generation
 Trek: The Original Series
 Trek: Voyager
+Trench
 Triathlon
 Trundle
 Tube
