@@ -466,7 +466,7 @@ const alerts = {
         accessibility: null,
         stop: null,
     },
-    byRouteAndAlertType: {/* [route_id]: { [alert_type]: { [alert_id]: ... } } */},
+    byRouteAndAlertType: {/* [route_id]: { [alert_type]: { [alert_id]: ... } } */ },
 };
 
 async function loadAlerts() {
@@ -508,9 +508,9 @@ function refreshMap(map) {
     renderLines();
 
     // Connect the two Spadinas if both line 1 and line 2 are visible
-    if (visibility.routes['1'] && visibility.routes['2']) {
-        const spadina1 = subway.stations['spadina-1'];
-        const spadina2 = subway.stations['spadina-2'];
+    const spadina1 = subway.stations['spadina-1'];
+    const spadina2 = subway.stations['spadina-2'];
+    if (visibility.routes['1'] && visibility.routes['2'] && spadina1 && spadina2) {
         const spadinaTunnel = L.polyline([
             [spadina1.latitude, spadina1.longitude],
             [spadina2.latitude, spadina2.longitude],
@@ -530,7 +530,7 @@ function refreshMap(map) {
         });
         spadinaTunnel.bindTooltip(spadinaTunnelInfoWindow);
         // listener for when tooltip opens
-        spadinaTunnel.on('tooltipopen', function(e) {
+        spadinaTunnel.on('tooltipopen', function (e) {
             // set content to random name from list
             const randomName = spadinaTunnelNames[Math.floor(Math.random() * spadinaTunnelNames.length)];
             spadinaTunnelInfoWindow.setContent(`
@@ -610,14 +610,14 @@ function assembleAlerts() {
 
                 alerts.byRouteAndAlertType[route_id] = alerts.byRouteAndAlertType[route_id] || {};
                 alerts.byRouteAndAlertType[route_id][alert_type.short_name] = alerts.byRouteAndAlertType[route_id][alert_type.short_name] || {};
-                
+
                 if (!(id in alerts.byRouteAndAlertType[route_id][alert_type.short_name])) {
                     alerts.byRouteAndAlertType[route_id][alert_type.short_name][id] = newAlert;
                 } else {
                     alerts.byRouteAndAlertType[route_id][alert_type.short_name][id].stations.push(station_id);
                 }
             }
-        ));
+            ));
 
         // if any alert has a station list with a gap, fill in the missing stations
         Object.entries(alerts.byRouteAndAlertType).forEach(([route_id, alertTypes]) => {
@@ -626,9 +626,9 @@ function assembleAlerts() {
             const stationOrder = route.stops.map(p => subway.platforms[p]?.parent_station_id).filter(Boolean);
             Object.values(alertTypes).forEach(alerts =>
                 Object.values(alerts).forEach(alert => {
-                    const indices = alert.stations.map(s => stationOrder.indexOf(s)).filter(i => i >= 0).sort((a,b) => a-b);
+                    const indices = alert.stations.map(s => stationOrder.indexOf(s)).filter(i => i >= 0).sort((a, b) => a - b);
                     if (indices.length > 1) {
-                        for (let i = indices[0]; i <= indices[indices.length-1]; i++) {
+                        for (let i = indices[0]; i <= indices[indices.length - 1]; i++) {
                             if (stationOrder[i] && !alert.stations.includes(stationOrder[i])) alert.stations.push(stationOrder[i]);
                         }
                     }
@@ -689,14 +689,14 @@ function addLineSegments() {
 
         if (normalSegments.length) {
             // For each normal segment, make a tooltip polyline
-            normalSegments.forEach(({segment, s1, s2}) => {
+            normalSegments.forEach(({ segment, s1, s2 }) => {
                 const transitPolyLine = L.polyline(segment, {
                     color,
                     weight: 16,
                     opacity: visOpacity,
                     zIndex: Layers.SubwayLine,
                 });
-                
+
                 if (!visibility.routes[route_id]) {
                     // add listener for click to make line visible
                     transitPolyLine.on('click', () => {
@@ -731,7 +731,7 @@ function addLineSegments() {
         }
 
         if (alertSegments.length) {
-            alertSegments.forEach(({segment, s1, s2}) => {
+            alertSegments.forEach(({ segment, s1, s2 }) => {
                 const alertPolyLine = L.polyline(segment, {
                     color: 'rgba(100, 100, 100, 1)',
                     weight: 6,
@@ -886,7 +886,7 @@ function addServiceAlerts() {
         Object.entries(alerts.byRouteAndAlertType[route_id] || {}).forEach(([alertGroupKey, alertGroup]) => {
             if (!visibility.alerts[alertGroupKey]) return;
             processedAlerts[route_id][alertGroupKey] = {};
-            
+
             // for each alert in that type
             Object.entries(alertGroup).forEach(([alertKey, alert]) => {
                 // if two alerts of the same alert_type have overlapping stations, merge them
@@ -920,7 +920,7 @@ function addServiceAlerts() {
                     className: 'alert-tooltip',
                     offset: [0, 0]
                 });
-                
+
                 let stationString = "";
                 // If the start and end stations are the same, we show "at <station name>"
                 // Otherwise, we show "from <start station> to <end station>"
@@ -929,11 +929,11 @@ function addServiceAlerts() {
                 } else {
                     const start_station_name = subway.stations[alert.stations.reduce((a, b) => {
                         return stops.findIndex(p => subway.platforms[p]?.parent_station_id === a) <
-                               stops.findIndex(p => subway.platforms[p]?.parent_station_id === b) ? a : b;
+                            stops.findIndex(p => subway.platforms[p]?.parent_station_id === b) ? a : b;
                     })].name;
                     const end_station_name = subway.stations[alert.stations.reduce((a, b) => {
                         return stops.findIndex(p => subway.platforms[p]?.parent_station_id === a) >
-                               stops.findIndex(p => subway.platforms[p]?.parent_station_id === b) ? a : b;
+                            stops.findIndex(p => subway.platforms[p]?.parent_station_id === b) ? a : b;
                     })].name;
                     stationString = `from ${start_station_name} to ${end_station_name}`;
                 }
