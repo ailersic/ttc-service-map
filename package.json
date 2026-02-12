@@ -24,7 +24,7 @@
     "dev": "cd build && npx wrangler pages dev ./public",
     "dev:debug": "npm run dev -- --log-level=debug",
     "postinstall": "node scripts/postInstall.js",
-    "prebuild": "npm run db:genTypes && npm run pb:generate",
+    "prebuild": "npm run db:typegen && npm run pb:typegen",
     "build": "tsc -b",
     "postbuild": "node scripts/postBuild.js",
     "build:watch": "tsc -b -w",
@@ -34,9 +34,9 @@
     "db:migrate": "npx wrangler d1 migrations apply ttcmapdb",
     "db:migrate:remote": "npx wrangler d1 migrations apply ttcmapdb --remote",
     "db:drop": "rm -rf .wrangler/state/v3/d1/*",
-    "db:genTypes": "npx prisma generate",
+    "db:typegen": "npx prisma generate",
     "pb:download": "curl -# -O https://raw.githubusercontent.com/google/transit/e62ea02efd8987cd6a5eaf8438de7feef9303857/gtfs-realtime/proto/gtfs-realtime.proto",
-    "pb:generate": "npx pbjs --keep-case -t static-module -w es6 -o generated/gtfs-realtime.js gtfs-realtime.proto && npx pbts -o generated/gtfs-realtime.d.ts generated/gtfs-realtime.js"
+    "pb:typegen": "npx pbjs --keep-case -t static-module -w es6 -o generated/gtfs-realtime.js gtfs-realtime.proto && npx pbts -o generated/gtfs-realtime.d.ts generated/gtfs-realtime.js"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260114.0",

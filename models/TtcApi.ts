@@ -195,28 +195,34 @@ export default class TtcApi {
                         const prevAnchor = a[i - 1].platform.parent_station?.anchors
                             .find(({ shape_id }) => shape_id === shape?.id)?.interpolation_factor!;
                         segments.push(
-                            geometry.reducePolyLine({
-                                points: geometry.smoothenPolyLine(
-                                    geometry.slicePolyLine(
-                                        shape!.shape_points.map(({ latitude, longitude }) => [longitude, latitude]),
-                                        prevAnchor,
-                                        thisAnchor,
-                                    ),
-                                    1e-4,
-                                ),
-                                tolerance: 1e-6,
-                            }).map(([longitude, latitude]) => ({ latitude, longitude })),
+                            // geometry.reducePolyLine({
+                            //     points: geometry.smoothenPolyLine(
+                            //         geometry.slicePolyLine(
+                            //             shape!.shape_points.map(({ latitude, longitude }) => [longitude, latitude]),
+                            //             prevAnchor,
+                            //             thisAnchor,
+                            //         ),
+                            //         1e-4,
+                            //     ),
+                            //     tolerance: 1e-6,
+                            // }).map(([longitude, latitude]) => ({ latitude, longitude })),
+                            geometry.slicePolyLine(
+                                shape!.shape_points.map(({ latitude, longitude }) => [longitude, latitude]),
+                                prevAnchor,
+                                thisAnchor,
+                            ).map(([longitude, latitude]) => ({ latitude, longitude })),
                         );
                     }
                     return segments;
                 }, [] as { latitude: number, longitude: number }[][]),
-                shape: geometry.reducePolyLine({
-                    points: geometry.smoothenPolyLine(
-                        points.map(({ latitude, longitude }) => [longitude, latitude]),
-                        1e-4,
-                    ),
-                    tolerance: 1e-6,
-                }).map(([longitude, latitude]) => ({ latitude, longitude })),
+                // shape: geometry.reducePolyLine({
+                //     points: geometry.smoothenPolyLine(
+                //         points.map(({ latitude, longitude }) => [longitude, latitude]),
+                //         1e-4,
+                //     ),
+                //     tolerance: 1e-6,
+                // }).map(([longitude, latitude]) => ({ latitude, longitude })),
+                shape: points,
             };
         });
         Logger.info('Mapped to client format in', sw.lap(), 'ms');

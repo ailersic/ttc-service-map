@@ -17,6 +17,7 @@ model Agency {
 model Station {
     id        String @id
     name      String
+    formerly  String?
     latitude  Float
     longitude Float
 

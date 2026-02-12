@@ -482,20 +482,20 @@ function refreshMap(map) {
     renderLines();
 
     // Connect the two Spadinas
-    const spadina1 = subway.stations['spadina-station-1'];
-    const spadina2 = subway.stations['spadina-station-2'];
-    const spadinaTunnel = L.polyline([
-        [spadina1.latitude, spadina1.longitude],
-        [spadina2.latitude, spadina2.longitude],
-    ], {
-        color: "#000",
-        weight: 4,
-        opacity: 1.0,
-        zIndex: Layers.Top,
-    });
-
-    // spadinaTunnel.addTo(map);
-    allSegmentPolylines.push(spadinaTunnel);
+    const spadina1 = subway.stations['spadina-1'];
+    const spadina2 = subway.stations['spadina-2'];
+    if (spadina1 && spadina2) {
+        const spadinaTunnel = L.polyline([
+            [spadina1.latitude, spadina1.longitude],
+            [spadina2.latitude, spadina2.longitude],
+        ], {
+            color: "#000",
+            weight: 4,
+            opacity: 1.0,
+            zIndex: Layers.Top,
+        });
+        allSegmentPolylines.push(spadinaTunnel);
+    }
 
     allSegmentPolylines.forEach(polyline => polyline.addTo(map));
     // allReductionPolylines.forEach(polyline => polyline.addTo(map));

@@ -5,7 +5,14 @@ import { Writable } from 'stream';
 import { pipeline } from 'stream/promises';
 import unzipper from 'unzipper';
 import geometry from '../build/utils/geometry.js';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { config } from 'dotenv';
+
+config();
+
+const USE_EXISTING = false;
+const DRY_RUN = false;
 
 const ACCOUNT_ID = "364551d890021662422bef42d8059833";
 const DATABASE_ID = "44f8e533-ac92-4a09-9cee-8fa3c68b8de3";
@@ -26,16 +33,20 @@ const queries = [];
  * @param {{ scalarType: ArgScalarType, arity: 'scalar' | 'list' }[]} argTypes
  */
 function fillQueryArgs(sql, args, argTypes) {
+    const chunks = sql.split('?');
+    sql = '';
     args.forEach((arg, i) => {
         let argStr = '';
         const type = argTypes[i].scalarType;
         switch (type) {
             case 'bigint':
             case 'boolean':
-            case 'decimal':
-            case 'float':
             case 'int':
                 argStr = '' + arg;
+                break;
+            case 'decimal':
+            case 'float':
+                argStr = (Math.round(arg * 1e6) / 1e6).toString();
                 break;
             case 'bytes':
             case 'json':
@@ -49,15 +60,17 @@ function fillQueryArgs(sql, args, argTypes) {
                 argStr = `'${('' + arg).replaceAll('\'', '\'\'')}'`;
                 break;
         }
-        sql = sql.replace('?', argStr);
+        sql += chunks[i] + argStr;
     });
-    const matchReturning = sql.match(/(.*) RETURNING.*/);
-    return matchReturning ? matchReturning[1] : sql;
+    sql += chunks[chunks.length - 1];
+    const withoutReturning = sql.split(' RETURNING')[0];
+    return withoutReturning;
 }
 
 function makeMockQuery(dummy) {
     return async ({ sql, args, argTypes }) => {
         if (sql !== 'COMMIT') {
+            // console.log('SQL!');
             queries.push(fillQueryArgs(sql, args, argTypes));
         }
         return dummy;
@@ -151,6 +164,7 @@ async function loadGtfs() {
     const tripStopCountLookup = {};
     const routeAndDirectionByTripId = {};
     const tripShapeLookup = {};
+    const stopLatLon = {};
     const stationPlatforms = [];
     const pointsByShape = {};
     const loadOrder = [
@@ -180,13 +194,13 @@ async function loadGtfs() {
                 await consumeShapes(file, pointsByShape);
                 break;
             case 'stops.txt':
-                await consumeStops(file, stationPlatforms);
+                await consumeStops(file, stopLatLon, stationPlatforms);
                 break;
             case 'trips.txt':
                 await consumeTrips(file, tripStopCountLookup, routeAndDirectionByTripId, tripShapeLookup);
                 break;
             case 'stop_times.txt':
-                await consumeStopTimes(file, tripStopCountLookup, routeAndDirectionByTripId, tripShapeLookup, stationPlatforms, pointsByShape);
+                await consumeStopTimes(file, tripStopCountLookup, routeAndDirectionByTripId, tripShapeLookup, stationPlatforms, pointsByShape, stopLatLon);
                 break;
         }
     }
@@ -233,8 +247,8 @@ async function consumeRoutes(file) {
                 route_sort_order,
             }) => ({
                 id: route_id,
-                long_name: route_long_name,
-                short_name: route_short_name,
+                long_name: toTitleCase(route_long_name),
+                short_name: toTitleCase(route_short_name),
                 type: mapGtfsRouteTypeToApi(route_type),
                 color: `#${route_color || '000000'}`,
                 text_color: `#${route_text_color || 'ffffff'}`,
@@ -258,22 +272,32 @@ async function consumeShapes(file, pointsByShape) {
             });
         });
     });
+    console.log('Read', Object.values(pointsByShape).map(points => points.length).reduce((s, c) => s + c, 0), 'points');
     Object.entries(pointsByShape).forEach(([id, points]) => {
         pointsByShape[id] = geometry.reducePolyLine({
             points,
             x: 'longitude', y: 'latitude',
             iterations: 10,
-            tolerance: 1.4e-4, // ~16.7m N/S, ~12.2m E/W, see: https://www.omnicalculator.com/other/latitude-longitude-distance
+            tolerance: 1e-6,
         });
     });
+    console.log('Reduced to', Object.values(pointsByShape).map(points => points.length).reduce((s, c) => s + c, 0), 'points');
     Object.values(pointsByShape).forEach(points => points.sort((a, b) => a.sequence - b.sequence));
+    console.log('Creating shapes');
     await prisma.shape.createMany({ data: Object.keys(pointsByShape).map(id => ({ id })) });
-    await prisma.shapePoint.createMany({ data: Object.values(pointsByShape).flat() });
+    console.log('Creating shape points');
+    for (let data of Object.values(pointsByShape)) {
+        await prisma.shapePoint.createMany({ data });
+    }
+    console.log('Done');
 }
 
 // ~45s
-async function consumeStops(file, stationPlatforms) {
+async function consumeStops(file, stopLatLon, stationPlatforms) {
     await consumeCsv(file, async (stops) => {
+        if (stops.some(({ parent_station_id }) => parent_station_id)) {
+            console.warn('some stops have parent stations!');
+        }
         const data = stops.map(({ stop_id, stop_lat, stop_lon, stop_name, stop_code }) => ({
             id: stop_id,
             latitude: Number(stop_lat),
@@ -281,6 +305,7 @@ async function consumeStops(file, stationPlatforms) {
             name: toTitleCase(stop_name),
             code: stop_code || null,
         }));
+        data.forEach(({ id, latitude, longitude }) => stopLatLon[id] = { latitude, longitude });
         stationPlatforms.push(...data.filter(({ name }) =>
             (name.includes('Station') || name.startsWith('York University')) && name.includes('Platform'),
         ));
@@ -305,7 +330,7 @@ async function consumeTrips(
             }
             tripStopCountLookup[route_id][direction_id || '0'][trip_id] = 0;
             routeAndDirectionByTripId[trip_id] = [route_id, direction_id || '0'];
-            tripShapeLookup[trip_id] = shape_id;
+            tripShapeLookup[trip_id] = shape_id || undefined;
         });
     });
 }
@@ -318,6 +343,7 @@ async function consumeStopTimes(
     tripShapeLookup,
     stationPlatforms,
     pointsByShape,
+    stopLatLon,
 ) {
     console.log('counting stops by trip...');
     await consumeCsv(file, stopTimes => {
@@ -346,6 +372,51 @@ async function consumeStopTimes(
     });
     console.log('done');
 
+    console.log('inferring shapes for shapeless trips...');
+    const tripsWithInferredShapes = [];
+    trip_ids_to_keep.forEach(trip_id => {
+        if (tripShapeLookup[trip_id] === undefined) {
+            let shape_id = `inf-${trip_id}`;
+            tripShapeLookup[trip_id] = shape_id;
+            tripsWithInferredShapes.push(trip_id);
+        }
+    });
+    console.log(tripsWithInferredShapes.length, 'trips have no shape');
+    await prisma.shape.createMany({
+        data: tripsWithInferredShapes.map(trip_id => ({
+            id: tripShapeLookup[trip_id],
+        })),
+    });
+    console.log('done');
+
+    console.log('inferring shape points...')
+    const newPoints = [];
+    await consumeCsv(file, (stopTimes) => {
+        stopTimes.forEach(({ trip_id, stop_id, stop_sequence }) => {
+            if (tripsWithInferredShapes.includes(trip_id)) {
+                const shape_id = tripShapeLookup[trip_id];
+                const sequence = Number(stop_sequence);
+                const { latitude, longitude } = stopLatLon[stop_id];
+                const point = {
+                    shape_id,
+                    sequence,
+                    latitude,
+                    longitude,
+                };
+                newPoints.push(point);
+                (pointsByShape[shape_id] || (pointsByShape[shape_id] = [])).push(point);
+            }
+        });
+    });
+    console.log('inferred', newPoints.length, 'points');
+    await prisma.shapePoint.createMany({ data: newPoints });
+    tripsWithInferredShapes.forEach(trip_id => {
+        const shape_id = tripShapeLookup[trip_id];
+        pointsByShape[shape_id].sort(({ sequence: a }, { sequence: b }) => a - b);
+        console.log('shape', shape_id, 'has', pointsByShape[shape_id].length, 'points');
+    });
+    console.log('done');
+
     console.log('linking Route to Shape...');
     const updateArgs = trip_ids_to_keep
         .filter(trip_id => routeAndDirectionByTripId[trip_id][1] === '0')
@@ -359,7 +430,7 @@ async function consumeStopTimes(
     }
     console.log('done');
 
-    console.log('creating RouteStop...');
+    console.log('creating route stops...');
     const keepIdLookup = {};
     trip_ids_to_keep.forEach(trip_id => keepIdLookup[trip_id] = true);
     let data = [];
@@ -383,7 +454,7 @@ async function consumeStopTimes(
             const shape_id = tripShapeLookup[trip_id];
             const points = pointsByShape[shape_id];
             const platform = stationPlatforms.find(({ id }) => id === platform_id);
-            if (platform) {
+            if (platform && shape_id) {
                 if (platform.shape) {
                     console.error('platform', platform.id, 'already has shape', platform.shape.id, 'but trying to put shape', shape_id);
                 }
@@ -446,15 +517,20 @@ function mapGtfsRouteTypeToApi(routeType) {
 
 function toTitleCase(name) {
     const noCap = ['a', 'an', 'and', 'at', 'in', 'of', 'on', 'the', 'to'];
-    const allCap = ['TMU'];
+    const allCap = ['TMU', 'TTC'];
+    const prefix = ['Mc', 'O\''];
     return name.replace(/\s+/g, ' ').replace(
         /[A-Z']+/ig,
-        match => {
-            if (noCap.includes(match.toLocaleLowerCase())) {
+        (match, offset) => {
+            if (offset > 0 && noCap.includes(match.toLocaleLowerCase())) {
                 return match.toLocaleLowerCase();
             } else if (allCap.includes(match.toLocaleUpperCase())) {
                 return match.toLocaleUpperCase();
             } else {
+                const pre = prefix.find(pre => match.toLocaleLowerCase().startsWith(pre.toLocaleLowerCase()));
+                if (pre) {
+                    return pre + toTitleCase(match.slice(pre.length));
+                }
                 return match.charAt(0).toLocaleUpperCase() + match.substring(1).toLocaleLowerCase();
             }
         }
@@ -465,15 +541,15 @@ async function generateStations(stationPlatforms) {
     const stationMap = {};
     stationPlatforms.forEach(p => {
         // Special handling for York University Station (see above)
-        let stationName = (p.name.match(/(.*Station)/i) || p.name.match(/(York University)/))[1];
-        let stationId = stationName.toLowerCase().trim().replace(/[\s-]+/g, '-');
+        let stationName = (p.name.match(/(.*) Station/i) || p.name.match(/(York University)/))[1];
+        let stationId = stationName.toLowerCase().trim().replace('\'', '').replace(/[\s-]+/g, '-');
         // Special handling for Bloor-Yonge Station
-        if (stationName === 'Bloor Station' || stationName === 'Yonge Station') {
-            stationName = 'Bloor-Yonge Station';
+        if (stationName === 'Bloor' || stationName === 'Yonge') {
+            stationName = 'Bloor-Yonge';
             stationId = stationName.toLowerCase().trim().replace(/[\s-]+/g, '-');
         }
         // Special handling for Bloor-Yonge Station
-        if (stationName === 'Spadina Station') {
+        if (stationName === 'Spadina') {
             if (p.name.includes('Northbound') || p.name.includes('Southbound')) {
                 stationId = `${stationId}-1`;
             } else {
@@ -483,21 +559,32 @@ async function generateStations(stationPlatforms) {
         if (stationId in stationMap) {
             stationMap[stationId].children.push(p);
         } else {
+            let formerly = undefined;
+            switch (stationName) {
+                case 'Cedarvale':
+                    formerly = 'Eglinton West';
+                    break;
+                case 'TMU':
+                    formerly = 'Dundas';
+                    break;
+            }
             stationMap[stationId] = {
                 name: stationName,
+                formerly,
                 children: [p],
             };
         }
     });
     const anchors = [];
-    const stations = Object.entries(stationMap).map(([station_id, { name, children }]) => {
+    const stations = Object.entries(stationMap).map(([station_id, { name, formerly, children }]) => {
         const average = { latitude: 0, longitude: 0 };
         children.forEach(p => {
             average.latitude += p.latitude / children.length;
             average.longitude += p.longitude / children.length;
         });
         const shapes = {};
-        children.forEach(({ shape }) => {
+        children.forEach(({ shape, ...rest }) => {
+            if (shape && !shape.id) console.log(rest, 'has shape:', shape);
             shape && (shapes[shape.id] = shape);
         });
         // console.log('found', Object.keys(shapes).length, 'shapes for', station_id);
@@ -513,6 +600,10 @@ async function generateStations(stationPlatforms) {
             const avgOnShapes = Object.values(shapes)
                 .reduce((avg, shape) => {
                     // console.log('\t\tshape:', shape.id);
+                    if (shape.points === undefined) {
+                        console.warn(`shape '${shape.id}' has no points!`);
+                        return avg;
+                    }
                     const {
                         point: [closestLongitude, closestLatitude],
                         t: interpolationFactor,
@@ -537,7 +628,7 @@ async function generateStations(stationPlatforms) {
             station_id,
         })));
         const { latitude, longitude } = current;
-        return { id: station_id, name, latitude, longitude };
+        return { id: station_id, name, formerly, latitude, longitude };
     });
     stations.forEach(s => {
         const { latitude, longitude } = s;
@@ -552,8 +643,102 @@ async function generateStations(stationPlatforms) {
     })));
 }
 
+async function upload() {
+    let combinedSql = '';
 
-await loadGtfs();
+    if (USE_EXISTING) {
+        combinedSql = readFileSync('./scripts/seed.sql').toString();
+    } else {
+        await loadGtfs();
+        console.log('generated', queries.length, 'queries');
+        if (queries.length === 0) {
+            return;
+        }
+        combinedSql = queries.join(';\n');
+        writeFileSync('./scripts/seed.sql', combinedSql);
+    }
 
-console.log(queries.length, 'queries');
-writeFileSync('./scripts/seed.sql', queries.join(';\n\n'));
+    if (DRY_RUN) {
+        return;
+    }
+
+    const etag = createHash('md5').update(combinedSql).digest('hex');
+    console.log('etag:', etag);
+
+    const initResponse = await fetch(D1_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            action: 'init',
+            etag,
+        }),
+    });
+
+    if (!initResponse.ok) {
+        console.log(await initResponse.text());
+        return;
+    }
+
+    const initData = await initResponse.json();
+    console.log('init data:', initData);
+
+    if (!initData.success) {
+        console.log('errors:', initData.errors);
+        return;
+    }
+
+    const uploadResponse = await fetch(initData.result.upload_url, {
+        method: 'PUT',
+        body: combinedSql,
+    });
+    if (!uploadResponse.ok) {
+        console.log(await uploadResponse.text());
+        return;
+    }
+
+    const ingestResponse = await fetch(D1_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            action: 'ingest',
+            etag,
+            filename: initData.result.filename,
+        }),
+    });
+
+    if (!ingestResponse.ok) {
+        console.log(await ingestResponse.text());
+        return;
+    }
+
+    const ingestData = await ingestResponse.json();
+    console.log('ingest data:', ingestData);
+
+    if (!ingestData.success) {
+        console.log('errors:', ingestData.errors);
+        return;
+    }
+
+    const bookmark = ingestData.result.at_bookmark;
+    console.log('bookmark:', bookmark);
+
+    while (true) {
+        await new Promise(r => setTimeout(r, 1000));
+        const pollResponse = await fetch(D1_URL, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                action: 'poll',
+                current_bookmark: bookmark,
+            }),
+        });
+        const pollData = await pollResponse.json();
+        console.log('poll:', pollData);
+        if (pollData.result.status === 'complete') {
+            console.log('upload complete');
+            break;
+        }
+    }
+}
+
+await upload();
