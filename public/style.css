@@ -35,9 +35,12 @@ h2 {
     font-family: "Jost", Trebuchet MS, Arial, sans-serif;
     font-weight: 500;
     background: #000000;
-    padding: 10px;
-    margin: 10px;
-    width: 180px;
+    padding-top: 4px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 4px;
+    margin: 4px;
+    width: 130px;
     position: absolute;
     bottom: 10px;
 }
@@ -50,7 +53,7 @@ h2 {
     margin-top: 6px;
     margin-bottom: 6px;
     width: 100%;
-    font-size: 2em;
+    font-size: 1.5em;
     color: white;
     font-weight: 500;
 }

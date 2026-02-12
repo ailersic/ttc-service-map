@@ -1,0 +1,114 @@
+Adventure
+Amble
+Beaten Path
+Beltline
+Bike Lane
+Bike Path
+Bobsled
+Boogaloo
+Bumble
+Bunker
+Busk
+Bypass
+Cardio
+Catwalk
+Commute
+Connection
+Conveyor Belt
+Crawlspace
+Cross-Country
+Cruise
+Dash
+Derby
+Desire Path
+Detour
+Duct
+Expedition
+Express
+Express Lane
+Expressway
+Extension
+Fitness Program
+Freeway
+Gallivant
+Garden Path
+Golf Course
+Grand Tour
+Hike
+Hop
+Jaunt
+Jog
+Journey
+Jump
+Junket
+Kaiju Breach
+Link
+Marathon
+Meander
+Migration
+Music Hall
+Odyssey
+Parkway
+Passage
+Path
+Perambulation
+Peregrination
+Pilgrimage
+Pipe
+Pipeline
+Portal
+Promenade
+Quest
+Raceway
+Rainbow Road
+Rally
+Ramble
+Rip in Spacetime
+Runway
+Safari
+Sashay
+Saunter
+Skip
+Slalom
+Slog
+Sortie
+Spadeena
+Speedway
+Sprint
+Step
+Strip
+Stroll
+Superhighway
+Teleporter
+The Path
+Tour
+Trail
+Traipse
+Treadmill
+Trek
+Trek: Deep Space Nine
+Trek: Enterprise
+Trek: The Next Generation
+Trek: The Original Series
+Trek: Voyager
+Triathlon
+Trundle
+Tube
+Tunnel
+Turnpike
+Underground
+Underpass
+Vent
+Voyage
+Walkabout
+Walkway
+Wander
+Warp
+Warp Zone
+Waterslide
+Way
+Wormhole
+Yellow Brick Road
+Zip
+Zipline
+Zoom

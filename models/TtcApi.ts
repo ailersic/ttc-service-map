@@ -286,7 +286,6 @@ export default class TtcApi {
             alerts: (await Promise.all(
                 feedMessage.entity
                     .map(async ({ id, alert }) => {
-
                         // discard feed entities without an alert
                         if (!alert) return null;
 
@@ -302,8 +301,8 @@ export default class TtcApi {
 
                         // discard alerts that are not active
                         if (active_period && !active_period.some(({ start, end }) => (
-                            (!start || Number(start) < Date.now()) &&
-                            (!end || Number(end) > Date.now())
+                            (!start || Number(start) * 1000 < Date.now()) &&
+                            (!end || Number(end) * 1000 > Date.now())
                         ))) return null;
 
                         return {
