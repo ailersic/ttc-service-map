@@ -767,7 +767,7 @@ function addStationMarkers() {
             const station = subway.stations[platform.parent_station_id];
             if (!station) return;
 
-            const { name, latitude, longitude } = station;
+            const { name, formerly, latitude, longitude } = station;
 
             // Check if we already added this station marker
             if (allStationMarkers.some(marker => {
@@ -794,8 +794,15 @@ function addStationMarkers() {
                 offset: [0, 0]
             });
             stationInfoWindow.setContent(`
-                <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
-                    <div style="font-size: 14px; text-align: center;">${name}</div>
+                <div style="color: black; text-align: center; margin-right: 0px; margin-left: 0px;">
+                    <div style="font-size: 14px; font-weight: bold; text-align: center;">
+                        ${name}
+                    </div>
+                    ${formerly && `                        
+                        <div style="font-size: 12px; margin-top: 4px; text-align: center;">
+                            Formerly ${formerly}
+                        </div>
+                    ` || ''}
                 </div>
             `);
             stationMarker.bindTooltip(stationInfoWindow);
