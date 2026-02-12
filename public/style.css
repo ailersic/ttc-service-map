@@ -12,10 +12,10 @@ html, body {
 
 h1 {
     text-align: center;
-    font-size: 2.5em;
+    font-size: 2em;
     color: white;
     font-weight: 500;
-    margin-top: 10px;
+    margin-top: 4px;
     margin-bottom: 0px;
     flex-shrink: 0;
 }
@@ -92,8 +92,8 @@ a {
 #map {
     flex: 1; /* Allows the map to take up remaining space */
     width: 100%;
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin-top: 4px;
+    margin-bottom: 4px;
 }
 
 .gm-ui-hover-effect { display: none !important; }
@@ -102,19 +102,19 @@ div.button-container {
     display: flex;
     justify-content: center;
     margin-top: 0px;
-    margin-bottom: 10px;
+    margin-bottom: 4px;
 }
 
 .button {
     border: none;
-    padding: 6px 12px;
+    padding: 4px 12px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
     font-size: 1em;
     font-family: "Jost", Trebuchet MS, Arial, sans-serif;
     font-weight: 500;
-    margin: 4px 2px;
+    margin: 0px 2px;
     transition-duration: 0.4s;
     cursor: pointer;
     background-color: white;

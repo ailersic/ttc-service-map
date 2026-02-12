@@ -1,6 +1,6 @@
 {
   "name": "ttc-service-map",
-  "version": "2026.1.13.1",
+  "version": "2026.2.12.1",
   "description": "A network status map for the Toronto Transit Commission.",
   "author": "Andrew F. Ilersich <andrew.ilersich@mail.utoronto.ca> (https://www.ilersich.com/)",
   "contributors": [
