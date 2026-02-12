@@ -917,9 +917,14 @@ function addServiceAlerts() {
     // Now, for each processed alert, create markers and polylines
     subway.routes.forEach(({ id: route_id, long_name: route_name, stops, segments }) => {
         if (!visibility.routes[route_id]) return;
+        const stationOrder = stops.map(p => subway.platforms[p]?.parent_station_id).filter(Boolean);
+
         Object.entries(processedAlerts[route_id] || {}).forEach(([alertGroupKey, alertGroup]) => {
             if (!visibility.alerts[alertGroupKey]) return;
             Object.values(alertGroup).forEach(alert => {
+
+                const indices = alert.stations.map(s => stationOrder.indexOf(s)).filter(i => i >= 0).sort((a, b) => a - b);
+                
                 // Create an info window for the alert
                 let alertInfoWindow = L.tooltip({
                     direction: 'top',
@@ -927,21 +932,15 @@ function addServiceAlerts() {
                     className: 'alert-tooltip',
                     offset: [0, 0]
                 });
-
+                
                 let stationString = "";
                 // If the start and end stations are the same, we show "at <station name>"
                 // Otherwise, we show "from <start station> to <end station>"
                 if (alert.stations.length === 1) {
                     stationString = `at ${subway.stations[alert.stations[0]].name}`;
                 } else {
-                    const start_station_name = subway.stations[alert.stations.reduce((a, b) => {
-                        return stops.findIndex(p => subway.platforms[p]?.parent_station_id === a) <
-                            stops.findIndex(p => subway.platforms[p]?.parent_station_id === b) ? a : b;
-                    })].name;
-                    const end_station_name = subway.stations[alert.stations.reduce((a, b) => {
-                        return stops.findIndex(p => subway.platforms[p]?.parent_station_id === a) >
-                            stops.findIndex(p => subway.platforms[p]?.parent_station_id === b) ? a : b;
-                    })].name;
+                    const start_station_name = subway.stations[stationOrder[indices[0]]].name;
+                    const end_station_name = subway.stations[stationOrder[indices.at(-1)]].name;
                     stationString = `from ${start_station_name} to ${end_station_name}`;
                 }
 
