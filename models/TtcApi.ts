@@ -1,6 +1,6 @@
 import geometry from '../utils/geometry.ts';
 import Gtfs from './Gtfs.ts';
-import { RouteType, PrismaClient } from '@prisma/client';
+import { RouteType, PrismaClient } from '../generated/prisma/client.ts';
 import { transit_realtime } from '../generated/gtfs-realtime.js';
 import Logger from '../utils/Logger.ts';
 import Stopwatch from '../utils/Stopwatch.ts';

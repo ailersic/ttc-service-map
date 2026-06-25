@@ -5,7 +5,7 @@
  */
 
 import { env } from 'node:process';
-import { Prisma, PrismaClient, RouteType } from '@prisma/client';
+import { Prisma, PrismaClient, RouteType } from '../generated/prisma/client.ts';
 import { parse } from 'csv-parse';
 import { Writable } from 'stream';
 import { pipeline } from 'stream/promises';
