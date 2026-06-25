@@ -2,7 +2,7 @@ import { listLocalDatabases } from '@prisma/adapter-d1';
 import 'dotenv/config';
 import { defineConfig } from "prisma/config";
 
-const url = `file:${listLocalDatabases()[0]}`;
+// const url = `file:${listLocalDatabases()[0]}`;
 
 // DEBUG
 // console.log('local databases:', listLocalDatabases());
@@ -13,5 +13,5 @@ export default defineConfig({
   migrations: {
     path: './migrations',
   },
-  datasource: { url },
+//   datasource: { url },
 });
