@@ -23,7 +23,7 @@
     "start": "npm run dev",
     "dev": "cd build && npx wrangler pages dev ./public",
     "dev:debug": "npm run dev -- --log-level=debug",
-    "postinstall": "node build/scripts/postInstall.js",
+    "postinstall": "tsc -b && node build/scripts/postInstall.js",
     "prebuild": "npm run db:typegen && npm run pb:typegen",
     "build": "tsc -b",
     "postbuild": "node build/scripts/postBuild.js",
