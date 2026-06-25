@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTCmap.ca - TTC Network Service Map</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+    <script>
+        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="canonical" href="https://www.ttcmap.ca/">
+
+    <!-- Leaflet CSS and JS (for the map) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script type="text/javascript" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- MapLibre GL JS (still required to handle the rendering) -->
+    <script type="text/javascript" src="//unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.js"></script>
+    <link href="//unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.css" rel="stylesheet" />
+
+    <!-- Mapbox GL Leaflet -->
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.0/leaflet-maplibre-gl.js"></script>
+
+    <!-- Protomaps Leaflet -->
+    <script src="https://unpkg.com/pmtiles@4.3.0/dist/pmtiles.js"></script>
+    <script src="https://unpkg.com/protomaps-leaflet@5.0.1/dist/protomaps-leaflet.js"></script>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M6HN6DHVVM"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-M6HN6DHVVM');
+    </script>
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8655146723176313"
+        crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <script src="icons.js"></script>
+    <script src="script.js"></script>
+
+    <h1>TTCMAP.CA</h1>
+
+    <div style="display: flex; justify-content: center;">
+        <h2 style="margin-right: .5em;" id="subheading">Last updated: Loading...</h2>
+        <button class="small-button refresh-button" onClick="fetchAndPlotAlerts()">
+            <i class="fas fa-rotate-right"></i>
+        </button>
+    </div>
+
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="map-overlay">
+            <div class="legend-column">
+                <div id="alert-legend" class="legend">
+                    <div id="alert-legend-header" class="legend-header">
+                        <h3>ALERTS</h3><button class="small-button legend-button">+</button>
+                    </div>
+                    <div id="alert-legend-content" class="legend-content"></div>
+                </div>
+            </div>
+            <div class="legend-column">
+                <div id="route-legend" class="legend">
+                    <div id="route-legend-header" class="legend-header">
+                        <h3>ROUTES</h3><button class="small-button legend-button">+</button>
+                    </div>
+                    <div id="route-legend-content" class="legend-content">
+                        <div id="route-legend-content-scroll" class="scrollview">
+                            <div id="subway-lrt-group-header" class="route-legend-group-header">
+                                <p class="route-group-label">Subway/LRT</p>
+                                <button id="route-visibility-button-blue-night"
+                                    class="small-button view-button fa-regular fa-eye">
+                                </button>
+                            </div>
+                            <div id="subway-lrt-group-content" class="route-legend-group-content"></div>
+                            <div id="streetcar-group-header" class="route-legend-group-header">
+                                <p class="route-group-label">Streetcar</p>
+                                <button id="route-visibility-button-blue-night"
+                                    class="small-button view-button fa-regular fa-eye">
+                                </button>
+                            </div>
+                            <div id="streetcar-group-content" class="route-legend-group-content"></div>
+                            <div id="bus-group-header" class="route-legend-group-header">
+                                <p class="route-group-label">Bus</p>
+                                <button id="route-visibility-button-blue-night"
+                                    class="small-button view-button fa-regular fa-eye">
+                                </button>
+                            </div>
+                            <div id="bus-group-content" class="route-legend-group-content"></div>
+                            <div id="blue-night-group-header" class="route-legend-group-header">
+                                <p class="route-group-label">Blue Night</p>
+                                <button id="route-visibility-button-blue-night"
+                                    class="small-button view-button fa-regular fa-eye">
+                                </button>
+                            </div>
+                            <div id="blue-night-group-content" class="route-legend-group-content"></div>
+                        </div>
+                        <div class="search-row">
+                            <input id="route-search" type="search" maxlength="3" placeholder='Search'
+                                inputmode="numeric"></input>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="loading-modal" class="modal">
+        <div id="loading-modal-content" class="modal-content"> <!-- Show loading svg animation -->
+            <img src="loading.svg" alt="Loading...">
+            <p>If map does not load, check <a href="https://www.ttc.ca/service-alerts">TTC Alerts</a></p>
+        </div>
+    </div>
+
+    <div id="about-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p>TTCmap.ca is an independently-run real-time network status map for the TTC subway system. It combines
+                long-term service changes and short-term disruptions in one place, making it easier to see if anything
+                affects your trip. The alerts shown include the TTC's <a href="https://www.ttc.ca/service-alerts">live
+                    service alerts</a> and <a
+                    href="https://www.ttc.ca/riding-the-ttc/Updates/Reduced-Speed-Zones">reduced speed zones.</a> Refer
+                to those links if TTCmap is not working properly.<br><br>Because this website only shows official TTC
+                service announcements, there may be short-term disruptions that go unreported and are not shown here.
+                This website is not affiliated with the TTC or the City of Toronto.<br><br>If you have any suggestions
+                or notice any issues, feel free to <a href="mailto:info@ttcmap.ca">contact us!</a> If you're a
+                developer, you can find this project on <a
+                    href="https://github.com/ailersic/ttc-service-map">Github.</a></p>
+        </div>
+    </div>
+
+    <div class="button-container">
+        <button id="about-button" class="button">
+            About
+        </button>
+        <a href="mailto:info@ttcmap.ca">
+            <button id="contact-button" class="button">
+                Contact
+            </button>
+        </a>
+        <a href="https://ko-fi.com/ttcmap">
+            <button id="donate-button" class="button">
+                <img src="kofi_symbol.png" style="max-height: 1em;"> Donate
+            </button>
+        </a>
+    </div>
+
+    <!-- Banner ad -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8655146723176313"
+        crossorigin="anonymous"></script>
+    <ins class="adsbygoogle bottombanner" style="display:block;" data-ad-client="ca-pub-8655146723176313"
+        data-ad-slot="4693449043"></ins>
+    <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+</body>
+
+</html>

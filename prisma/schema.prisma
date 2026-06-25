@@ -1,0 +1,134 @@
+generator client {
+    provider = "prisma-client"
+    runtime  = "cloudflare"
+    output = "../generated/prisma"
+}
+
+datasource db {
+    provider = "sqlite"
+}
+
+model Agency {
+    id           String   @id
+    name         String
+    url          String
+    last_updated DateTime @default(now())
+}
+
+model Station {
+    id        String  @id
+    name      String
+    formerly  String?
+    latitude  Float
+    longitude Float
+
+    platforms Platform[]
+    anchors   StationAnchor[]
+}
+
+model StationAnchor {
+    interpolation_factor Float
+
+    station    Station @relation(fields: [station_id], references: [id])
+    station_id String
+
+    polyline    PolyLine @relation(fields: [polyline_id], references: [id])
+    polyline_id String
+
+    @@id([station_id, polyline_id])
+    @@index([station_id])
+}
+
+model Platform {
+    id        String  @id
+    name      String
+    code      String?
+    latitude  Float
+    longitude Float
+
+    parent_station    Station? @relation(fields: [parent_station_id], references: [id])
+    parent_station_id String?
+
+    route_stops RouteStop[]
+    anchors     PlatformAnchor[]
+
+    @@index([parent_station_id])
+}
+
+model PlatformAnchor {
+    interpolation_factor Float
+
+    platform    Platform @relation(fields: [platform_id], references: [id])
+    platform_id String
+
+    polyline    PolyLine @relation(fields: [polyline_id], references: [id])
+    polyline_id String
+
+    @@id([platform_id, polyline_id])
+    @@index([platform_id])
+}
+
+enum RouteType {
+    SubwayLRT
+    Streetcar
+    Bus
+}
+
+model Route {
+    id         String    @id
+    short_name String
+    long_name  String
+    type       RouteType
+    color      String?
+    text_color String?
+    sort_order Int?
+
+    forward     PolyLine? @relation(fields: [forward_id], name: "forward", references: [id])
+    forward_id  String?
+    backward    PolyLine? @relation(fields: [backward_id], name: "backward", references: [id])
+    backward_id String?
+
+    stops RouteStop[]
+}
+
+model RouteStop {
+    direction Int
+    sequence  Int
+
+    route    Route  @relation(fields: [route_id], references: [id])
+    route_id String
+
+    platform    Platform @relation(fields: [platform_id], references: [id])
+    platform_id String
+
+    @@id([route_id, direction, sequence])
+    @@index([route_id])
+    @@index([platform_id])
+}
+
+model Service {
+    id String @id
+}
+
+model PolyLine {
+    id String @id
+
+    points Point[]
+
+    route_forward    Route[]          @relation(name: "forward")
+    route_backward   Route[]          @relation(name: "backward")
+    station_anchors  StationAnchor[]
+    platform_anchors PlatformAnchor[]
+}
+
+model Point {
+    latitude  Float
+    longitude Float
+    sequence  Int
+
+    polyline    PolyLine @relation(fields: [polyline_id], references: [id])
+    polyline_id String
+
+    @@id([polyline_id, sequence])
+    @@index([polyline_id])
+}

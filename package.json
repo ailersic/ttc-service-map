@@ -1,10 +1,61 @@
 {
   "name": "ttc-service-map",
-  "version": "2026.2.8.1",
+  "version": "2026.2.12.1",
   "description": "A network status map for the Toronto Transit Commission.",
   "author": "Andrew F. Ilersich <andrew.ilersich@mail.utoronto.ca> (https://www.ilersich.com/)",
   "contributors": [
-    "Kevin Xu <wenkai.xu@mail.utoronto.ca> (https://github.com/KevinUTAT)"
+    "Kevin Xu <wenkai.xu@mail.utoronto.ca> (https://github.com/KevinUTAT)",
+    "Anthony Ilersich <antonio.ilersich@gmail.com>"
   ],
-  "license": "GPL-3.0-only"
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "main": "api/index.js",
+  "dependencies": {
+    "@prisma/adapter-d1": "^7.2.0",
+    "@prisma/client": "^7.2.0",
+    "csv-parse": "^6.1.0",
+    "dotenv": "^17.2.3",
+    "prisma": "^7.8.0",
+    "stream-transform": "^3.4.0",
+    "unzipper": "^0.12.3"
+  },
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "cd build && npx wrangler pages dev ./public",
+    "dev:debug": "npm run dev -- --log-level=debug",
+    "postinstall": "node scripts/postInstall.js",
+    "prebuild": "npm run db:typegen && npm run pb:typegen",
+    "build": "tsc -b",
+    "postbuild": "node build/scripts/postBuild.js",
+    "build:watch": "tsc -b -w",
+    "rebuild": "npm ci && npm run build",
+    "cf:api-token": "echo $(cat .env | sed -n 's/^CLOUDFLARE_API_TOKEN=\"\\(.*\\)\"/\\1/p')",
+    "cf:account-id": "echo $(cat .env | sed -n 's/^CLOUDFLARE_ACCOUNT_ID=\"\\(.*\\)\"/\\1/p')",
+    "cf:test-api-token": "curl -X GET \"https://api.cloudflare.com/client/v4/accounts/$(npm run -s cf:account-id)/tokens/verify\" -H \"Authorization: Bearer $(npm run -s cf:api-token)\"",
+    "db:seed:gen-script": "node build/scripts/generateDbSeedScript.js",
+    "db:seed:local": "npx wrangler d1 execute ttcmapdb --file ./generated/seed.sql --local",
+    "db:seed:remote": "npx wrangler d1 execute ttcmapdb --file ./generated/seed.sql --remote",
+    "db:reseed:local": "npm run db:seed:gen-script && npm run db:seed:local",
+    "db:diff": "npx prisma migrate diff --from-config-datasource --to-schema ./prisma/schema.prisma",
+    "db:migrate:gen-script": "prisma migrate diff --from-config-datasource --to-schema ./prisma/schema.prisma --script > ./migrations/$(date -u +%s).sql",
+    "db:migrate:local": "npx wrangler d1 migrations apply ttcmapdb",
+    "db:migrate:remote": "npx wrangler d1 migrations apply ttcmapdb --remote",
+    "db:drop:local": "rm -rf .wrangler/state/v3/d1/*",
+    "db:typegen": "npx prisma generate",
+    "pb:fetch": "curl -o generated/gtfs-realtime.proto https://raw.githubusercontent.com/google/transit/e62ea02efd8987cd6a5eaf8438de7feef9303857/gtfs-realtime/proto/gtfs-realtime.proto",
+    "pb:typegen:js": "npx pbjs --keep-case -t static-module -w es6 -o generated/gtfs-realtime.js generated/gtfs-realtime.proto",
+    "pb:typegen:ts": "npx pbts -o generated/gtfs-realtime.d.ts generated/gtfs-realtime.js",
+    "pb:typegen": "npm run -s pb:fetch && npm run -s pb:typegen:js && npm run -s pb:typegen:ts"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260114.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/leaflet": "^1.9.21",
+    "@types/node": "^25.0.3",
+    "@types/unzipper": "^0.10.11",
+    "protobufjs-cli": "^2.0.0",
+    "replace-in-file": "^8.4.0",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.88.0"
+  }
 }

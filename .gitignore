@@ -1,6 +1,8 @@
+.DS_Store
 .env
 .vercel
+.vscode
 .wrangler
 build
+generated
 node_modules
-.DS_Store
