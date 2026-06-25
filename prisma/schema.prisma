@@ -1,6 +1,6 @@
 generator client {
-    provider = "prisma-client-js"
-    runtime = "cloudflare"
+    provider = "prisma-client"
+    runtime  = "cloudflare"
 }
 
 datasource db {
@@ -15,7 +15,7 @@ model Agency {
 }
 
 model Station {
-    id        String @id
+    id        String  @id
     name      String
     formerly  String?
     latitude  Float
@@ -28,15 +28,14 @@ model Station {
 model StationAnchor {
     interpolation_factor Float
 
-    station    Station  @relation(fields: [station_id], references: [id])
+    station    Station @relation(fields: [station_id], references: [id])
     station_id String
 
-    shape    Shape  @relation(fields: [shape_id], references: [id])
-    shape_id String
+    polyline    PolyLine @relation(fields: [polyline_id], references: [id])
+    polyline_id String
 
-    @@id([station_id, shape_id])
+    @@id([station_id, polyline_id])
     @@index([station_id])
-    @@index([shape_id])
 }
 
 model Platform {
@@ -50,14 +49,27 @@ model Platform {
     parent_station_id String?
 
     route_stops RouteStop[]
+    anchors     PlatformAnchor[]
 
     @@index([parent_station_id])
 }
 
+model PlatformAnchor {
+    interpolation_factor Float
+
+    platform    Platform @relation(fields: [platform_id], references: [id])
+    platform_id String
+
+    polyline    PolyLine @relation(fields: [polyline_id], references: [id])
+    polyline_id String
+
+    @@id([platform_id, polyline_id])
+    @@index([platform_id])
+}
+
 enum RouteType {
-    TramStreetcarLightRail
-    SubwayMetro
-    Rail
+    SubwayLRT
+    Streetcar
     Bus
 }
 
@@ -70,18 +82,17 @@ model Route {
     text_color String?
     sort_order Int?
 
-    shape    Shape?  @relation(fields: [shape_id], references: [id])
-    shape_id String?
+    forward     PolyLine? @relation(fields: [forward_id], name: "forward", references: [id])
+    forward_id  String?
+    backward    PolyLine? @relation(fields: [backward_id], name: "backward", references: [id])
+    backward_id String?
 
-    route_stops RouteStop[]
-
-    @@index([shape_id])
+    stops RouteStop[]
 }
 
 model RouteStop {
     direction Int
     sequence  Int
-    distance_along_shape Float
 
     route    Route  @relation(fields: [route_id], references: [id])
     route_id String
@@ -98,24 +109,25 @@ model Service {
     id String @id
 }
 
-model Shape {
+model PolyLine {
     id String @id
 
-    shape_points ShapePoint[]
-    routes       Route[]
+    points Point[]
 
-    station_anchors StationAnchor[]
+    route_forward    Route[]          @relation(name: "forward")
+    route_backward   Route[]          @relation(name: "backward")
+    station_anchors  StationAnchor[]
+    platform_anchors PlatformAnchor[]
 }
 
-model ShapePoint {
-    latitude      Float
-    longitude     Float
-    sequence      Int
-    dist_traveled Float?
+model Point {
+    latitude  Float
+    longitude Float
+    sequence  Int
 
-    shape    Shape  @relation(fields: [shape_id], references: [id])
-    shape_id String
+    polyline    PolyLine @relation(fields: [polyline_id], references: [id])
+    polyline_id String
 
-    @@id([shape_id, sequence])
-    @@index([shape_id])
+    @@id([polyline_id, sequence])
+    @@index([polyline_id])
 }

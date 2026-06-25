@@ -4,4 +4,5 @@
 .vscode
 .wrangler
 build
+generated
 node_modules

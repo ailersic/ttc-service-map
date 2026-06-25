@@ -3,5 +3,5 @@ import TtcApi from '../../../models/TtcApi.ts';
 import connect, { EnvWithDb } from '../../../prisma/prisma.ts';
 
 export const onRequestGet: PagesFunction<EnvWithDb> = async (context) => {
-    return global.Response.json(await new TtcApi(connect(context.env)).getSubwayRoutes()) as unknown as Response;
+    return global.Response.json(await new TtcApi(connect(context.env)).getBusAlerts()) as unknown as Response;
 };

@@ -54,10 +54,70 @@
 
     <h1>TTCMAP.CA</h1>
 
-    <h2 id="subheading">Last updated: Loading... <button class="small-button refresh-button"
-            onClick="window.location.reload()"><i class="fas fa-rotate-right"></i></button></h2>
+    <div style="display: flex; justify-content: center;">
+        <h2 style="margin-right: .5em;" id="subheading">Last updated: Loading...</h2>
+        <button class="small-button refresh-button" onClick="fetchAndPlotAlerts()">
+            <i class="fas fa-rotate-right"></i>
+        </button>
+    </div>
 
-    <div id="map"></div>
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="map-overlay">
+            <div class="legend-column">
+                <div id="alert-legend" class="legend">
+                    <div id="alert-legend-header" class="legend-header">
+                        <h3>ALERTS</h3><button class="small-button legend-button">+</button>
+                    </div>
+                    <div id="alert-legend-content" class="legend-content"></div>
+                </div>
+            </div>
+            <div class="legend-column">
+                <div id="route-legend" class="legend">
+                    <div id="route-legend-header" class="legend-header">
+                        <h3>ROUTES</h3><button class="small-button legend-button">+</button>
+                    </div>
+                    <div id="route-legend-content" class="legend-content">
+                        <div id="route-legend-content-scroll" class="scrollview">
+                            <div id="subway-lrt-group-header" class="route-legend-group-header">
+                                <p class="route-group-label">Subway/LRT</p>
+                                <button id="route-visibility-button-blue-night"
+                                    class="small-button view-button fa-regular fa-eye">
+                                </button>
+                            </div>
+                            <div id="subway-lrt-group-content" class="route-legend-group-content"></div>
+                            <div id="streetcar-group-header" class="route-legend-group-header">
+                                <p class="route-group-label">Streetcar</p>
+                                <button id="route-visibility-button-blue-night"
+                                    class="small-button view-button fa-regular fa-eye">
+                                </button>
+                            </div>
+                            <div id="streetcar-group-content" class="route-legend-group-content"></div>
+                            <div id="bus-group-header" class="route-legend-group-header">
+                                <p class="route-group-label">Bus</p>
+                                <button id="route-visibility-button-blue-night"
+                                    class="small-button view-button fa-regular fa-eye">
+                                </button>
+                            </div>
+                            <div id="bus-group-content" class="route-legend-group-content"></div>
+                            <div id="blue-night-group-header" class="route-legend-group-header">
+                                <p class="route-group-label">Blue Night</p>
+                                <button id="route-visibility-button-blue-night"
+                                    class="small-button view-button fa-regular fa-eye">
+                                </button>
+                            </div>
+                            <div id="blue-night-group-content" class="route-legend-group-content"></div>
+                        </div>
+                        <div class="search-row">
+                            <input id="route-search" type="search" maxlength="3" placeholder='Search'
+                                inputmode="numeric"></input>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <div id="loading-modal" class="modal">
         <div id="loading-modal-content" class="modal-content"> <!-- Show loading svg animation -->
@@ -106,304 +166,6 @@
         data-ad-slot="4693449043"></ins>
     <script>
         (adsbygoogle = window.adsbygoogle || []).push({});
-    </script>
-
-    <script>
-        // Get the modal
-        var modal = document.getElementById("about-modal");
-
-        // Get the button that opens the modal
-        var btn = document.getElementById("about-button");
-
-        // Get the <span> element that closes the modal
-        var span = document.getElementsByClassName("close")[0];
-
-        // When the user clicks on the button, open the modal
-        btn.onclick = function () {
-            modal.style.display = "flex";
-        }
-
-        // When the user clicks on <span> (x), close the modal
-        span.onclick = function () {
-            modal.style.display = "none";
-        }
-
-        // When the user clicks anywhere outside of the modal, close it
-        window.onclick = function (event) {
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        } 
-    </script>
-
-    <script>
-        let map;
-
-        async function initMap() {
-            const start = Date.now();
-            console.info('initMap()');
-            const subwayPromise = loadSubway();
-
-            map = L.map('map', {
-                maxBounds: [[43.201, -80.161], [44.182, -78.717]], // Toronto area bounds
-                maxBoundsViscosity: 1.0, // Prevents panning outside bounds
-                minZoom: 12, // Minimum zoom level
-                maxZoom: 17, // Maximum zoom level
-            }).setView([43.6699990, -79.3909390], 13);
-
-            // connect to pmtiles hosted on cloudflare
-            var layer = protomapsL.leafletLayer({
-                url: 'https://tiles.ttcmap.ca/toronto.pmtiles',
-                flavor: 'light',
-            });
-            layer.addTo(map);
-
-            const mapHeight = map.getContainer().clientHeight;
-            await subwayPromise;
-
-            // Create legend with service alert types
-            const alertLegend = document.createElement("div");
-            alertLegend.id = "legend";
-
-            const alertHeader = document.createElement("div");
-            alertHeader.id = "legend-header";
-            alertHeader.innerHTML = `<h3>ALERTS<span><button class="small-button legend-button">+</button></span></h3>`;
-            alertLegend.appendChild(alertHeader);
-
-            const alertContent = document.createElement("div");
-            alertContent.id = "legend-content";
-            alertContent.style.display = "none"; // Initially hidden
-
-            Object.entries(serviceAlertTypes).forEach(([key, serviceAlertType]) => {
-                const icon = serviceAlertType.icon;
-                const name = serviceAlertType.short_name;
-
-                const size = 32;
-                const scale = icon.scale;
-                let svg = `<svg width="${size}" height="${size}" viewBox="${-size / 2} ${-size / 2} ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-                    <g transform="scale(${scale * (size / 48)})">
-                    <path d="${icon.path}" 
-                    stroke="${icon.strokeColor}" 
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="${icon.strokeWeight / scale}" 
-                    fill="${icon.fillColor}"/>
-                    </g>
-                    </svg>`;
-
-                const typeDiv = document.createElement("div");
-                //typeDiv.innerHTML = `${svg} <span style="font-size:1.5em; ">${name}</span>`;
-                typeDiv.innerHTML = `<div style="display: flex; align-items: center; gap: 8px; margin: 5px 0;">
-                    <div style="flex-shrink: 0;">${svg}</div>
-                    <div style="flex: 1; font-size: 1.0em; word-wrap: break-word; width: 45px;">${name}</div>
-                    <button class="small-button view-button" style="margin-right: 10px;"><i class="fa-regular fa-eye"></i></button>
-                </div>`
-                const viewButton = typeDiv.querySelector(".view-button");
-                viewButton.addEventListener("click", () => {
-                    if (visibility.alerts[serviceAlertType.short_name]) {
-                        visibility.alerts[serviceAlertType.short_name] = false;
-                        viewButton.innerHTML = `<i class="fa-regular fa-eye-slash"></i>`;
-                        refreshMap(map); // Refresh the map to hide this type
-                    } else {
-                        visibility.alerts[serviceAlertType.short_name] = true;
-                        viewButton.innerHTML = `<i class="fa-regular fa-eye"></i>`;
-                        refreshMap(map); // Refresh the map to show this type
-                    }
-                });
-                alertContent.appendChild(typeDiv);
-            });
-
-            alertContent.style.maxHeight = `${mapHeight * 0.6}px`; // Set max height to 60% of the map height
-            alertContent.style.overflowY = "auto"; // Enable scrolling if content exceeds max height
-            alertLegend.appendChild(alertContent);
-
-            const alertLegendButton = alertHeader.querySelector(".legend-button");
-            alertLegendButton.addEventListener("click", () => {
-                if (alertContent.style.display === "none") {
-                    alertContent.style.display = "block";
-                    alertLegendButton.innerHTML = `−`;
-                } else {
-                    alertContent.style.display = "none";
-                    alertLegendButton.innerHTML = `+`;
-                }
-            });
-
-            // Create legend with routes
-            const routeLegend = document.createElement("div");
-            routeLegend.id = "legend";
-            routeLegend.style.left = "160px"; // Offset to avoid overlap with alert legend
-
-            const routeHeader = document.createElement("div");
-            routeHeader.id = "legend-header";
-            routeHeader.innerHTML = `<h3>ROUTES<span><button class="small-button legend-button">+</button></span></h3>`;
-            routeLegend.appendChild(routeHeader);
-
-            const routeContent = document.createElement("div");
-            routeContent.id = "legend-content";
-            routeContent.style.display = "none"; // Initially hidden
-
-
-            const titleDiv = document.createElement("div");
-            titleDiv.innerHTML = `<div style="display: flex; align-items: center; gap: 8px; margin: 5px 0;">
-                <div style="flex: 1; font-size: 1.2em; word-wrap: break-word; width: 70px;">Subway/LRT</div>
-                <button id="route-visibility-button-subways" class="small-button view-button" style="margin-right: 10px;"><i class="fa-regular fa-eye"></i></button>
-            </div>`
-            routeContent.appendChild(titleDiv);
-
-            // for each subway route, create an entry in the legend with route icon and visibility toggle button
-            Object.entries(subway.routes).forEach(([key, route]) => {
-                console.warn(`Route ${route.short_name} with color ${route.color}`);
-                const color = route.color;
-                const number = route.short_name;
-
-                const size = 24;
-                if (route.short_name === "1") {
-                    font_color = "#000000";
-                } else {
-                    font_color = "#ffffff";
-                }
-                // Create a simple circle with the number over it as the route icon
-                let icon = `<div style="width: ${size}px; height: ${size}px; border: 3px solid #ffffff; border-radius: 50%; background-color: ${color}; display: flex; align-items: center; justify-content: center; color: ${font_color}; margin: 0 auto; padding: 0px; font-size: 16px;">${number}</div>`;
-
-                const entryDiv = document.createElement("div");
-                entryDiv.innerHTML = `<div style="display: flex; align-items: center; gap: 8px; margin: 5px 0;">
-                    <div style="flex: 1; font-size: 1.0em; word-wrap: break-word; width: 20px;"></div>
-                    <div style="flex-shrink: 0;">${icon}</div>
-                    <div style="flex: 1; font-size: 1.0em; word-wrap: break-word; width: 25px;"></div>
-                    <button id="route-visibility-button-${route.short_name}" class="small-button view-button" style="margin-right: 10px;"><i class="fa-regular fa-eye"></i></button>
-                </div>`
-
-                const viewButton = entryDiv.querySelector(".view-button");
-                viewButton.addEventListener("click", () => {
-                    if (visibility.routes[route.short_name]) {
-                        visibility.routes[route.short_name] = false;
-                        viewButton.innerHTML = `<i class="fa-regular fa-eye-slash"></i>`;
-                        refreshMap(map); // Refresh the map to hide this type
-                    } else {
-                        visibility.routes[route.short_name] = true;
-                        viewButton.innerHTML = `<i class="fa-regular fa-eye"></i>`;
-                        refreshMap(map); // Refresh the map to show this type
-                    }
-                });
-                routeContent.appendChild(entryDiv);
-            });
-
-            const titleViewButton = titleDiv.querySelector(".view-button");
-            
-            titleViewButton.addEventListener("click", () => {
-                // set visibility for all routes to the same value based on the title button
-                Object.entries(subway.routes).forEach(([key, route]) => {
-                    const entryViewButton = routeContent.querySelector(`#route-visibility-button-${route.short_name}`);
-                    if (titleViewButton.innerHTML.includes("fa-eye-slash")) {
-                        visibility.routes[route.short_name] = true;
-                        entryViewButton.innerHTML = `<i class="fa-regular fa-eye"></i>`;
-                    } else {
-                        visibility.routes[route.short_name] = false;
-                        entryViewButton.innerHTML = `<i class="fa-regular fa-eye-slash"></i>`;
-                    }
-                });
-
-                // set title button too
-                if (titleViewButton.innerHTML.includes("fa-eye-slash")) {
-                    titleViewButton.innerHTML = `<i class="fa-regular fa-eye"></i>`;
-                } else {
-                    titleViewButton.innerHTML = `<i class="fa-regular fa-eye-slash"></i>`;
-                }
-                
-                refreshMap(map); // Refresh the map to show/hide all routes
-            });
-
-            routeContent.style.maxHeight = `${mapHeight * 0.6}px`; // Set max height to 60% of the map height
-            routeContent.style.overflowY = "auto"; // Enable scrolling if content exceeds max height
-            routeLegend.appendChild(routeContent);
-
-            const routeLegendButton = routeHeader.querySelector(".legend-button");
-            routeLegendButton.addEventListener("click", () => {
-                if (routeContent.style.display === "none") {
-                    routeContent.style.display = "block";
-                    routeLegendButton.innerHTML = `−`;
-                } else {
-                    routeContent.style.display = "none";
-                    routeLegendButton.innerHTML = `+`;
-                }
-            });
-
-            // Add both legends to the map
-            const alertLegendControl = L.control({ position: 'bottomleft' });
-            const routeLegendControl = L.control({ position: 'bottomleft' }); // offset to avoid overlap
-            
-            alertLegendControl.onAdd = function () {
-                // Prevent map dragging when interacting with the legend
-                L.DomEvent.disableClickPropagation(alertLegend);
-                L.DomEvent.disableScrollPropagation(alertLegend);
-
-                // Crucial for mobile: prevent touch from propagating to the map
-                alertLegend.addEventListener('touchstart', function (e) {
-                    e.stopPropagation();
-                }, { passive: true });
-
-                alertLegend.addEventListener('touchmove', function (e) {
-                    e.stopPropagation();
-                }, { passive: true });
-
-                return alertLegend;
-            };
-            alertLegendControl.addTo(map);
-
-            routeLegendControl.onAdd = function () {
-                // Prevent map dragging when interacting with the legend
-                L.DomEvent.disableClickPropagation(routeLegend);
-                L.DomEvent.disableScrollPropagation(routeLegend);
-
-                // Crucial for mobile: prevent touch from propagating to the map
-                routeLegend.addEventListener('touchstart', function (e) {
-                    e.stopPropagation();
-                }, { passive: true });
-
-                routeLegend.addEventListener('touchmove', function (e) {
-                    e.stopPropagation();
-                }, { passive: true });
-
-                return routeLegend;
-            };
-            routeLegendControl.addTo(map);
-
-            async function fetchAndPlotAlerts() {
-                const start = Date.now();
-                console.info('fetchAndPlotAlerts()');
-
-                await loadAlerts();
-
-                // const lastUpdatedDate = new Date(alertsjson.lastUpdated);
-                const lastUpdatedDate = new Date(alerts.fromApi.subway.timestamp);
-                const options = {
-                    timeZone: 'America/Toronto',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true,
-                };
-
-                document.getElementById("subheading").innerHTML = `Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)} <button class="small-button refresh-button" onClick="window.location.reload()"><i class="fas fa-rotate-right"></i></button>`;
-                document.getElementById("loading-modal").style.display = "none"; // Hide loading modal
-
-                refreshMap(map);
-                console.info('fetchAndPlotAlerts() finished in', Date.now() - start, 'ms');
-            }
-
-            setVisibilityDefaults();
-            fetchAndPlotAlerts(); // Initial fetch and plot
-            const interval = setInterval(fetchAndPlotAlerts, 300000); // Refresh every 5 minutes
-
-            if (subway.routes.length === 0) {
-                await subwayPromise;
-            }
-            refreshMap(map);
-            console.info('initMap() finished in', Date.now() - start, 'ms');
-        }
-
-        initMap();
     </script>
 </body>
 

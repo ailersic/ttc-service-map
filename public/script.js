@@ -1,646 +1,853 @@
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
     ('ontouchstart' in window);
 
-/*class Station {
-    constructor(name, lat, lng) {
-        this.name = name;
-        this.lat = lat;
-        this.lng = lng;
-    }
-}*/
-
-class ServiceAlertType {
+class AlertTypeDisplayInfo {
     constructor(short_name, long_name, icon) {
+        /** @type {AlertType} */
         this.short_name = short_name;
+        /** @type {string} */
         this.long_name = long_name;
         this.icon = icon;
     }
 }
 
-const serviceAlertTypes = {
-    Delays: new ServiceAlertType("Delays", "Delays", snail),
-    Bypass: new ServiceAlertType("Bypass", "Bypass", noentry),
-    Closure: new ServiceAlertType("Closure", "No service", cross),
-    Planned: new ServiceAlertType("Planned", "Planned alert", clock),
-    Accessibility: new ServiceAlertType("Access.", "Accessibility alert", accessibility),
+const alertTypeDisplayInfo = Object.freeze({
+    Delays: new AlertTypeDisplayInfo("Delays", "Delays", snail),
+    Bypass: new AlertTypeDisplayInfo("Bypass", "Bypass", noentry),
+    Closure: new AlertTypeDisplayInfo("Closure", "No service", cross),
+    Planned: new AlertTypeDisplayInfo("Planned", "Planned alert", clock),
+    Accessibility: new AlertTypeDisplayInfo("Accessibility", "Accessibility alert", accessibility),
     //Restored: new ServiceAlertType("Restored", "Service restored", check),
-    Other: new ServiceAlertType("Other", "Other alert", exclamation),
-    Multiple: new ServiceAlertType("Multiple", "Multiple alerts", multiple)
-}
+    Other: new AlertTypeDisplayInfo("Other", "Other alert", exclamation),
+    Multiple: new AlertTypeDisplayInfo("Multiple", "Multiple alerts", multiple)
+});
 
-/*
-class Line {
-    constructor(name, colour, stations) {
-        this.name = name;
-        this.colour = colour;
-        this.stations = stations;
-        this.serviceReductions = [];
+/** @typedef {Exclude<keyof typeof alertTypeDisplayInfo, 'Multiple'>} AlertType */
+
+class LayerTree {
+    /** @type {L.Map} */
+    #map;
+
+    /** @type {L.LayerGroup} */
+    #platformMarkerGroup;
+    /** @type {L.LayerGroup} */
+    #stationPlatformConnectionGroup;
+    /** @type {{ [k in string]: any }} */
+    #platformMarkersByPlatformId = {};
+    /** @type {{ [k in string]: any }} */
+    #stationPlatformConnectionsByPlatformId = {};
+    /** @type {{ [k in string]: string[] }} */
+    #platformsByRouteId = {};
+
+    /** @type {L.LayerGroup} */
+    #stationMarkerGroup;
+    /** @type {{ [k in string]: any }} */
+    #stationMarkersByStationId = {};
+    /** @type {{ [k in string]: string[] }} */
+    #stationsByRouteId = {}
+
+    /** @type {L.LayerGroup} */
+    #routeSegmentGroup;
+    /** @type {{ [k in string]: any }} */
+    #routeSegmentGroupsByRouteId = {};
+    /** @typedef {'subway-lrt' | 'streetcar' | 'bus' | 'blue-night'} RouteGroupName */
+    /** @type {{ [k in RouteGroupName]: string[] }} */
+    #routeIdsByGroup = {
+        'subway-lrt': [],
+        streetcar: [],
+        bus: [],
+        'blue-night': [],
+    };
+    /** @type {{ [k in RouteGroupName]?: Element }} */
+    #routeGroupVisibilityButtonsByGroup = {};
+
+    /** @import { LatLng } from "../utils/geometry.ts" */
+    /** @type {{ [k in string]: { [k in string]: LatLng[] } }} */
+    #segmentsByRouteIdAndPlatformId = {} // keyed by the id of the platform at the start of the segment in the direction of travel
+
+    /** @type {L.LayerGroup} */
+    #alertMarkerGroup;
+    /** @type {L.LayerGroup} */
+    #alertSegmentGroup;
+    /**
+     * @typedef {Object} DisplayAlert
+     * @property {string} id
+     * @property {AlertTypeDisplayInfo} displayInfo
+     * @property {true | undefined} stale
+     * @property {string} header
+     * @property {string} description
+     * @property {string} routeId
+     * @property {string[]} platformIds
+     * @property {string[]} stationIds
+     * @property {any[]} markers
+     * @property {any[]} segments
+     */
+    /** @type {{ [k in string]: DisplayAlert[] }} */
+    #alertsByRouteId = {};
+
+    #visibility = {
+        /** @type {{ [k in AlertType]: boolean }} */
+        alertTypes: {},
+        /** @type {{ [k in string]: boolean }} */
+        routes: {},
+        /** @type {{ [k in string]: number }} */
+        stations: {},
+        /** @type {{ [k in string]: number }} */
+        platforms: {},
+    };
+
+    /** @type {string[]} */
+    #spadinaTunnelNames;
+    /** @type {L.Polyline<GeoJSON.LineString | GeoJSON.MultiLineString, any>} */
+    #spadinaTunnel;
+    #spadina1 = '99976';
+    #spadina2 = '99976-ns';
+
+    /** @param {L.Map} map */
+    constructor(map) {
+        this.#map = map;
+        map.on('zoomend', this.#onZoom.bind(this));
+        this.#platformMarkerGroup = L.layerGroup();
+        this.#platformMarkerGroup.addTo(this.#map);
+        this.#stationPlatformConnectionGroup = L.layerGroup();
+        this.#stationPlatformConnectionGroup.addTo(this.#map);
+        this.#stationMarkerGroup = L.layerGroup();
+        this.#stationMarkerGroup.addTo(this.#map);
+        this.#routeSegmentGroup = L.layerGroup();
+        this.#routeSegmentGroup.addTo(this.#map);
+        this.#alertMarkerGroup = L.layerGroup();
+        this.#alertMarkerGroup.addTo(this.#map);
+        this.#alertSegmentGroup = L.layerGroup();
+        this.#alertSegmentGroup.addTo(this.#map);
+        Object.values(alertTypeDisplayInfo).forEach(({ short_name }) => {
+            this.showAlertType(short_name);
+        });
+        this.#onZoom();
     }
-    addServiceReduction(startStation, endStation, effectDesc, description) {
-        if (description === null || description === "") {
-            console.error("Error: description must be non-empty.");
-            return;
+
+    #onZoom() {
+        const zoom = this.#map.getZoom();
+        this.#platformMarkerGroup.removeFrom(this.#map);
+        this.#stationPlatformConnectionGroup.removeFrom(this.#map);
+        if (zoom >= 14) {
+            this.#platformMarkerGroup.addTo(this.#map);
+            this.#stationPlatformConnectionGroup.addTo(this.#map);
         }
-        description = description.replace(/<a[\s\S]*?\/a>/gi, ""); // Remove <a> tags
-        description = description.trim();
-
-        if (effectDesc === null) { effectDesc = "Broken"; } // Default to unrecognized string so we can interpret it later or default to "Other alert"
-
-        // Find type of alert
-        let typeIdx = serviceReductionTypes.findIndex(type => type.name.toLowerCase() === effectDesc.toLowerCase());
-
-        // If the type is not found, we try to interpret it
-        if (typeIdx === -1) {
-            if (effectDesc.toLowerCase().includes("closure")) {
-                if (description.toLowerCase().includes("will be") ||
-                    description.toLowerCase().includes("will start") ||
-                    description.toLowerCase().includes("will end") ||
-                    description.toLowerCase().includes("will close") ||
-                    description.toLowerCase().includes("will open")
-                ) {
-                    typeIdx = serviceReductionTypes.findIndex(type => type.name === "Planned alert");
-                } else {
-                    typeIdx = serviceReductionTypes.findIndex(type => type.name === "No service");
-                }
-            }
-
-            if (effectDesc.toLowerCase().includes("regular service")) {
-                typeIdx = serviceReductionTypes.findIndex(type => type.name === "Service restored");
-            }
-
-            if (effectDesc.toLowerCase().includes("reduced speed zone")) {
-                typeIdx = serviceReductionTypes.findIndex(type => type.name === "Delays");
-            }
-
-            if (description.toLowerCase().includes("there will be no")) {
-                typeIdx = serviceReductionTypes.findIndex(type => type.name === "Planned alert");
-            }
-
-            // more interpretation logic can be added here
-
-            // If the type is still not found, default to "Other alert"
-            if (typeIdx === -1) {
-                typeIdx = serviceReductionTypes.findIndex(type => type.name === "Other alert");
-            }
+        this.#stationMarkerGroup.removeFrom(this.#map);
+        if (zoom >= 12.5) {
+            this.#stationMarkerGroup.addTo(this.#map);
         }
+    }
 
-        // If station name is "Eglinton West", change it to "Cedarvale (...)"
-        if (startStation === "Eglinton West") { startStation = "Cedarvale (formerly Eglinton West)"; }
-        if (endStation === "Eglinton West") { endStation = "Cedarvale (formerly Eglinton West)"; }
+    //#region map objects
 
-        // If station name is "Cedarvale", change it to "Cedarvale (...)"
-        if (startStation === "Cedarvale") { startStation = "Cedarvale (formerly Eglinton West)"; }
-        if (endStation === "Cedarvale") { endStation = "Cedarvale (formerly Eglinton West)"; }
+    /**
+     * @param {{ latitude: number, longitude: number, name: string }} platform 
+     */
+    #makePlatformMarker(platform) {
+        const marker = L.circleMarker([platform.latitude, platform.longitude], {
+            radius: 6,
+            color: '#000',
+            fillColor: '#fff',
+            fillOpacity: 1,
+            weight: 5,
+            opacity: 1,
+            pane: 'PlatformMarker',
+        });
+        const tooltip = L.tooltip({
+            direction: 'top',
+            sticky: false,
+            className: 'station-tooltip',
+            offset: [0, 0],
+        });
+        tooltip.setContent(`<p>${platform.name}</p>`);
+        marker.bindTooltip(tooltip);
+        return marker;
+    }
 
-        // If station name is "Dundas", change it to "TMU (...)"
-        if (startStation === "Dundas") { startStation = "TMU (formerly Dundas)"; }
-        if (endStation === "Dundas") { endStation = "TMU (formerly Dundas)"; }
+    /**
+     * @param {{ latitude: number, longitude: number, name: string, formerly?: string }} station 
+     */
+    #makeStationMarker(station) {
+        const marker = L.circleMarker([station.latitude, station.longitude], {
+            radius: 8,
+            color: '#000',
+            fillColor: '#fff',
+            fillOpacity: .9,
+            weight: 5,
+            opacity: .9,
+            pane: 'StationMarker',
+        });
+        const tooltip = L.tooltip({
+            direction: 'top',
+            sticky: false,
+            className: 'station-tooltip',
+            offset: [0, 0]
+        });
+        tooltip.setContent(`
+            <p>${station.name}</p>
+            ${station.formerly && `<p>Formerly ${station.formerly}</p>` || ''}
+        `);
+        marker.bindTooltip(tooltip);
+        return marker;
+    }
 
-        // If station name is "TMU", change it to "TMU (...)"
-        if (startStation === "TMU") { startStation = "TMU (formerly Dundas)"; }
-        if (endStation === "TMU") { endStation = "TMU (formerly Dundas)"; }
+    #makeStationPlatformConnection(station, platform) {
+        return L.polyline([[station.latitude, station.longitude], [platform.latitude, platform.longitude]], {
+            color: '#888',
+            weight: 6,
+            opacity: 1,
+            pane: 'PlatformConnection',
+        });
+    }
 
-        // If station name is "Vaughan Metropolitan Centre", change it to "Vaughan"
-        if (startStation === "Vaughan Metropolitan Centre") { startStation = "Vaughan"; }
-        if (endStation === "Vaughan Metropolitan Centre") { endStation = "Vaughan"; }
+    #makeSpadinaTunnel(station1, station2) {
+        const tunnel = L.polyline([
+            [station1.latitude, station1.longitude],
+            [station2.latitude, station2.longitude],
+        ], {
+            color: '#000',
+            weight: 12,
+            opacity: 1,
+            pane: 'PlatformConnection',
+        });
+        const tooltip = L.tooltip({
+            direction: 'top',
+            sticky: true,
+            className: 'route-tooltip',
+            offset: [0, 0],
+        });
+        tunnel.bindTooltip(tooltip);
+        tunnel.on('tooltipopen', () => {
+            const randomName = this.#spadinaTunnelNames[Math.floor(Math.random() * this.#spadinaTunnelNames.length)];
+            tooltip.setContent(`<p>Spadina ${randomName}</p>`);
+        });
+        return tunnel;
+    }
 
-        // If station name is "Sheppard", change it to "Sheppard-Yonge"
-        if (startStation === "Sheppard") { startStation = "Sheppard-Yonge"; }
-        if (endStation === "Sheppard") { endStation = "Sheppard-Yonge"; }
+    /**
+     * @param {Transit['routes'][0]} route 
+     * @param {Transit['routes'][0]['segments']['forward'][0]} segment 
+     * @param {string} start
+     * @param {string} end
+     */
+    #makeRouteSegment(route, segment, start, end) {
+        const weight = route.type === 'SubwayLRT'
+            ? 16 : (
+                route.type === 'Streetcar'
+                    ? 8
+                    : 6
+            );
+        const pane = route.type === 'SubwayLRT'
+            ? 'SubwayLrtLine' : (
+                route.type === 'Streetcar'
+                    ? 'StreetcarLine'
+                    : 'BusLine'
+            );
+        const shadowPane = route.type === 'SubwayLRT'
+            ? 'SubwayLrtShadow' : (
+                route.type === 'Streetcar'
+                    ? 'StreetcarShadow'
+                    : 'BusShadow'
+            );
+        const polyline = L.polyline(segment.map(({ latitude, longitude }) => [latitude, longitude]), {
+            color: route.color,
+            weight,
+            opacity: 1,
+            pane,
+        });
+        const shadow = L.polyline(segment.map(({ latitude, longitude }) => [latitude, longitude]), {
+            color: 'black',
+            weight: weight + 2,
+            opacity: 1,
+            pane: shadowPane,
+        });
+        const tooltip = L.tooltip({
+            direction: 'top',
+            sticky: true,
+            className: 'route-tooltip',
+            offset: [0, 0]
+        });
+        tooltip.setContent(`<p>${route.short_name} ${route.long_name}</p><p>Normal service between ${start} and ${end}</p>`);
+        polyline.bindTooltip(tooltip);
+        return { polyline, shadow };
+    }
 
-        // If station name is "Bloor", change it to "Bloor-Yonge"
-        if (startStation === "Bloor") { startStation = "Bloor-Yonge"; }
-        if (endStation === "Bloor") { endStation = "Bloor-Yonge"; }
+    #makeAlertMarker(icon, latitude, longitude, header, description) {
+        const size = 36;
+        const marker = L.marker([latitude, longitude], {
+            icon: L.divIcon({
+                className: 'alert-div-icon',
+                html: `<svg width="${size}" height="${size}" viewBox="${-12 * icon.scale} ${-12 * icon.scale} ${24 * icon.scale} ${24 * icon.scale}">
+                    <g transform="scale(${icon.scale})">
+                    <path d="${icon.path}" 
+                    stroke="${icon.strokeColor}" 
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="${icon.strokeWeight / icon.scale}" 
+                    fill="${icon.fillColor}"/>
+                    </g>
+                    </svg>`,
+                iconSize: [size, size],
+                iconAnchor: [size / 2, size / 2],
+                tooltipAnchor: [0, -.375 * size],
+            }),
+            pane: 'AlertMarker',
+        });
+        const tooltip = L.tooltip({
+            direction: 'top',
+            sticky: true,
+            className: 'alert-tooltip',
+            offset: [0, 0],
+        });
+        tooltip.setContent(`<p>${header}</p>${description ? `<p>${description}</p>` : ''}`);
+        marker.bindTooltip(tooltip);
+        return marker;
+    }
 
-        // If station name is "Yonge", change it to "Bloor-Yonge" if Line 2, or "Sheppard-Yonge" if Line 4
-        if (startStation === "Yonge") {
-            if (this.name === "Line 2 - Bloor-Danforth") {
-                startStation = "Bloor-Yonge";
-            } else if (this.name === "Line 4 - Sheppard") {
-                startStation = "Sheppard-Yonge";
-            }
-        }
-        if (endStation === "Yonge") {
-            if (this.name === "Line 2 - Bloor-Danforth") {
-                endStation = "Bloor-Yonge";
-            } else if (this.name === "Line 4 - Sheppard") {
-                endStation = "Sheppard-Yonge";
-            }
-        }
+    #makeAlertSegment(polyline, alertType, header, description) {
+        // TODO
+    }
 
-        // Find the indices of the start and end stations
-        let startStationIdx = this.stations.findIndex(station => station.name === startStation);
-        let endStationIdx = this.stations.findIndex(station => station.name === endStation);
-        let extraStartStationIdx = -1;
-        let extraEndStationIdx = -1;
-        let extraAlert = false;
+    //#endregion map objects
 
-        // If both stations are not found, we try to find them in the description
-        if (startStationIdx === -1 && endStationIdx === -1) {
-            let matchingStations = []
-            this.stations.forEach((station) => {
-                if (description.includes(station.name)) {
-                    matchingStations.push(station.name);
-                }
-            });
+    //#region data
 
-            // check if any matching stations are substrings of other matching stations
-            matchingStations = matchingStations.filter((station, index) => {
-                return !matchingStations.some((otherStation, otherIndex) => {
-                    return (index !== otherIndex) && otherStation.includes(station);
-                });
-            });
-
-            // If we have two matching stations, we assume they are the start and end stations
-            if (matchingStations.length === 2) {
-                startStationIdx = this.stations.findIndex(station => station.name === matchingStations[0]);
-                endStationIdx = this.stations.findIndex(station => station.name === matchingStations[1]);
-            } else if (matchingStations.length === 1) {
-                startStationIdx = this.stations.findIndex(station => station.name === matchingStations[0]);
-                endStationIdx = startStationIdx; // If only one station is found, we assume it's both start and end
-            } else if (matchingStations.length === 4) {
-                // assume there are two alerts in the description
-                // sort matchingStations by the order they appear in the description, then group them into pairs
-                extraAlert = true;
-
-                let sortedStations = matchingStations.sort((a, b) => {
-                    return description.indexOf(a) - description.indexOf(b);
-                });
-
-                startStationIdx = this.stations.findIndex(station => station.name === sortedStations[0]);
-                endStationIdx = this.stations.findIndex(station => station.name === sortedStations[1]);
-
-                extraStartStationIdx = this.stations.findIndex(station => station.name === sortedStations[2]);
-                extraEndStationIdx = this.stations.findIndex(station => station.name === sortedStations[3]);
+    /**
+     * @param {Transit} transit
+     * @param {string[]} tunnelNames
+     */
+    loadTransitData(transit, tunnelNames) {
+        this.#spadinaTunnelNames = tunnelNames;
+        transit.routes.forEach(r => {
+            if (/3\d\d/.test(r.id)) {
+                this.#routeIdsByGroup['blue-night'].push(r.id);
             } else {
-                console.error(`Error: could not find stations in the description. Description: "${description}"`);
+                switch (r.type) {
+                    case 'SubwayLRT':
+                        this.#routeIdsByGroup['subway-lrt'].push(r.id);
+                        break;
+                    case 'Streetcar':
+                        this.#routeIdsByGroup.streetcar.push(r.id);
+                        break;
+                    case 'Bus':
+                        this.#routeIdsByGroup.bus.push(r.id);
+                        break;
+                }
+            }
+            this.#platformsByRouteId[r.id] = r.stops.forward.concat(r.stops.backward);
+            this.#stationsByRouteId[r.id] = r.stops.forward.concat(r.stops.backward)
+                .map(pid => transit.platforms[pid].parent_station_id)
+                .filter(Boolean)                                     // filter out nulls
+                .sort()                                              // sort to collect duplicates
+                .filter((sid, i, a) => i === 0 || sid !== a[i - 1]); // remove duplicates
+            this.#routeSegmentGroupsByRouteId[r.id] = L.layerGroup();
+            this.#segmentsByRouteIdAndPlatformId[r.id] = {};
+            for (let i = 0; i < r.stops.forward.length - 1; i++) {
+                const start = r.stops.forward[i];
+                const end = r.stops.forward[i + 1];
+                const segment = r.segments.forward[i + 1];
+                this.#segmentsByRouteIdAndPlatformId[r.id][start] = segment;
+                const startName = transit.platforms[start].parent_station_id
+                    ? transit.stations[transit.platforms[start].parent_station_id].name
+                    : transit.platforms[start].name;
+                const endName = transit.platforms[end].parent_station_id
+                    ? transit.stations[transit.platforms[end].parent_station_id].name
+                    : transit.platforms[end].name;
+                const { polyline, shadow } = this.#makeRouteSegment(r, segment, startName, endName);
+                shadow.addTo(this.#routeSegmentGroupsByRouteId[r.id]);
+                polyline.addTo(this.#routeSegmentGroupsByRouteId[r.id]);
+            }
+            for (let i = 0; i < r.stops.backward.length - 1; i++) {
+                const start = r.stops.backward[i];
+                const end = r.stops.backward[i + 1];
+                const segment = r.segments.backward[i + 1];
+                this.#segmentsByRouteIdAndPlatformId[r.id][start] = segment;
+                const startName = transit.platforms[start].parent_station_id
+                    ? transit.stations[transit.platforms[start].parent_station_id].name
+                    : transit.platforms[start].name;
+                const endName = transit.platforms[end].parent_station_id
+                    ? transit.stations[transit.platforms[end].parent_station_id].name
+                    : transit.platforms[end].name;
+                const { polyline, shadow } = this.#makeRouteSegment(r, segment, startName, endName);
+                shadow.addTo(this.#routeSegmentGroupsByRouteId[r.id]);
+                polyline.addTo(this.#routeSegmentGroupsByRouteId[r.id]);
+            }
+        });
+
+        // add platform markers
+        Object.entries(transit.platforms).forEach(([pid, p]) => {
+            this.#visibility.platforms[pid] = 0;
+            if (p.parent_station_id && transit.routes
+                .filter(({ id }) => ['1', '2', '3', '4', '5', '6'].includes(id))
+                .some(({ stops: { forward, backward } }) => forward.includes(pid) || backward.includes(pid))
+            ) {
+                console.info('skipping platform:', pid, 'has parent', transit.stations[p.parent_station_id]);
+                // DO NOT add subway/lrt platforms with a parent station to map
+            } else {
+                console.info('add marker for platform:', pid);
+                this.#platformMarkersByPlatformId[pid] = this.#makePlatformMarker(p);
+            }
+            // p.parent_station_id && (this.#stationPlatformConnectionsByPlatformId[id] = this.#makeStationPlatformConnection(transit.stations[p.parent_station_id], p));
+        });
+
+        // add station markers
+        Object.entries(transit.stations).forEach(([id, s]) => {
+            this.#visibility.stations[id] = 0;
+            this.#stationMarkersByStationId[id] = this.#makeStationMarker(s);
+        });
+
+        // add spadina tunnel
+        this.#spadinaTunnel = this.#makeSpadinaTunnel(transit.stations[this.#spadina1], transit.stations[this.#spadina2]);
+
+        // set default visibility depending on time of day
+        const now = new Date();
+        const sunday = now.getDay() === 0;
+        if (sunday ? (now.getHours() > 8 || now.getHours() < 2) : (now.getHours() > 6 || now.getHours() < 2)) {
+            // subway/lrt and streetcar visible by default during operating hours
+            this.showRouteGroup('subway-lrt');
+            this.showRouteGroup('streetcar');
+            this.hideRouteGroup('bus');
+            this.hideRouteGroup('blue-night');
+        }
+        if ((now.getHours() + now.getMinutes() / 60) > 1.5 && (now.getHours() + now.getMinutes() / 60) < 5.5) {
+            this.hideRouteGroup('subway-lrt');
+            this.hideRouteGroup('streetcar');
+            this.hideRouteGroup('bus');
+            this.showRouteGroup('blue-night'); // blue night visible by default during operating hours
+        }
+
+        this.#onZoom();
+    }
+
+    /**
+     * @param {string} alertId 
+     * @param {AlertTypeDisplayInfo} displayInfo 
+     * @param {string} header 
+     * @param {string} description 
+     * @param {string} routeId 
+     * @param {string[]} platformIds 
+     * @param {string[]} stationIds 
+     */
+    addAlert(alertId, displayInfo, header, description, routeId, platformIds, stationIds) {
+        console.info('add alert:', alertId, displayInfo.short_name, 'on route', routeId, `\n'${header}'\n`, platformIds);
+        if (!routeId) {
+            console.warn('no route id on alert');
+        }
+        /** @type {DisplayAlert} */
+        const newAlert = {
+            id: alertId,
+            displayInfo,
+            header,
+            description,
+            routeId,
+            platformIds,
+            stationIds,
+            markers: [],
+            segments: [],
+        };
+        (this.#alertsByRouteId[routeId] || (this.#alertsByRouteId[routeId] = [])).push(newAlert);
+        platformIds.forEach(pid => {
+            const platformMarker = this.#platformMarkersByPlatformId[pid];
+            if (!platformMarker) {
+                console.warn('platform', pid, 'has no marker');
                 return;
             }
-        } else if (startStationIdx === -1 || endStationIdx === -1) {
-            // If one of the stations can't be identified, we return an error
-            if (startStationIdx === -1) {
-                console.error(`Error: could not find start station "${startStation}" in the list of stations.`);
-            } else {
-                console.error(`Error: could not find end station "${endStation}" in the list of stations.`);
+            const { lat, lng } = platformMarker.getLatLng();
+            const marker = this.#makeAlertMarker(displayInfo.icon, lat, lng, header, description);
+            newAlert.markers.push(marker);
+            // console.info('alert visibility:', this.isAlertTypeVisible(displayInfo.short_name), this.isRouteVisible(routeId));
+            if (
+                this.isAlertTypeVisible(displayInfo.short_name) &&
+                this.isRouteVisible(routeId)
+            ) {
+                marker.addTo(this.#alertMarkerGroup);
             }
+        });
+        stationIds.forEach(sid => {
+            const stationMarker = this.#stationMarkersByStationId[sid];
+            if (!stationMarker) {
+                return;
+            }
+            const { lat, lng } = stationMarker.getLatLng();
+            const marker = this.#makeAlertMarker(displayInfo.icon, lat, lng, header, description);
+            newAlert.markers.push(marker);
+            if (this.isAlertTypeVisible(displayInfo)) {
+                marker.addTo(this.#alertMarkerGroup);
+            }
+        });
+        // TODO: segments
+        // TODO: special handling for spadina?
+    }
+
+    clearAlerts() {
+        Object.values(this.#alertsByRouteId).forEach(alerts =>
+            alerts.forEach(({ markers, segments }) => {
+                markers.forEach(m => m.removeFrom(this.#alertMarkerGroup));
+                segments.forEach(s => s.removeFrom(this.#alertSegmentGroup));
+            }),
+        );
+        this.#alertsByRouteId = {};
+    }
+
+    //#endregion data
+
+    //#region visibility
+
+    /** @param {AlertType} type */
+    showAlertType(type) {
+        if (this.#visibility.alertTypes[type]) {
             return;
         }
-
-        // If the start and end stations are the same and it's not a station-specific elevator alert, we expand the range by one station in each direction
-        let elevatorIdx = serviceReductionTypes.findIndex(type => type.name === "Elevator alert");
-        if (startStationIdx === endStationIdx && typeIdx !== elevatorIdx) {
-            startStationIdx = Math.max(0, startStationIdx - 1);
-            endStationIdx = Math.min(this.stations.length - 1, endStationIdx + 1);
-        }
-
-        if (startStationIdx > endStationIdx) {
-            let temp = startStationIdx;
-            startStationIdx = endStationIdx;
-            endStationIdx = temp;
-        }
-
-        if (extraAlert && extraStartStationIdx > extraEndStationIdx) {
-            let temp = extraStartStationIdx;
-            extraStartStationIdx = extraEndStationIdx;
-            extraEndStationIdx = temp;
-        }
-
-        let direction = "both"; // Default direction is both
-        if (typeIdx !== elevatorIdx) {
-            if (this.name === "Line 1 - Yonge-University") {
-                if ((startStationIdx + endStationIdx) / 2 <= 21) {
-                    if (description.toLowerCase().includes("southbound") && !description.toLowerCase().includes("northbound")) {
-                        direction = "forward";
-                    } else if (description.toLowerCase().includes("northbound") && !description.toLowerCase().includes("southbound")) {
-                        direction = "reverse";
-                    }
-                } else {
-                    if (description.toLowerCase().includes("northbound") && !description.toLowerCase().includes("southbound")) {
-                        direction = "forward";
-                    } else if (description.toLowerCase().includes("southbound") && !description.toLowerCase().includes("northbound")) {
-                        direction = "reverse";
-                    }
+        this.#visibility.alertTypes[type] = true;
+        Object.values(this.#alertsByRouteId).forEach(alerts =>
+            alerts.forEach(({ displayInfo: alertType, routeId, markers }) => {
+                if (type === alertType.short_name && this.isRouteVisible(routeId)) {
+                    markers.forEach(m => m.addTo(this.#alertMarkerGroup));
                 }
-            } else if (this.name === "Line 2 - Bloor-Danforth" || this.name === "Line 4 - Sheppard") {
-                if (description.toLowerCase().includes("eastbound") && !description.toLowerCase().includes("westbound")) {
-                    direction = "forward";
-                } else if (description.toLowerCase().includes("westbound") && !description.toLowerCase().includes("eastbound")) {
-                    direction = "reverse";
+            }),
+        );
+    }
+
+    /** @param {AlertType} type */
+    hideAlertType(type) {
+        if (!this.#visibility.alertTypes[type]) {
+            return;
+        }
+        this.#visibility.alertTypes[type] = false;
+        Object.values(this.#alertsByRouteId).forEach(alerts =>
+            alerts.forEach(({ displayInfo: alertType, markers }) => {
+                if (type === alertType.short_name) {
+                    markers.forEach(m => m.removeFrom(this.#alertMarkerGroup));
                 }
+            }),
+        );
+    }
+
+    /** @param {AlertType} type */
+    isAlertTypeVisible(type) {
+        return this.#visibility.alertTypes[type];
+    }
+
+    #incrementStationVisibility(id) {
+        this.#visibility.stations[id]++;
+        if (this.#visibility.stations[id] === 1) {
+            this.#stationMarkersByStationId[id].addTo(this.#stationMarkerGroup);
+            if ((id === this.#spadina1 && this.#visibility.stations[this.#spadina2]) ||
+                (id === this.#spadina2 && this.#visibility.stations[this.#spadina1])) {
+                this.#spadinaTunnel.addTo(this.#stationMarkerGroup);
             }
         }
+    }
 
-        console.log(`Adding service reduction from ${this.stations[startStationIdx].name} to ${this.stations[endStationIdx].name} of type ${serviceReductionTypes[typeIdx].name} with description "${description}" and direction "${direction}".`);
-        if (extraAlert) {
-            console.log(`Adding extra service reduction from ${this.stations[extraStartStationIdx].name} to ${this.stations[extraEndStationIdx].name} of type ${serviceReductionTypes[typeIdx].name} with description "${description}" and direction "${direction}".`);
+    #decrementStationVisibility(id) {
+        this.#visibility.stations[id]--;
+        if (this.#visibility.stations[id] === 0) {
+            this.#stationMarkersByStationId[id].removeFrom(this.#stationMarkerGroup);
+            if ((id === this.#spadina1 && this.#visibility.stations[this.#spadina2]) ||
+                (id === this.#spadina2 && this.#visibility.stations[this.#spadina1])) {
+                this.#spadinaTunnel.removeFrom(this.#stationMarkerGroup);
+            }
         }
+    }
 
-        let serviceReduction = new ServiceReduction(
-            startStationIdx,
-            endStationIdx,
-            typeIdx,
-            description,
-            direction
+    #incrementPlatformVisibility(id) {
+        this.#visibility.platforms[id]++;
+        if (this.#visibility.platforms[id] === 1) {
+            this.#platformMarkersByPlatformId[id]?.addTo(this.#platformMarkerGroup);
+            this.#stationPlatformConnectionsByPlatformId[id]?.addTo(this.#stationPlatformConnectionGroup)
+        }
+    }
+
+    #decrementPlatformVisibility(id) {
+        this.#visibility.platforms[id]--;
+        if (this.#visibility.platforms[id] === 0) {
+            this.#platformMarkersByPlatformId[id]?.removeFrom(this.#platformMarkerGroup);
+            this.#stationPlatformConnectionsByPlatformId[id]?.removeFrom(this.#stationPlatformConnectionGroup);
+        }
+    }
+
+    /** @param {string} id */
+    showRoute(id) {
+        if (this.#visibility.routes[id]) {
+            return;
+        }
+        this.#visibility.routes[id] = true;
+        this.#routeSegmentGroupsByRouteId[id].addTo(this.#routeSegmentGroup);
+        this.#platformsByRouteId[id].forEach(this.#incrementPlatformVisibility.bind(this));
+        this.#stationsByRouteId[id].forEach(this.#incrementStationVisibility.bind(this));
+        id in this.#alertsByRouteId && this.#alertsByRouteId[id].forEach(({ markers }) =>
+            markers.forEach(m => m.addTo(this.#alertMarkerGroup)),
         );
-        this.serviceReductions.push(serviceReduction);
-
-        if (extraAlert) {
-            let extraServiceReduction = new ServiceReduction(
-                extraStartStationIdx,
-                extraEndStationIdx,
-                typeIdx,
-                description,
-                direction
-            );
-            this.serviceReductions.push(extraServiceReduction);
-        }
     }
-    delServiceReduction(serviceReductionIdx) {
-        if (serviceReductionIdx >= 0 && serviceReductionIdx < this.serviceReductions.length) {
-            this.serviceReductions.splice(serviceReductionIdx, 1);
+
+    /** @param {string} id */
+    hideRoute(id) {
+        if (!this.#visibility.routes[id]) {
+            return;
+        }
+        this.#visibility.routes[id] = false;
+        this.#routeSegmentGroupsByRouteId[id].removeFrom(this.#routeSegmentGroup);
+        this.#platformsByRouteId[id].forEach(this.#decrementPlatformVisibility.bind(this));
+        this.#stationsByRouteId[id].forEach(this.#decrementStationVisibility.bind(this));
+        (id in this.#alertsByRouteId) && this.#alertsByRouteId[id].forEach(({ markers }) =>
+            markers.forEach(m => m.removeFrom(this.#alertMarkerGroup)),
+        );
+    }
+
+    /** @param {string} id */
+    isRouteVisible(id) {
+        return !!this.#visibility.routes[id];
+    }
+
+    /**
+     * @param {RouteGroupName} group 
+     * @param {HTMLElement} element 
+     */
+    addRouteGroupVisibilityButton(group, element) {
+        this.#routeGroupVisibilityButtonsByGroup[group] = element;
+        element.onclick = () => this.toggleRouteGroup(group);
+    }
+
+    /**
+     * @param {RouteGroupName} group 
+     */
+    showRouteGroup(group) {
+        const button = this.#routeGroupVisibilityButtonsByGroup[group];
+        button.className = button.className.replace('fa-eye-slash', 'fa-eye');
+        document
+            .querySelector(`#${group}-group-content`)
+            .querySelectorAll('.legend-content-row')
+            .forEach(row => {
+                const btn = row.querySelector('.view-button');
+                btn.className = btn.className.replace('fa-eye-slash', 'fa-eye');
+            })
+        this.#routeIdsByGroup[group].forEach(id => this.showRoute(id));
+    }
+
+    /**
+     * @param {RouteGroupName} group 
+    */
+    hideRouteGroup(group) {
+        const button = this.#routeGroupVisibilityButtonsByGroup[group];
+        button.className = button.className.replace(/fa-eye($| )/, 'fa-eye-slash$1');
+        document
+            .querySelector(`#${group}-group-content`)
+            .querySelectorAll('.legend-content-row')
+            .forEach(row => {
+                const btn = row.querySelector('.view-button');
+                btn.className = btn.className.replace(/fa-eye($| )/, 'fa-eye-slash$1');
+            });
+        this.#routeIdsByGroup[group].forEach(id => this.hideRoute(id));
+    }
+
+    /**
+     * @param {RouteGroupName} group 
+     */
+    toggleRouteGroup(group) {
+        if (this.isRouteGroupVisible(group)) {
+            this.hideRouteGroup(group)
         } else {
-            console.error(`Invalid service reduction index: ${serviceReductionIdx} when length is ${this.serviceReductions.length}.`);
+            this.showRouteGroup(group)
         }
     }
-    clearServiceReductions() {
-        this.serviceReductions = [];
+
+    /**
+     * @param {RouteGroupName} group 
+     */
+    isRouteGroupVisible(group) {
+        return this.#routeIdsByGroup[group].some(id => this.isRouteVisible(id));
     }
-}
 
-var lines = [
-    new Line(
-        "Line 1 - Yonge-University",
-        " #FFCA09",
-        [
-            new Station("Vaughan", 43.7940210, -79.5279060),
-            new Station("Highway 407", 43.7833590, -79.5234540),
-            new Station("Pioneer Village", 43.7767455, -79.5093530),
-            new Station("York University", 43.7740970, -79.4998880),
-            new Station("Finch West", 43.7644147, -79.4913299),
-            new Station("Downsview Park", 43.7533110, -79.4786930),
-            new Station("Sheppard West", 43.7496755, -79.4623870),
-            new Station("Wilson", 43.7344480, -79.4500420),
-            new Station("Yorkdale", 43.7245980, -79.4474920),
-            new Station("Lawrence West", 43.7152660, -79.4439145),
-            new Station("Glencairn", 43.7085980, -79.4405415),
-            new Station("Cedarvale (formerly Eglinton West)", 43.6999980, -79.4364910),
-            new Station("St Clair West", 43.6845480, -79.4156400),
-            new Station("Dupont", 43.6743490, -79.4068895),
-            new Station("Spadina", 43.6696490, -79.4049890),
-            new Station("St George", 43.6683990, -79.3988140),
-            new Station("Museum", 43.6665990, -79.3931890),
-            new Station("Queen's Park", 43.6598990, -79.3904890),
-            new Station("St Patrick", 43.6546490, -79.3881880),
-            new Station("Osgoode", 43.6510990, -79.3866880),
-            new Station("St Andrew", 43.6476490, -79.3847880),
-            new Station("Union", 43.6456990, -79.3805880),
-            new Station("King", 43.6490490, -79.3778880),
-            new Station("Queen", 43.6527490, -79.3793880),
-            new Station("TMU (formerly Dundas)", 43.6565490, -79.3809880),
-            new Station("College", 43.6607990, -79.3828880),
-            new Station("Wellesley", 43.6655490, -79.3836380),
-            new Station("Bloor-Yonge", 43.6705465, -79.3856535),
-            new Station("Rosedale", 43.6766490, -79.3883390),
-            new Station("Summerhill", 43.6826990, -79.3909890),
-            new Station("St Clair", 43.6880490, -79.3932890),
-            new Station("Davisville", 43.6976480, -79.3970900),
-            new Station("Eglinton", 43.7055980, -79.3986400),
-            new Station("Lawrence", 43.7259480, -79.4023900),
-            new Station("York Mills", 43.7438480, -79.4060910),
-            new Station("Sheppard-Yonge", 43.7612845, -79.4105167),
-            new Station("North York Centre", 43.7679470, -79.4125420),
-            new Station("Finch", 43.7804970, -79.4154915)
-        ]
-    ),
-    new Line(
-        "Line 2 - Bloor-Danforth",
-        " #00A754",
-        [
-            new Station("Kipling", 43.6375200, -79.5357930),
-            new Station("Islington", 43.6453980, -79.5241435),
-            new Station("Royal York", 43.6484480, -79.5095930),
-            new Station("Old Mill", 43.6497480, -79.4941420),
-            new Station("Jane", 43.6499490, -79.4837420),
-            new Station("Runnymede", 43.6518990, -79.4758420),
-            new Station("High Park", 43.6536990, -79.4678410),
-            new Station("Keele", 43.6554990, -79.4595410),
-            new Station("Dundas West", 43.6572990, -79.4519410),
-            new Station("Lansdowne", 43.6592800, -79.4424670),
-            new Station("Dufferin", 43.6606990, -79.4347900),
-            new Station("Ossington", 43.6621990, -79.4269900),
-            new Station("Christie", 43.6642990, -79.4181400),
-            new Station("Bathurst", 43.6657990, -79.4114395),
-            new Station("Spadina", 43.6670990, -79.4047890),
-            new Station("St George", 43.6683990, -79.3988140),
-            new Station("Bay", 43.6699990, -79.3909390),
-            new Station("Bloor-Yonge", 43.6705465, -79.3856535),//43.6710230, -79.3863725
-            new Station("Sherbourne", 43.6721385, -79.3761675),
-            new Station("Castle Frank", 43.6737990, -79.3689380),
-            new Station("Broadview", 43.6766990, -79.3588380),
-            new Station("Chester", 43.6782960, -79.3525195),
-            new Station("Pape", 43.6797990, -79.3449370),
-            new Station("Donlands", 43.6810490, -79.3383370),
-            new Station("Greenwood", 43.6826990, -79.3308370),
-            new Station("Coxwell", 43.6843990, -79.3228360),
-            new Station("Woodbine", 43.6864990, -79.3131360),
-            new Station("Main Street", 43.6890990, -79.3015360),
-            new Station("Victoria Park", 43.6948990, -79.2886850),
-            new Station("Warden", 43.7115490, -79.2789350),
-            new Station("Kennedy", 43.7321527, -79.2635679)
-        ]
-    ),
-    new Line(
-        "Line 3 - Scarborough",
-        " #00A6E4",
-        [
-            new Station("Kennedy", 43.7321527, -79.2635679),
-            new Station("Lawrence East", 43.750492758336705, -79.27022397820112),
-            new Station("Ellesmere", 43.76684906706332, -79.27622767390194),
-            new Station("Midland", 43.77042753260233, -79.27198857241383),
-            new Station("Scarborough Centre", 43.77439342976872, -79.25795440901479),
-            new Station("McCowan", 43.77467540310604, -79.2522365349571)
-        ]
-    ),
-    new Line(
-        "Line 4 - Sheppard",
-        " #B51A79",
-        [
-            new Station("Sheppard-Yonge", 43.7612845, -79.4105167),
-            new Station("Bayview", 43.7669115, -79.3867165),
-            new Station("Bessarion", 43.7692490, -79.3763285),
-            new Station("Leslie", 43.7712980, -79.3658900),
-            new Station("Don Mills", 43.7753975, -79.3463865)
-        ]
-    ),
-    new Line(
-        "Line 6 - Finch West LRT",
-        " #646464",
-        [
-            new Station("Humber College", 43.7299048, -79.6015296),
-            new Station("Westmore", 43.7348147, -79.6003652),
-            new Station("Martin Grove", 43.7366316, -79.5923394),
-            new Station("Albion", 43.7411377, -79.5892051),
-            new Station("Stevenson", 43.7432573, -79.5865726),
-            new Station("Mount Olive", 43.7433737, -79.5813581),
-            new Station("Rowntree Mills", 43.7462218, -79.5685629),
-            new Station("Pearldale", 43.7476892, -79.5629559),
-            new Station("Duncanwoods", 43.7489724, -79.556895),
-            new Station("Milvan Rumike", 43.7499601, -79.552337),
-            new Station("Emery", 43.7520405, -79.5423827),
-            new Station("Signet Arrow", 43.7532955, -79.5361882),
-            new Station("Norfinch Oakdale", 43.7559301, -79.524251),
-            new Station("Jane and Finch", 43.7572507, -79.517746),
-            new Station("Driftwood", 43.7580635, -79.5133814),
-            new Station("Tobermory", 43.7592824, -79.5079134),
-            new Station("Sentinel", 43.7610537, -79.500013),
-            new Station("Finch West", 43.7644147, -79.4913299),
-        ]
-    )
-];
-*/
+    //#endregion visibility
+};
 
+/** @type {LayerTree} */
+let layerTree;
+
+/** @import { PlatformCollection, StationCollection, RouteCollection } from "../models/TtcApi.ts" */
 /**
- * @typedef {Object} SubwayInfo
- * @property {import("./models/TtcApi.ts").SubwayPlatformCollection} platforms
- * @property {import("./models/TtcApi.ts").SubwayStationCollection} stations
- * @property {import("./models/TtcApi.ts").SubwayRouteCollection} routes
+ * @typedef {Object} Transit
+ * @property {PlatformCollection} platforms
+ * @property {StationCollection} stations
+ * @property {RouteCollection} routes
  */
-/** @type {SubwayInfo} */
-const subway = {
+/** @type {Transit} */
+const transit = {
     platforms: {},
     stations: {},
     routes: [],
 };
 
-const visibility = {
-    routes: {},
-    alerts: {},
-}
-
-var spadinaTunnelNames = [];
-
-function loadSpadinaTunnelNames() {
-    // load list of names from spadina.txt, make an array of strings corresponding to each line in the file, and assign to spadinaTunnelNames
-    fetch('/spadina.txt')
+async function loadTransitData() {
+    transit.platforms = await fetch('/api/platforms').then(res => res.json());
+    transit.stations = await fetch('/api/stations').then(res => res.json());
+    transit.routes = await fetch('/api/routes').then(res => res.json());
+    const tunnelNames = await fetch('/spadina.txt')
         .then(response => response.text())
-        .then(text => {
-            spadinaTunnelNames = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-        });
+        .then(text => text.split('\n').map(line => line.trim()).filter(line => line.length > 0));
+    console.debug('got', transit.routes.length, 'routes from api');
+    console.debug('got', tunnelNames.length, 'tunnel names from api');
+
+    layerTree.loadTransitData(transit, tunnelNames);
 }
 
-async function loadSubway() {
-    subway.platforms = await fetch('/api/subway/platforms').then(res => res.json());
-    subway.stations = await fetch('/api/subway/stations').then(res => res.json());
-    subway.routes = await fetch('/api/subway/routes').then(res => res.json());
-
-    loadSpadinaTunnelNames();
-}
-
-function setVisibilityDefaults() {
-    subway.routes.forEach(route => {
-        visibility.routes[route.id] = true;
-    });
-
-    // Example: hide Line 2 by default
-    //visibility.routes['2'] = false;
-
-    Object.values(serviceAlertTypes).forEach(alertType => {
-        visibility.alerts[alertType.short_name] = true;
-    });
-
-    // Example: hide Planned alerts by default
-    //visibility.alerts[serviceAlertTypes.Planned.short_name] = false;
-}
-
+/** @import { AlertCollection } from "../models/TtcApi.ts" */
 /**
  * @typedef {Object} AlertInfo
- * @property {import("./models/TtcApi.ts").AlertCollection} fromApi
- * @property {{ [k in string]: Pick<Alert, 'id' | 'header' | 'effect' | 'description'>[] }} perStation
+ * @property {AlertCollection} subway
+ * @property {AlertCollection} streetcar
+ * @property {AlertCollection} bus
+ * @property {AlertCollection} accessibility
+ * @property {AlertCollection} stop
  */
 /** @type {AlertInfo} */
 const alerts = {
-    fromApi: {
-        subway: null,
-        streetcar: null,
-        bus: null,
-        accessibility: null,
-        stop: null,
-    },
-    byRouteAndAlertType: {/* [route_id]: { [alert_type]: { [alert_id]: ... } } */ },
+    // fromApi: {
+    subway: null,
+    streetcar: null,
+    bus: null,
+    accessibility: null,
+    stop: null,
+    // },
+    // byRouteAndAlertType: {},
 };
 
 async function loadAlerts() {
     const start = Date.now();
-    alerts.fromApi.subway = await fetch('/api/subway/alerts').then(res => res.json());
+    alerts.subway = await fetch('/api/alerts/subway')
+        .then(res => res.json())
+        .catch(r => console.warn('fetch subway alerts failed:', r));
+    alerts.streetcar = await fetch('/api/alerts/streetcar')
+        .then(res => res.json())
+        .catch(r => console.warn('fetch streetcar alerts failed:', r));
+    alerts.bus = await fetch('/api/alerts/bus')
+        .then(res => res.json())
+        .catch(r => console.warn('fetch bus alerts failed:', r));
+    alerts.accessibility = await fetch('/api/alerts/accessibility')
+        .then(res => res.json())
+        .catch(r => console.warn('fetch accessibility alerts failed:', r));
+    alerts.stop = await fetch('/api/alerts/stops')
+        .then(res => res.json())
+        .catch(r => console.warn('fetch stop alerts failed:', r));
     assembleAlerts();
-    console.log('loadAlerts() in', Date.now() - start, 'ms');
+    console.debug('loadAlerts() in', Date.now() - start, 'ms');
 }
 
-const Layers = {
-    Top: 10000,
-    AlertMarker: 4000,
-    StationMarker: 3000,
-    AlertOverlay: 2000,
-    SubwayLine: 1000,
-    Bottom: 1,
+const Panes = {
+    AlertMarker: 70,
+    StationMarker: 60,
+    PlatformMarker: 50,
+    AlertOverlay: 40,
+    PlatformConnection: 30,
+    SubwayLrtLine: 25,
+    SubwayLrtShadow: 20,
+    StreetcarLine: 15,
+    StreetcarShadow: 10,
+    BusLine: 5,
+    BusShadow: 0,
 };
+/** @typedef {keyof typeof Panes} Pane */
 
-var allSegmentPolylines = [];
-var allAlertPolylines = [];
-var allStationMarkers = [];
-var allAlertMarkers = [];
+let map;
 
 var currentInfoWindow = null;
 
-function refreshMap(map) {
-    // Clear existing markers and polylines
-    allSegmentPolylines.forEach(polyline => polyline.remove());
-    allStationMarkers.forEach(marker => marker.remove());
-    allAlertPolylines.forEach(polyline => polyline.remove());
-    allAlertMarkers.forEach(marker => marker.remove());
-
-    allSegmentPolylines = [];
-    allStationMarkers = [];
-    allAlertPolylines = [];
-    allAlertMarkers = [];
-
-    // Re-render all lines
-    renderLines();
-
-    // Connect the two Spadinas if both line 1 and line 2 are visible
-    const spadina1 = subway.stations['spadina-1'];
-    const spadina2 = subway.stations['spadina-2'];
-    if (visibility.routes['1'] && visibility.routes['2'] && spadina1 && spadina2) {
-        const spadinaTunnel = L.polyline([
-            [spadina1.latitude, spadina1.longitude],
-            [spadina2.latitude, spadina2.longitude],
-        ], {
-            color: "#000",
-            weight: 10,
-            opacity: 1.0,
-            zIndex: Layers.Top,
-        });
-
-        // Create an info window for the station marker
-        const spadinaTunnelInfoWindow = L.tooltip({
-            direction: 'top',
-            sticky: false,
-            className: 'spadina-tunnel-tooltip',
-            offset: [0, 0]
-        });
-        spadinaTunnel.bindTooltip(spadinaTunnelInfoWindow);
-        // listener for when tooltip opens
-        spadinaTunnel.on('tooltipopen', function (e) {
-            // set content to random name from list
-            const randomName = spadinaTunnelNames[Math.floor(Math.random() * spadinaTunnelNames.length)];
-            spadinaTunnelInfoWindow.setContent(`
-                <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
-                    <div style="font-size: 14px; text-align: center;">Spadina ${randomName}</div>
-                </div>
-            `);
-        });
-
-        allSegmentPolylines.push(spadinaTunnel);
-    }
-
-    allSegmentPolylines.forEach(polyline => polyline.addTo(map));
-    allAlertPolylines.forEach(polyline => polyline.addTo(map));
-    allStationMarkers.forEach(marker => marker.addTo(map));
-    allAlertMarkers.forEach(marker => marker.addTo(map));
-}
-
-function renderLines() {
-    addLineSegments();
-    addStationMarkers();
-    addServiceAlerts();
-}
-
 function assembleAlerts() {
-    alerts.byRouteAndAlertType = {};
-    // subway alerts
-    if (alerts.fromApi.subway) {
-        console.warn('got', alerts.fromApi.subway.alerts.length, 'alerts from api');
-        // for each route and each alert type, process the alerts and append to alerts.byRouteAndAlertType
-        alerts.fromApi.subway.alerts.forEach(({ id, effect, criteria, header, description }) =>
-            criteria.forEach(({ direction, platform_id, route_id, route_type }) => {
-                // We currently only pay attention to alerts with:
-                // - a defined platform with a parent station
+    const count = Object.values(alerts).reduce((sum, { alerts }) => sum + alerts.length, 0);
+    console.debug('got', count, 'alerts from api');
+    layerTree.clearAlerts();
+    Object.values(alerts).forEach(({ alerts }) =>
+        alerts.forEach(({ id, periods, effect, criteria, header, description }) => {
 
-                if (platform_id === undefined) return;
-                const platform = subway.platforms[platform_id];
-                if (platform === undefined || platform.parent_station_id === null) return;
-                const station_id = platform.parent_station_id;
-                const station = subway.stations[station_id];
-                if (station === undefined) return;
+            // console.warn(`Alert ${id} with effect ${effect} for the following periods: ${periods
+            //     .map(({ start, end }) => `${Date(start).toLocaleString()} to ${Date(end).toLocaleString()}`).join(', ')
+            //     }`);
 
-                console.warn(`Platform ${platform_id} at station ${station.name} on route ${route_id} has alert ${id} with effect ${effect}`);
-
-                let alert_type = serviceAlertTypes.Other; // default
-
+            // map alert type
+            let display = alertTypeDisplayInfo.Other; // default
+            if (periods.every(({ start }) => start > Date.now())) {
+                display = alertTypeDisplayInfo.Planned;
+            } else {
                 switch (effect) {
                     case 'AccessibilityIssue':
-                        alert_type = serviceAlertTypes.Accessibility;
+                        display = alertTypeDisplayInfo.Accessibility;
                         break;
-                    case 'AdditionalService':
-                        // TODO
-                        break;
+                    // case 'AdditionalService':
+                    //     // TODO: ignore?
+                    //     break;
                     case 'Detour':
-                        // TODO (hi prio)
+                        display = alertTypeDisplayInfo.Bypass;
                         break;
                     case 'ModifiedService':
-                        // TODO
+                        // TODO: what is this
+                        // console.warn('ModifiedService:', header, '-', description);
+                        display = alertTypeDisplayInfo.Other;
                         break;
                     case 'NoService':
-                        alert_type = serviceAlertTypes.Closure;
+                        display = alertTypeDisplayInfo.Closure;
                         break;
                     case 'ReducedService':
-                        if (header.toLowerCase().includes("there will be no")) {
-                            alert_type = serviceAlertTypes.Planned;
-                        }
+                        // if (header.toLowerCase().includes("there will be no")) {
+                        display = alertTypeDisplayInfo.Planned;
+                        // }
                         break;
                     case 'SignificantDelay':
-                        alert_type = serviceAlertTypes.Delays;
+                        display = alertTypeDisplayInfo.Delays;
                         break;
                     default:
                         console.warn('Unsupported Alert.Effect:', effect);
                         return;
                 }
-
-                const newAlert = { alert_type, header, description, stations: [station_id] };
-
-                alerts.byRouteAndAlertType[route_id] = alerts.byRouteAndAlertType[route_id] || {};
-                alerts.byRouteAndAlertType[route_id][alert_type.short_name] = alerts.byRouteAndAlertType[route_id][alert_type.short_name] || {};
-
-                if (!(id in alerts.byRouteAndAlertType[route_id][alert_type.short_name])) {
-                    alerts.byRouteAndAlertType[route_id][alert_type.short_name][id] = newAlert;
-                } else {
-                    alerts.byRouteAndAlertType[route_id][alert_type.short_name][id].stations.push(station_id);
-                }
             }
-            ));
 
-        // if any alert has a station list with a gap, fill in the missing stations
-        Object.entries(alerts.byRouteAndAlertType).forEach(([route_id, alertTypes]) => {
-            const route = subway.routes.find(r => r.id === route_id);
-            if (!route) return;
-            const stationOrder = route.stops.map(p => subway.platforms[p]?.parent_station_id).filter(Boolean);
-            Object.values(alertTypes).forEach(alerts =>
-                Object.values(alerts).forEach(alert => {
-                    const indices = alert.stations.map(s => stationOrder.indexOf(s)).filter(i => i >= 0).sort((a, b) => a - b);
-                    if (indices.length > 1) {
-                        for (let i = indices[0]; i <= indices[indices.length - 1]; i++) {
-                            if (stationOrder[i] && !alert.stations.includes(stationOrder[i])) alert.stations.push(stationOrder[i]);
-                        }
-                    }
-                })
-            );
-        });
-    }
+            const platformsEffected = [];
+            const stationsEffected = [];
+            let routeId;
+
+            criteria.forEach(({ direction, platform_id, route_id, route_type }) => {
+                direction && console.warn('direction in criteria!', direction);
+                route_type && console.warn('route_type in criteria!', route_type);
+                routeId && route_id && routeId !== route_id && console.warn('multiple routes in criteria!');
+
+                route_id && (routeId = route_id);
+
+                platform_id && platformsEffected.push(platform_id);
+
+                const platform = platform_id === undefined ? null : transit.platforms[platform_id];
+                const station_id = platform?.parent_station_id || undefined;
+                station_id && stationsEffected.push(station_id);
+
+                const station = station_id === undefined ? null : transit.stations[station_id];
+                // console.warn(`effecting
+                //     platform ${platform?.name}
+                //     at station ${station?.name}
+                //     on route ${route_id}`.replace(/ +/, ' '));
+            });
+
+            layerTree.addAlert(id, display, header, description, routeId, platformsEffected, stationsEffected);
+        }));
+
+    // // if any alert has a station list with a gap, fill in the missing stations
+    // Object.entries(alerts.byRouteAndAlertType).forEach(([route_id, alertTypes]) => {
+    //     const route = transit.routes.find(r => r.id === route_id);
+    //     const stationOrder = route.stops.forward.map(p => transit.platforms[p]?.parent_station_id).filter(Boolean);
+    //     Object.values(alertTypes).forEach(alerts =>
+    //         Object.values(alerts).forEach(alert => {
+    //             const indices = alert.stations.map(s => stationOrder.indexOf(s)).filter(i => i >= 0).sort((a, b) => a - b);
+    //             if (indices.length > 1) {
+    //                 for (let i = indices[0]; i <= indices[indices.length - 1]; i++) {
+    //                     if (stationOrder[i] && !alert.stations.includes(stationOrder[i])) alert.stations.push(stationOrder[i]);
+    //                 }
+    //             }
+    //         })
+    //     );
+    // });
+    // );
 }
 
-
 function addLineSegments() {
-    subway.routes.forEach(({ id: route_id, long_name: route_name, stops, segments, color }) => {
+    transit.routes.forEach(({ id: route_id, type, long_name: route_name, stops, segments, color }) => {
         let visOpacity = 0.8;
         if (!visibility.routes[route_id]) visOpacity = 0.2;
 
@@ -648,11 +855,11 @@ function addLineSegments() {
         alertSegments = [];
         lastSegmentAlert = false;
 
-        stops.forEach((platformId, i) => {
-            if (i >= segments.length) return;
-            const segmentLatLngs = segments[i].map(({ latitude, longitude }) => [latitude, longitude]);
-            const s1 = subway.platforms[platformId]?.parent_station_id;
-            const s2 = subway.platforms[stops[i + 1]]?.parent_station_id;
+        stops.forward.forEach((platformId, i) => {
+            if (i >= segments.forward.length) return;
+            const segmentLatLngs = segments.forward[i].map(({ latitude, longitude }) => [latitude, longitude]);
+            const s1 = transit.platforms[platformId]?.parent_station_id;
+            const s2 = transit.platforms[stops[i + 1]]?.parent_station_id;
             let isAlertSegment = false;
 
             // Check if this segment is affected by any alerts
@@ -685,16 +892,16 @@ function addLineSegments() {
             }
         });
 
-        console.warn(`Route ${route_name} (${route_id}): ${normalSegments.length} normal segments, ${alertSegments.length} alert segments`);
+        // console.warn(`Route ${route_name} (${route_id}): ${normalSegments.length} normal segments, ${alertSegments.length} alert segments`);
 
         if (normalSegments.length) {
             // For each normal segment, make a tooltip polyline
             normalSegments.forEach(({ segment, s1, s2 }) => {
                 const transitPolyLine = L.polyline(segment, {
                     color,
-                    weight: 16,
+                    weight: type === 'SubwayLRT' ? 16 : 12,
                     opacity: visOpacity,
-                    zIndex: Layers.SubwayLine,
+                    // zIndex: Panes.SubwayLrtLine,
                 });
 
                 if (!visibility.routes[route_id]) {
@@ -719,7 +926,7 @@ function addLineSegments() {
                         <div style="color: black; font-weight: bold; text-align: center; margin-right: 0px; margin-left: 0px;">
                             <div style="font-size: 14px; text-align: center;">${route_name}</div>
                             <div style="font-size: 12px; margin-top: 4px; margin-bottom: 4px; text-align: center;">
-                                Normal service from ${subway.stations[s1]?.name || 'Unknown Station'} to ${subway.stations[s2]?.name || 'Unknown Station'}
+                                Normal service from ${transit.stations[s1]?.name || 'Unknown Station'} to ${transit.stations[s2]?.name || 'Unknown Station'}
                             </div>
                         </div>
                     `);
@@ -737,7 +944,7 @@ function addLineSegments() {
                     weight: 6,
                     opacity: visOpacity,
                     dashArray: '5, 15',
-                    zIndex: Layers.AlertOverlay,
+                    // zIndex: Panes.AlertOverlay,
                 });
 
                 if (!visibility.routes[route_id]) {
@@ -755,86 +962,6 @@ function addLineSegments() {
             });
         }
     });
-}
-
-function addStationMarkers() {
-    subway.routes.forEach(({ id: route_id, long_name: route_name, stops }) => {
-        if (!visibility.routes[route_id]) return;
-
-        stops.forEach(platformId => {
-            const platform = subway.platforms[platformId];
-            if (!platform || !platform.parent_station_id) return;
-            const station = subway.stations[platform.parent_station_id];
-            if (!station) return;
-
-            const { name, formerly, latitude, longitude } = station;
-
-            // Check if we already added this station marker
-            if (allStationMarkers.some(marker => {
-                const latlng = marker.getLatLng();
-                return latlng.lat === latitude && latlng.lng === longitude;
-            })) {
-                return;
-            }
-
-            const stationMarker = L.circleMarker([latitude, longitude], {
-                radius: 8,
-                color: '#000',
-                fillColor: '#fff',
-                fillOpacity: 1,
-                weight: 5,
-                opacity: 1,
-                zIndex: Layers.StationMarker,
-            });
-            // Create an info window for the station marker
-            const stationInfoWindow = L.tooltip({
-                direction: 'top',
-                sticky: false,
-                className: 'station-tooltip',
-                offset: [0, 0]
-            });
-            stationInfoWindow.setContent(`
-                <div style="color: black; text-align: center; margin-right: 0px; margin-left: 0px;">
-                    <div style="font-size: 14px; font-weight: bold; text-align: center;">
-                        ${name}
-                    </div>
-                    ${formerly && `                        
-                        <div style="font-size: 12px; margin-top: 4px; text-align: center;">
-                            Formerly ${formerly}
-                        </div>
-                    ` || ''}
-                </div>
-            `);
-            stationMarker.bindTooltip(stationInfoWindow);
-            allStationMarkers.push(stationMarker);
-        });
-    });
-
-    // DEBUG
-    if (false) {
-        subway.routes.forEach(({ id, color, shape }) => {
-            shape.forEach(({ latitude, longitude }, i) => {
-                const debugMarker = L.circleMarker([latitude, longitude], {
-                    radius: 6,
-                    color: '#000',
-                    weight: 2,
-                    opacity: 1,
-                    fillColor: color,
-                    fillOpacity: 1,
-                    zIndex: Layers.SubwayLine + 1,
-                });
-                const debugTooltip = L.tooltip({
-                    direction: 'top',
-                    sticky: false,
-                    className: 'station-tooltip',
-                    offset: [0, 0],
-                });
-                debugTooltip.setContent(`${i}: ${latitude}, ${longitude}`);
-                debugMarker.bindTooltip(debugTooltip);
-                allStationMarkers.push(debugMarker);
-            });
-        });
-    }
 }
 
 function getHeading(latlng1, latlng2) {
@@ -881,406 +1008,661 @@ function getMidpointAlongCurve(latlngs) {
     return latlngs[latlngs.length - 1];
 }
 
-function addServiceAlerts() {
-    processedAlerts = {};
+// function addServiceAlerts() {
+//     processedAlerts = {};
 
-    // for each route
-    subway.routes.forEach(({ id: route_id, long_name: route_name, stops, segments }) => {
-        if (!visibility.routes[route_id]) return;
-        processedAlerts[route_id] = {};
+//     // for each route
+//     transit.routes.forEach(({ id: route_id, long_name: route_name, stops, segments }) => {
+//         if (!visibility.routes[route_id]) return;
+//         processedAlerts[route_id] = {};
 
-        // for each alert type in that route
-        Object.entries(alerts.byRouteAndAlertType[route_id] || {}).forEach(([alertGroupKey, alertGroup]) => {
-            if (!visibility.alerts[alertGroupKey]) return;
-            processedAlerts[route_id][alertGroupKey] = {};
+//         // for each alert type in that route
+//         Object.entries(alerts.byRouteAndAlertType[route_id] || {}).forEach(([alertGroupKey, alertGroup]) => {
+//             if (!visibility.alerts[alertGroupKey]) return;
+//             processedAlerts[route_id][alertGroupKey] = {};
 
-            // for each alert in that type
-            Object.entries(alertGroup).forEach(([alertKey, alert]) => {
-                // if two alerts of the same alert_type have overlapping stations, merge them
-                let merged = false;
-                Object.values(processedAlerts[route_id][alertGroupKey]).forEach(existingAlert => {
-                    const intersection = existingAlert.stations.filter(station => alert.stations.includes(station));
-                    if (intersection.length > 0) {
-                        // merge
-                        existingAlert.stations = Array.from(new Set([...existingAlert.stations, ...alert.stations]));
-                        existingAlert.header += "\n<hr>\n" + alert.header;
-                        merged = true;
-                    }
-                });
-                if (!merged) {
-                    processedAlerts[route_id][alertGroupKey][alertKey] = { ...alert };
-                }
-            });
-        });
-    });
+//             // for each alert in that type
+//             Object.entries(alertGroup).forEach(([alertKey, alert]) => {
+//                 // if two alerts of the same alert_type have overlapping stations, merge them
+//                 let merged = false;
+//                 Object.values(processedAlerts[route_id][alertGroupKey]).forEach(existingAlert => {
+//                     const intersection = existingAlert.stations.filter(station => alert.stations.includes(station));
+//                     if (intersection.length > 0) {
+//                         // merge
+//                         existingAlert.stations = Array.from(new Set([...existingAlert.stations, ...alert.stations]));
+//                         existingAlert.header += "\n<hr>\n" + alert.header;
+//                         merged = true;
+//                     }
+//                 });
+//                 if (!merged) {
+//                     processedAlerts[route_id][alertGroupKey][alertKey] = { ...alert };
+//                 }
+//             });
+//         });
+//     });
 
-    // Now, for each processed alert, create markers and polylines
-    subway.routes.forEach(({ id: route_id, long_name: route_name, stops, segments }) => {
-        if (!visibility.routes[route_id]) return;
-        Object.entries(processedAlerts[route_id] || {}).forEach(([alertGroupKey, alertGroup]) => {
-            if (!visibility.alerts[alertGroupKey]) return;
-            Object.values(alertGroup).forEach(alert => {
-                // Create an info window for the alert
-                let alertInfoWindow = L.tooltip({
-                    direction: 'top',
-                    sticky: true,
-                    className: 'alert-tooltip',
-                    offset: [0, 0]
-                });
+//     // Now, for each processed alert, create markers and polylines
+//     transit.routes.forEach(({ id: route_id, long_name: route_name, stops, segments }) => {
+//         if (!visibility.routes[route_id]) return;
+//         Object.entries(processedAlerts[route_id] || {}).forEach(([alertGroupKey, alertGroup]) => {
+//             if (!visibility.alerts[alertGroupKey]) return;
+//             Object.values(alertGroup).forEach(alert => {
+//                 // Create an info window for the alert
+//                 let alertInfoWindow = L.tooltip({
+//                     direction: 'top',
+//                     sticky: true,
+//                     className: 'alert-tooltip',
+//                     offset: [0, 0]
+//                 });
 
-                let stationString = "";
-                // If the start and end stations are the same, we show "at <station name>"
-                // Otherwise, we show "from <start station> to <end station>"
-                if (alert.stations.length === 1) {
-                    stationString = `at ${subway.stations[alert.stations[0]].name}`;
-                } else {
-                    const start_station_name = subway.stations[alert.stations.reduce((a, b) => {
-                        return stops.findIndex(p => subway.platforms[p]?.parent_station_id === a) <
-                            stops.findIndex(p => subway.platforms[p]?.parent_station_id === b) ? a : b;
-                    })].name;
-                    const end_station_name = subway.stations[alert.stations.reduce((a, b) => {
-                        return stops.findIndex(p => subway.platforms[p]?.parent_station_id === a) >
-                            stops.findIndex(p => subway.platforms[p]?.parent_station_id === b) ? a : b;
-                    })].name;
-                    stationString = `from ${start_station_name} to ${end_station_name}`;
-                }
+//                 let stationString = "";
+//                 // If the start and end stations are the same, we show "at <station name>"
+//                 // Otherwise, we show "from <start station> to <end station>"
+//                 if (alert.stations.length === 1) {
+//                     stationString = `at ${transit.stations[alert.stations[0]].name}`;
+//                 } else {
+//                     const start_station_name = transit.stations[alert.stations.reduce((a, b) => {
+//                         return stops.forward.findIndex(p => transit.platforms[p]?.parent_station_id === a) <
+//                             stops.forward.findIndex(p => transit.platforms[p]?.parent_station_id === b) ? a : b;
+//                     })].name;
+//                     const end_station_name = transit.stations[alert.stations.reduce((a, b) => {
+//                         return stops.forward.findIndex(p => transit.platforms[p]?.parent_station_id === a) >
+//                             stops.forward.findIndex(p => transit.platforms[p]?.parent_station_id === b) ? a : b;
+//                     })].name;
+//                     stationString = `from ${start_station_name} to ${end_station_name}`;
+//                 }
 
-                alertInfoWindow.setContent(`
-                    <div style="color: black; text-align: center; margin-right: 0px; margin-left: 0px;">
-                        <div style="font-size: 14px; font-weight: bold; text-align: center;">${route_name}</div>
-                        <div style="font-size: 12px; margin-top: 4px; text-align: center;">
-                            ${alert.alert_type.long_name} ${stationString}
-                        </div>
-                        <div style="font-size: 12px; color: #666; margin-top: 4px; margin-bottom: 4px; text-align: center;">
-                            ${alert.header}
-                        </div>
-                    </div>
-                `);
+//                 alertInfoWindow.setContent(`
+//                     <div style="color: black; text-align: center; margin-right: 0px; margin-left: 0px;">
+//                         <div style="font-size: 14px; font-weight: bold; text-align: center;">${route_name}</div>
+//                         <div style="font-size: 12px; margin-top: 4px; text-align: center;">
+//                             ${alert.alert_type.long_name} ${stationString}
+//                         </div>
+//                         <div style="font-size: 12px; color: #666; margin-top: 4px; margin-bottom: 4px; text-align: center;">
+//                             ${alert.header}
+//                         </div>
+//                     </div>
+//                 `);
 
-                const alertSegs = [];
-                if (alert.stations.length >= 2) {
-                    // Highlight segment for each alert
-                    stops.forEach((platformId, i) => {
-                        if (i >= segments.length) return;
-                        const s1 = subway.platforms[platformId]?.parent_station_id;
-                        const s2 = subway.platforms[stops[i + 1]]?.parent_station_id;
-                        if (alert.stations.includes(s1) && alert.stations.includes(s2)) {
-                            const segmentLatLngs = segments[i].map(({ latitude, longitude }) => [latitude, longitude]);
-                            alertSegs.push(...segmentLatLngs);
-                        }
-                    });
-                }
+//                 const alertSegs = [];
+//                 if (alert.stations.length >= 2) {
+//                     // Highlight segment for each alert
+//                     stops.forward.forEach((platformId, i) => {
+//                         if (i >= segments.length) return;
+//                         const s1 = transit.platforms[platformId]?.parent_station_id;
+//                         const s2 = transit.platforms[stops[i + 1]]?.parent_station_id;
+//                         if (alert.stations.includes(s1) && alert.stations.includes(s2)) {
+//                             const segmentLatLngs = segments[i].map(({ latitude, longitude }) => [latitude, longitude]);
+//                             alertSegs.push(...segmentLatLngs);
+//                         }
+//                     });
+//                 }
 
-                const icon = alert.alert_type.icon;
-                const alertIcon = L.divIcon({
-                    className: 'my-custom-svg-icon', // Optional: for CSS styling
-                    html: `<svg width="${24 * icon.scale}" height="${24 * icon.scale}" viewBox="${-12 * icon.scale} ${-12 * icon.scale} ${24 * icon.scale} ${24 * icon.scale}" xmlns="http://www.w3.org/2000/svg">
-                        <g transform="scale(${icon.scale})">
-                        <path d="${icon.path}" 
-                        stroke="${icon.strokeColor}" 
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="${icon.strokeWeight / icon.scale}" 
-                        fill="${icon.fillColor}"/>
-                        </g>
-                        </svg>`,
-                    iconSize: [48, 48], // Set the size of your SVG
-                    iconAnchor: [24, 24], // Point of the icon corresponding to marker's location
-                    tooltipAnchor: [0, -18] // Point from which the tooltip should open relative to the iconAnchor
-                });
+//                 const icon = alert.alert_type.icon;
+//                 const alertIcon = L.divIcon({
+//                     className: 'my-custom-svg-icon', // Optional: for CSS styling
+//                     html: `<svg width="${24 * icon.scale}" height="${24 * icon.scale}" viewBox="${-12 * icon.scale} ${-12 * icon.scale} ${24 * icon.scale} ${24 * icon.scale}" xmlns="http://www.w3.org/2000/svg">
+//                         <g transform="scale(${icon.scale})">
+//                         <path d="${icon.path}" 
+//                         stroke="${icon.strokeColor}" 
+//                         stroke-linecap="round"
+//                         stroke-linejoin="round"
+//                         stroke-width="${icon.strokeWeight / icon.scale}" 
+//                         fill="${icon.fillColor}"/>
+//                         </g>
+//                         </svg>`,
+//                     iconSize: [48, 48], // Set the size of your SVG
+//                     iconAnchor: [24, 24], // Point of the icon corresponding to marker's location
+//                     tooltipAnchor: [0, -18] // Point from which the tooltip should open relative to the iconAnchor
+//                 });
 
-                let marker_latlng = null;
+//                 let marker_latlng = null;
 
-                // plot icons at midpoint of segment if alert.stations.length >= 2, else at station
-                if (alertSegs.length >= 2) {
-                    const midpoint = getMidpointAlongCurve(alertSegs.map(([lat, lng]) => L.latLng(lat, lng)));
-                    marker_latlng = midpoint;
-                } else {
-                    // If there's only one station in the alert, place the marker at that station
-                    const firstStationId = alert.stations[0];
-                    const firstStation = subway.stations[firstStationId];
-                    marker_latlng = L.latLng(firstStation.latitude, firstStation.longitude);
-                }
+//                 // plot icons at midpoint of segment if alert.stations.length >= 2, else at station
+//                 if (alertSegs.length >= 2) {
+//                     const midpoint = getMidpointAlongCurve(alertSegs.map(([lat, lng]) => L.latLng(lat, lng)));
+//                     marker_latlng = midpoint;
+//                 } else {
+//                     // If there's only one station in the alert, place the marker at that station
+//                     const firstStationId = alert.stations[0];
+//                     const firstStation = transit.stations[firstStationId];
+//                     marker_latlng = L.latLng(firstStation.latitude, firstStation.longitude);
+//                 }
 
-                let alertMarker = L.marker([marker_latlng.lat, marker_latlng.lng], {
-                    icon: alertIcon,
-                    zIndex: Layers.AlertMarker,
-                });
+//                 let alertMarker = L.marker([marker_latlng.lat, marker_latlng.lng], {
+//                     icon: alertIcon,
+//                     // zIndex: Panes.AlertMarker,
+//                 });
 
-                alertMarker.bindTooltip(alertInfoWindow);
-                allAlertMarkers.push(alertMarker);
+//                 alertMarker.bindTooltip(alertInfoWindow);
+//                 allAlertMarkers.push(alertMarker);
 
-                if (alertSegs.length) {
-                    const alertPolyLine = L.polyline(alertSegs, {
-                        color: alert.alert_type.icon.strokeColor,
-                        weight: 20,
-                        opacity: 0.5,
-                        zIndex: Layers.AlertOverlay + 1,
-                    });
+//                 if (alertSegs.length) {
+//                     const alertPolyLine = L.polyline(alertSegs, {
+//                         color: alert.alert_type.icon.strokeColor,
+//                         weight: 20,
+//                         opacity: 0.5,
+//                         // zIndex: Panes.AlertOverlay + 1,
+//                     });
 
-                    alertPolyLine.bindTooltip(alertInfoWindow);
+//                     alertPolyLine.bindTooltip(alertInfoWindow);
 
-                    // Store the polyline in the global array
-                    allAlertPolylines.push(alertPolyLine);
-                }
-            })
-        });
-    });
+//                     // Store the polyline in the global array
+//                     allAlertPolylines.push(alertPolyLine);
+//                 }
+//             })
+//         });
+//     });
+// }
+
+// function addServiceAlertsOld(line) {
+//     // Check if any service alerts of the same type overlap, and combine them if they are
+//     let i1 = 0;
+//     while (i1 < line.serviceAlerts.length) {
+//         let i2 = 0;
+//         while (i2 < i1) {
+//             if (!alertTypeDisplayInfo[line.serviceAlerts[i1].typeIdx].view ||
+//                 !alertTypeDisplayInfo[line.serviceAlerts[i2].typeIdx].view) {
+//                 i2++;
+//                 continue;
+//             }
+
+//             let i1Start = line.serviceAlerts[i1].startStationIdx;
+//             let i1End = line.serviceAlerts[i1].endStationIdx;
+//             let i2Start = line.serviceAlerts[i2].startStationIdx;
+//             let i2End = line.serviceAlerts[i2].endStationIdx;
+//             if (((i1Start >= i2Start && i1Start <= i2End) || // i1 starts inside i2
+//                 (i1End >= i2Start && i1End <= i2End) || // i1 ends inside i2
+//                 (i2Start >= i1Start && i2Start <= i1End) || // i2 starts inside i1
+//                 (i2End >= i1Start && i2End <= i1End)) && // i2 ends inside i1
+//                 (line.serviceAlerts[i1].typeIdx === line.serviceAlerts[i2].typeIdx)) {
+
+//                 // If the service alert is adjacent to a previous one and the same type, combine them
+//                 line.serviceAlerts[i1].startStationIdx = Math.min(line.serviceAlerts[i1].startStationIdx, line.serviceAlerts[i2].startStationIdx);
+//                 line.serviceAlerts[i1].endStationIdx = Math.max(line.serviceAlerts[i1].endStationIdx, line.serviceAlerts[i2].endStationIdx);
+
+//                 // Combine descriptions
+//                 line.serviceAlerts[i1].description += `<hr>${line.serviceAlerts[i2].description}`;
+
+//                 // Combine directions
+//                 if (line.serviceAlerts[i1].direction != line.serviceAlerts[i2].direction) {
+//                     line.serviceAlerts[i1].direction = "both";
+//                 }
+
+//                 // Remove the previous service alert
+//                 line.delServiceAlert(i2);
+//                 i1 = 0; // Adjust index since we removed an item
+//                 break; // Exit the loop since we modified the array
+//             }
+//             i2++;
+//         }
+//         i1++;
+//     }
+
+//     // Check if any service alerts cover the same stations, and combine them if they do
+//     i1 = 0;
+//     while (i1 < line.serviceAlerts.length) {
+//         let i2 = 0;
+//         while (i2 < i1) {
+//             if (!alertTypeDisplayInfo[line.serviceAlerts[i1].typeIdx].view ||
+//                 !alertTypeDisplayInfo[line.serviceAlerts[i2].typeIdx].view) {
+//                 i2++;
+//                 continue;
+//             }
+
+//             if (line.serviceAlerts[i1].startStationIdx === line.serviceAlerts[i2].startStationIdx &&
+//                 line.serviceAlerts[i1].endStationIdx === line.serviceAlerts[i2].endStationIdx) {
+
+//                 // If the service alert is the same as a previous one, combine them
+//                 line.serviceAlerts[i1].description += `<hr>${line.serviceAlerts[i2].description}`;
+//                 // Combine directions
+//                 if (line.serviceAlerts[i1].direction != line.serviceAlerts[i2].direction) {
+//                     line.serviceAlerts[i1].direction = "both";
+//                 }
+
+//                 // If service alert types differ
+//                 if (line.serviceAlerts[i2].typeIdx != line.serviceAlerts[i1].typeIdx) {
+//                     let noServiceIdx = alertTypeDisplayInfo.findIndex(type => type.short_name === "Closure");
+//                     let restoredIdx = alertTypeDisplayInfo.findIndex(type => type.short_name === "Restored");
+
+//                     // If one of them is "No service", set the combined alert to that
+//                     if (line.serviceAlerts[i2].typeIdx === noServiceIdx || line.serviceAlerts[i1].typeIdx === noServiceIdx) {
+//                         line.serviceAlerts[i1].typeIdx = noServiceIdx;
+//                     }
+
+//                     // If one of them is "Service restored", set the combined alert to the other one
+//                     //else if (line.serviceReductions[i1].typeIdx === restoredIdx) {
+//                     //    line.serviceReductions[i1].typeIdx = line.serviceReductions[i2].typeIdx;
+//                     //}
+//                     //else if (line.serviceReductions[i2].typeIdx === restoredIdx) {} // Do nothing, we already set the typeIdx to the other one
+
+//                     // Otherwise, set the combined alert to "Multiple alerts"
+//                     else {
+//                         line.serviceAlerts[i1].typeIdx = alertTypeDisplayInfo.findIndex(type => type.short_name === "Multiple");
+//                     }
+//                 }
+
+//                 // Remove the previous service alert
+//                 line.delServiceAlert(i2);
+//                 i1 = 0; // Adjust index since we removed an item
+//                 break; // Exit the loop since we modified the array
+//             }
+//             i2++;
+//         }
+//         i1++;
+//     }
+
+//     // Create polylines for service alerts
+//     // These show infoboxes on mouseover with information about the service alert
+//     for (let i = 0; i < line.serviceAlerts.length; i++) {
+//         if (!alertTypeDisplayInfo[line.serviceAlerts[i].typeIdx].view) {
+//             continue; // Skip service alerts that are not set to be viewed
+//         }
+
+//         const stationIdxs = [];
+//         for (let j = line.serviceAlerts[i].startStationIdx; j <= line.serviceAlerts[i].endStationIdx; j++) {
+//             stationIdxs.push(j);
+//         }
+//         let serviceAlertType = alertTypeDisplayInfo[line.serviceAlerts[i].typeIdx];
+
+//         let directionIcon = bothwaysarrow;
+//         if (line.serviceAlerts[i].direction === "forward") {
+//             directionIcon = forwardarrow;
+//         } else if (line.serviceAlerts[i].direction === "reverse") {
+//             directionIcon = reversearrow;
+//         }
+
+//         let serviceAlertPolyLine = L.polyline(stationIdxs.map(idx => [
+//             line.stations[idx].lat,
+//             line.stations[idx].lng
+//         ]), {
+//             color: serviceAlertType.icon.strokeColor,
+//             weight: 12,
+//             opacity: 0.5,
+//             // zIndex: Panes.AlertOverlay,
+//         });
+
+//         let serviceAlertHighlightPolyLine = L.polyline(stationIdxs.map(idx => [
+//             line.stations[idx].lat,
+//             line.stations[idx].lng
+//         ]), {
+//             color: "rgba(0, 255, 255, 0.5)",
+//             weight: 20,
+//             opacity: 0,
+//             // zIndex: Panes.AlertOverlay + 1,
+//         });
+
+//         // Store the polyline in the global array
+//         allAlertPolylines.push(serviceAlertPolyLine);
+//         allAlertPolylines.push(serviceAlertHighlightPolyLine);
+
+//         // get midpoint of the polyline for the marker
+//         const path = serviceAlertPolyLine.getLatLngs();
+//         let midLat = path[0].lat;
+//         let midLng = path[0].lng;
+//         let rotAngle = 0;
+
+//         let totalDistance = 0;
+//         for (let i = 0; i < path.length - 1; i++) {
+//             totalDistance += L.latLng(path[i]).distanceTo(L.latLng(path[i + 1]));
+//         }
+//         let accumulatedDistance = 0;
+//         for (let i = 0; i < path.length - 1; i++) {
+//             delta = L.latLng(path[i]).distanceTo(L.latLng(path[i + 1]));
+//             accumulatedDistance += delta;
+//             if (accumulatedDistance >= totalDistance / 2) {
+//                 // We found the midpoint
+//                 let ratio = (totalDistance / 2 - accumulatedDistance + delta) / delta;
+//                 midLat = path[i].lat + ratio * (path[i + 1].lat - path[i].lat);
+//                 midLng = path[i].lng + ratio * (path[i + 1].lng - path[i].lng);
+//                 rotAngle = getHeading(path[i], path[i + 1]); // Get the heading between the two points
+//                 break;
+//             }
+//         }
+
+//         let stationString = "";
+//         // If the start and end stations are the same, we show "at <station name>"
+//         // Otherwise, we show "from <start station> to <end station>"
+//         if (line.serviceAlerts[i].startStationIdx === line.serviceAlerts[i].endStationIdx) {
+//             stationString = `at ${line.stations[line.serviceAlerts[i].startStationIdx].name}`;
+//         } else {
+//             stationString = `from ${line.stations[line.serviceAlerts[i].startStationIdx].name} to ${line.stations[line.serviceAlerts[i].endStationIdx].name}`;
+//         }
+
+//         // Create a marker at the midpoint of the polyline
+//         const icon = serviceAlertType.icon;
+//         const serviceAlertIcon = L.divIcon({
+//             className: 'my-custom-svg-icon', // Optional: for CSS styling
+//             html: `<svg width="${24 * icon.scale}" height="${24 * icon.scale}" viewBox="${-12 * icon.scale} ${-12 * icon.scale} ${24 * icon.scale} ${24 * icon.scale}" xmlns="http://www.w3.org/2000/svg">
+//                 <g transform="scale(${icon.scale})">
+//                 <path d="${icon.path}" 
+//                 stroke="${icon.strokeColor}" 
+//                 stroke-linecap="round"
+//                 stroke-linejoin="round"
+//                 stroke-width="${icon.strokeWeight / icon.scale}" 
+//                 fill="${icon.fillColor}"/>
+//                 </g>
+//                 </svg>`,
+//             iconSize: [48, 48], // Set the size of your SVG
+//             iconAnchor: [24, 24], // Point of the icon corresponding to marker's location
+//             tooltipAnchor: [0, -18] // Point from which the tooltip should open relative to the iconAnchor
+//         });
+
+//         // Bind the info window to the service alert marker
+//         let serviceAlertInfoWindow = L.tooltip({
+//             direction: 'top',
+//             sticky: false,
+//             className: 'service-alert-tooltip',
+//             offset: [0, 0]
+//         });
+
+//         serviceAlertInfoWindow.setContent(`
+//             <div style="color: black; text-align: center; margin-right: 0px; margin-left: 0px;">
+//                 <div style="font-size: 14px; font-weight: bold; text-align: center;">${line.name}</div>
+//                 <div style="font-size: 12px; margin-top: 4px; text-align: center;">
+//                     ${serviceAlertType.long_name} ${stationString}
+//                 </div>
+//                 <div style="font-size: 12px; color: #666; margin-top: 4px; margin-bottom: 4px; text-align: center;">
+//                     ${line.serviceAlerts[i].description}
+//                 </div>
+//             </div>
+//         `);
+
+//         let serviceAlertMarker = L.marker([midLat, midLng], {
+//             icon: serviceAlertIcon,
+//             // zIndex: Panes.AlertMarker,
+//         });
+//         serviceAlertMarker.bindTooltip(serviceAlertInfoWindow);
+//         serviceAlertMarker.on('tooltipopen', function () {
+//             serviceAlertHighlightPolyLine.setStyle({ opacity: 1 });
+//         });
+//         serviceAlertMarker.on('tooltipclose', function () {
+//             serviceAlertHighlightPolyLine.setStyle({ opacity: 0 });
+//         });
+
+//         const scaleRGB = c => c.replace(/\d+/g, n => Math.round(n * 0.75));
+//         directionIcon.rotation = rotAngle; // Set the rotation of the direction marker
+//         directionIcon.strokeColor = scaleRGB(serviceAlertType.icon.strokeColor); // Set the stroke color of the direction marker
+//         directionIcon.fillColor = directionIcon.strokeColor; // Set the fill color of the direction marker
+
+//         let directionMarkerIcon = L.divIcon({
+//             className: 'my-custom-svg-icon',
+//             html: `<svg width="${32 * directionIcon.scale}" height="${32 * directionIcon.scale}" viewBox="${-16 * directionIcon.scale} ${-16 * directionIcon.scale} ${32 * directionIcon.scale} ${32 * directionIcon.scale}" xmlns="http://www.w3.org/2000/svg">
+//                 <g transform="scale(${directionIcon.scale})">
+//                 <path d="${directionIcon.path}"
+//                 transform="rotate(${rotAngle}, 0, 0)"
+//                 stroke="${directionIcon.strokeColor}" 
+//                 stroke-linecap="round"
+//                 stroke-linejoin="round"
+//                 stroke-width="${directionIcon.strokeWeight / directionIcon.scale}" 
+//                 fill="${directionIcon.fillColor}"/>
+//                 </g>
+//                 </svg>`,
+//             iconSize: [64, 64], // Set the size of your SVG
+//             iconAnchor: [32, 32], // Point of the icon corresponding to marker's location
+//         });
+//         let directionMarker = L.marker([midLat, midLng], {
+//             icon: directionMarkerIcon,
+//             // zIndex: Panes.AlertMarker,
+//         });
+
+//         // Store the marker in the global array
+//         allAlertMarkers.push(serviceAlertMarker);
+//         allAlertMarkers.push(directionMarker);
+//     }
+// }
+
+async function fetchAndPlotAlerts() {
+    const start = Date.now();
+
+    await loadAlerts();
+
+    // const lastUpdatedDate = new Date(alertsjson.lastUpdated);
+    const ts = Math.max(...Object.values(alerts).map(({ timestamp }) => timestamp))
+    console.debug('alert timestamp:', ts);
+    const lastUpdatedDate = new Date(ts);
+    const options = {
+        timeZone: 'America/Toronto',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    };
+
+    document.getElementById("subheading").innerHTML = `Last updated: ${lastUpdatedDate.toLocaleString('en-CA', options)} `;
+    document.getElementById("loading-modal").style.display = "none"; // Hide loading modal
+
+    // refreshMap(map);
+    console.debug('fetchAndPlotAlerts() finished in', Date.now() - start, 'ms');
 }
 
-function addServiceAlertsOld(line) {
-    // Check if any service alerts of the same type overlap, and combine them if they are
-    let i1 = 0;
-    while (i1 < line.serviceAlerts.length) {
-        let i2 = 0;
-        while (i2 < i1) {
-            if (!serviceAlertTypes[line.serviceAlerts[i1].typeIdx].view ||
-                !serviceAlertTypes[line.serviceAlerts[i2].typeIdx].view) {
-                i2++;
-                continue;
-            }
+async function initMap() {
+    const start = Date.now();
 
-            let i1Start = line.serviceAlerts[i1].startStationIdx;
-            let i1End = line.serviceAlerts[i1].endStationIdx;
-            let i2Start = line.serviceAlerts[i2].startStationIdx;
-            let i2End = line.serviceAlerts[i2].endStationIdx;
-            if (((i1Start >= i2Start && i1Start <= i2End) || // i1 starts inside i2
-                (i1End >= i2Start && i1End <= i2End) || // i1 ends inside i2
-                (i2Start >= i1Start && i2Start <= i1End) || // i2 starts inside i1
-                (i2End >= i1Start && i2End <= i1End)) && // i2 ends inside i1
-                (line.serviceAlerts[i1].typeIdx === line.serviceAlerts[i2].typeIdx)) {
+    map = L.map('map', {
+        maxBounds: [[43.201, -80.161], [44.182, -78.717]], // Toronto area bounds
+        maxBoundsViscosity: 1.0, // Prevents panning outside bounds
+        minZoom: 12.5, // Minimum zoom level
+        maxZoom: 17, // Maximum zoom level
+        zoomSnap: 0,
+        zoomDelta: 0.25,
+        // renderer: L.svg({ padding: 2 }),
+        worldCopyJump: true,
+    }).setView([43.669999, -79.390939], 13);
+    baseZIndex = 201 // just over default tile pane
+    Object.entries(Panes).forEach(([pane, z]) => {
+        map.createPane(pane);
+        map.getPane(pane).style.zIndex = baseZIndex + z;
+    })
+    layerTree = new LayerTree(map);
 
-                // If the service alert is adjacent to a previous one and the same type, combine them
-                line.serviceAlerts[i1].startStationIdx = Math.min(line.serviceAlerts[i1].startStationIdx, line.serviceAlerts[i2].startStationIdx);
-                line.serviceAlerts[i1].endStationIdx = Math.max(line.serviceAlerts[i1].endStationIdx, line.serviceAlerts[i2].endStationIdx);
+    // connect to pmtiles hosted on cloudflare
+    var layer = protomapsL.leafletLayer({
+        url: 'https://tiles.ttcmap.ca/toronto.pmtiles',
+        flavor: 'light',
+    });
+    layer.addTo(map);
 
-                // Combine descriptions
-                line.serviceAlerts[i1].description += `<hr>${line.serviceAlerts[i2].description}`;
+    console.debug('initMap() finished in', Date.now() - start, 'ms');
+}
 
-                // Combine directions
-                if (line.serviceAlerts[i1].direction != line.serviceAlerts[i2].direction) {
-                    line.serviceAlerts[i1].direction = "both";
-                }
+/**
+ * @param {HTMLElement} legend
+ * @param {HTMLElement} button
+ */
+function openLegend(legend, button) {
+    legend.className += ' expanded';
+    button.innerHTML = '&minus;';
+}
 
-                // Remove the previous service alert
-                line.delServiceAlert(i2);
-                i1 = 0; // Adjust index since we removed an item
-                break; // Exit the loop since we modified the array
-            }
-            i2++;
-        }
-        i1++;
-    }
+/**
+ * @param {HTMLElement} legend
+ * @param {HTMLElement} button
+ */
+function closeLegend(legend, button) {
+    legend.className = legend.className.replace(' expanded', '');
+    button.innerHTML = '+';
+}
 
-    // Check if any service alerts cover the same stations, and combine them if they do
-    i1 = 0;
-    while (i1 < line.serviceAlerts.length) {
-        let i2 = 0;
-        while (i2 < i1) {
-            if (!serviceAlertTypes[line.serviceAlerts[i1].typeIdx].view ||
-                !serviceAlertTypes[line.serviceAlerts[i2].typeIdx].view) {
-                i2++;
-                continue;
-            }
+// // helper for route group toggle buttons
+// function toggleRouteGroup(groupName) {
+//     return ({ currentTarget }) => {
+//         if (layerTree.isRouteGroupVisible(groupName)) {
+//             layerTree.hideRouteGroup(groupName);
+//             currentTarget.className = currentTarget.className.replace('fa-eye', 'fa-eye-slash');
+//         } else {
+//             layerTree.showRouteGroup(groupName);
+//             currentTarget.className = currentTarget.className.replace('fa-eye-slash', 'fa-eye');
+//         }
+//     };
+// }
 
-            if (line.serviceAlerts[i1].startStationIdx === line.serviceAlerts[i2].startStationIdx &&
-                line.serviceAlerts[i1].endStationIdx === line.serviceAlerts[i2].endStationIdx) {
+// helper for route toggle buttons
 
-                // If the service alert is the same as a previous one, combine them
-                line.serviceAlerts[i1].description += `<hr>${line.serviceAlerts[i2].description}`;
-                // Combine directions
-                if (line.serviceAlerts[i1].direction != line.serviceAlerts[i2].direction) {
-                    line.serviceAlerts[i1].direction = "both";
-                }
-
-                // If service alert types differ
-                if (line.serviceAlerts[i2].typeIdx != line.serviceAlerts[i1].typeIdx) {
-                    let noServiceIdx = serviceAlertTypes.findIndex(type => type.short_name === "Closure");
-                    let restoredIdx = serviceAlertTypes.findIndex(type => type.short_name === "Restored");
-
-                    // If one of them is "No service", set the combined alert to that
-                    if (line.serviceAlerts[i2].typeIdx === noServiceIdx || line.serviceAlerts[i1].typeIdx === noServiceIdx) {
-                        line.serviceAlerts[i1].typeIdx = noServiceIdx;
-                    }
-
-                    // If one of them is "Service restored", set the combined alert to the other one
-                    //else if (line.serviceReductions[i1].typeIdx === restoredIdx) {
-                    //    line.serviceReductions[i1].typeIdx = line.serviceReductions[i2].typeIdx;
-                    //}
-                    //else if (line.serviceReductions[i2].typeIdx === restoredIdx) {} // Do nothing, we already set the typeIdx to the other one
-
-                    // Otherwise, set the combined alert to "Multiple alerts"
-                    else {
-                        line.serviceAlerts[i1].typeIdx = serviceAlertTypes.findIndex(type => type.short_name === "Multiple");
-                    }
-                }
-
-                // Remove the previous service alert
-                line.delServiceAlert(i2);
-                i1 = 0; // Adjust index since we removed an item
-                break; // Exit the loop since we modified the array
-            }
-            i2++;
-        }
-        i1++;
-    }
-
-    // Create polylines for service alerts
-    // These show infoboxes on mouseover with information about the service alert
-    for (let i = 0; i < line.serviceAlerts.length; i++) {
-        if (!serviceAlertTypes[line.serviceAlerts[i].typeIdx].view) {
-            continue; // Skip service alerts that are not set to be viewed
-        }
-
-        const stationIdxs = [];
-        for (let j = line.serviceAlerts[i].startStationIdx; j <= line.serviceAlerts[i].endStationIdx; j++) {
-            stationIdxs.push(j);
-        }
-        let serviceAlertType = serviceAlertTypes[line.serviceAlerts[i].typeIdx];
-
-        let directionIcon = bothwaysarrow;
-        if (line.serviceAlerts[i].direction === "forward") {
-            directionIcon = forwardarrow;
-        } else if (line.serviceAlerts[i].direction === "reverse") {
-            directionIcon = reversearrow;
-        }
-
-        let serviceAlertPolyLine = L.polyline(stationIdxs.map(idx => [
-            line.stations[idx].lat,
-            line.stations[idx].lng
-        ]), {
-            color: serviceAlertType.icon.strokeColor,
-            weight: 12,
-            opacity: 0.5,
-            zIndex: Layers.AlertOverlay,
-        });
-
-        let serviceAlertHighlightPolyLine = L.polyline(stationIdxs.map(idx => [
-            line.stations[idx].lat,
-            line.stations[idx].lng
-        ]), {
-            color: "rgba(0, 255, 255, 0.5)",
-            weight: 20,
-            opacity: 0,
-            zIndex: Layers.AlertOverlay + 1,
-        });
-
-        // Store the polyline in the global array
-        allAlertPolylines.push(serviceAlertPolyLine);
-        allAlertPolylines.push(serviceAlertHighlightPolyLine);
-
-        // get midpoint of the polyline for the marker
-        const path = serviceAlertPolyLine.getLatLngs();
-        let midLat = path[0].lat;
-        let midLng = path[0].lng;
-        let rotAngle = 0;
-
-        let totalDistance = 0;
-        for (let i = 0; i < path.length - 1; i++) {
-            totalDistance += L.latLng(path[i]).distanceTo(L.latLng(path[i + 1]));
-        }
-        let accumulatedDistance = 0;
-        for (let i = 0; i < path.length - 1; i++) {
-            delta = L.latLng(path[i]).distanceTo(L.latLng(path[i + 1]));
-            accumulatedDistance += delta;
-            if (accumulatedDistance >= totalDistance / 2) {
-                // We found the midpoint
-                let ratio = (totalDistance / 2 - accumulatedDistance + delta) / delta;
-                midLat = path[i].lat + ratio * (path[i + 1].lat - path[i].lat);
-                midLng = path[i].lng + ratio * (path[i + 1].lng - path[i].lng);
-                rotAngle = getHeading(path[i], path[i + 1]); // Get the heading between the two points
-                break;
-            }
-        }
-
-        let stationString = "";
-        // If the start and end stations are the same, we show "at <station name>"
-        // Otherwise, we show "from <start station> to <end station>"
-        if (line.serviceAlerts[i].startStationIdx === line.serviceAlerts[i].endStationIdx) {
-            stationString = `at ${line.stations[line.serviceAlerts[i].startStationIdx].name}`;
+function toggleAlertType(type) {
+    return ({ currentTarget }) => {
+        if (layerTree.isAlertTypeVisible(type)) {
+            layerTree.hideAlertType(type);
+            currentTarget.className = currentTarget.className.replace(/fa-eye($| )/, 'fa-eye-slash$1');
         } else {
-            stationString = `from ${line.stations[line.serviceAlerts[i].startStationIdx].name} to ${line.stations[line.serviceAlerts[i].endStationIdx].name}`;
+            layerTree.showAlertType(type);
+            currentTarget.className = currentTarget.className.replace('fa-eye-slash', 'fa-eye');
+        }
+    };
+}
+
+function toggleRoute(id) {
+    return ({ currentTarget }) => {
+        if (layerTree.isRouteVisible(id)) {
+            layerTree.hideRoute(id);
+            currentTarget.className = currentTarget.className.replace(/fa-eye($| )/, 'fa-eye-slash$1');
+        } else {
+            layerTree.showRoute(id);
+            currentTarget.className = currentTarget.className.replace('fa-eye-slash', 'fa-eye');
+        }
+    };
+}
+
+function initLegends() {
+    const alertLegend = document.getElementById('alert-legend');
+    const alertButton = document.querySelector('#alert-legend-header .legend-button');
+    const routeLegend = document.getElementById('route-legend');
+    const routeButton = document.querySelector('#route-legend-header .legend-button');
+    let activeLegend = null;
+
+    alertButton.addEventListener('click', () => {
+        switch (activeLegend) {
+            case 'alert':
+                closeLegend(alertLegend, alertButton);
+                activeLegend = null;
+                return;
+            case 'route':
+                closeLegend(routeLegend, routeButton);
+                break;
+        }
+        openLegend(alertLegend, alertButton);
+        activeLegend = 'alert';
+    });
+    routeButton.addEventListener('click', () => {
+        switch (activeLegend) {
+            case 'route':
+                closeLegend(routeLegend, routeButton);
+                activeLegend = null;
+                return;
+            case 'alert':
+                closeLegend(alertLegend, alertButton);
+                break;
+        }
+        openLegend(routeLegend, routeButton);
+        activeLegend = 'route';
+    });
+
+    Object.entries(alertTypeDisplayInfo).forEach(([key, serviceAlertType]) => {
+        const icon = serviceAlertType.icon;
+        const name = serviceAlertType.short_name;
+
+        const size = 32;
+        const scale = icon.scale;
+        let svg = `<svg width="${size}" height="${size}" viewBox="${-size / 2} ${-size / 2} ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+            <g transform="scale(${scale * (size / 48)})">
+            <path d="${icon.path}" 
+            stroke="${icon.strokeColor}" 
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="${icon.strokeWeight / scale}" 
+            fill="${icon.fillColor}"/>
+            </g>
+            </svg>`;
+
+        const typeDiv = document.createElement("div");
+        typeDiv.className = 'legend-content-row';
+        typeDiv.innerHTML = `${svg}<p class="alert-type-label">${name}</p>${name !== alertTypeDisplayInfo.Multiple.short_name
+                ? `<button class="small-button view-button fa-regular ${layerTree.isAlertTypeVisible(serviceAlertType.short_name) ? 'fa-eye' : 'fa-eye-slash'}"></button>`
+                : ''
+            }`;
+        const button = typeDiv.querySelector('.view-button');
+        button && (button.onclick = toggleAlertType(name));
+        alertLegend.querySelector('#alert-legend-content').appendChild(typeDiv);
+    });
+
+    // hookup route group toggle buttons
+    layerTree.addRouteGroupVisibilityButton('subway-lrt', document.querySelector("#subway-lrt-group-header .view-button"));
+    layerTree.addRouteGroupVisibilityButton('streetcar', document.querySelector("#streetcar-group-header .view-button"));
+    layerTree.addRouteGroupVisibilityButton('bus', document.querySelector("#bus-group-header .view-button"));
+    layerTree.addRouteGroupVisibilityButton('blue-night', document.querySelector("#blue-night-group-header .view-button"));
+
+    // hookup route search
+    document.getElementById('route-search').oninput = function (event) {
+        document.querySelectorAll('.route-legend-group-content')
+            .forEach(group => group.innerHTML = '');
+
+        if (!event.target.value) {
+            return;
         }
 
-        // Create a marker at the midpoint of the polyline
-        const icon = serviceAlertType.icon;
-        const serviceAlertIcon = L.divIcon({
-            className: 'my-custom-svg-icon', // Optional: for CSS styling
-            html: `<svg width="${24 * icon.scale}" height="${24 * icon.scale}" viewBox="${-12 * icon.scale} ${-12 * icon.scale} ${24 * icon.scale} ${24 * icon.scale}" xmlns="http://www.w3.org/2000/svg">
-                <g transform="scale(${icon.scale})">
-                <path d="${icon.path}" 
-                stroke="${icon.strokeColor}" 
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="${icon.strokeWeight / icon.scale}" 
-                fill="${icon.fillColor}"/>
-                </g>
-                </svg>`,
-            iconSize: [48, 48], // Set the size of your SVG
-            iconAnchor: [24, 24], // Point of the icon corresponding to marker's location
-            tooltipAnchor: [0, -18] // Point from which the tooltip should open relative to the iconAnchor
-        });
+        // for each route, create an entry in the legend with route icon and visibility toggle button
+        transit.routes.forEach(({ id, type, short_name, color, text_color }) => {
+            if (!short_name.includes(event.target.value)) {
+                return;
+            }
 
-        // Bind the info window to the service alert marker
-        let serviceAlertInfoWindow = L.tooltip({
-            direction: 'top',
-            sticky: false,
-            className: 'service-alert-tooltip',
-            offset: [0, 0]
-        });
+            // select the right group for this route
+            let groupContent;
+            switch (type) {
+                case 'SubwayLRT':
+                    groupContent = document.getElementById('subway-lrt-group-content');
+                    break;
+                case 'Streetcar':
+                    groupContent = /3\d\d/.test(short_name)
+                        ? document.getElementById('blue-night-group-content')
+                        : document.getElementById('streetcar-group-content');
+                    break;
+                case 'Bus':
+                    groupContent = /3\d\d/.test(short_name)
+                        ? document.getElementById('blue-night-group-content')
+                        : document.getElementById('bus-group-content');
+                    break;
+            }
 
-        serviceAlertInfoWindow.setContent(`
-            <div style="color: black; text-align: center; margin-right: 0px; margin-left: 0px;">
-                <div style="font-size: 14px; font-weight: bold; text-align: center;">${line.name}</div>
-                <div style="font-size: 12px; margin-top: 4px; text-align: center;">
-                    ${serviceAlertType.long_name} ${stationString}
-                </div>
-                <div style="font-size: 12px; color: #666; margin-top: 4px; margin-bottom: 4px; text-align: center;">
-                    ${line.serviceAlerts[i].description}
-                </div>
-            </div>
-        `);
+            const icon = (type === 'SubwayLRT')
+                ? `<div class="route-icon subway-lrt-icon" style="background-color: ${color}; color: ${text_color};">${short_name}</div>`
+                : `<div class="route-icon streetcar-bus-icon" style="background-color: ${color}; color: ${text_color};">${short_name}</div>`;
 
-        let serviceAlertMarker = L.marker([midLat, midLng], {
-            icon: serviceAlertIcon,
-            zIndex: Layers.AlertMarker,
+            const entryDiv = document.createElement("div");
+            entryDiv.className = 'legend-content-row';
+            entryDiv.innerHTML = `${icon}<button class="small-button view-button fa-regular ${layerTree.isRouteVisible(id) ? 'fa-eye' : 'fa-eye-slash'}"></button>`;
+            entryDiv.querySelector('.view-button').onclick = toggleRoute(id);
+            groupContent.appendChild(entryDiv);
         });
-        serviceAlertMarker.bindTooltip(serviceAlertInfoWindow);
-        serviceAlertMarker.on('tooltipopen', function () {
-            serviceAlertHighlightPolyLine.setStyle({ opacity: 1 });
-        });
-        serviceAlertMarker.on('tooltipclose', function () {
-            serviceAlertHighlightPolyLine.setStyle({ opacity: 0 });
-        });
+    };
+}
 
-        const scaleRGB = c => c.replace(/\d+/g, n => Math.round(n * 0.75));
-        directionIcon.rotation = rotAngle; // Set the rotation of the direction marker
-        directionIcon.strokeColor = scaleRGB(serviceAlertType.icon.strokeColor); // Set the stroke color of the direction marker
-        directionIcon.fillColor = directionIcon.strokeColor; // Set the fill color of the direction marker
+window.onload = function () {
 
-        let directionMarkerIcon = L.divIcon({
-            className: 'my-custom-svg-icon',
-            html: `<svg width="${32 * directionIcon.scale}" height="${32 * directionIcon.scale}" viewBox="${-16 * directionIcon.scale} ${-16 * directionIcon.scale} ${32 * directionIcon.scale} ${32 * directionIcon.scale}" xmlns="http://www.w3.org/2000/svg">
-                <g transform="scale(${directionIcon.scale})">
-                <path d="${directionIcon.path}"
-                transform="rotate(${rotAngle}, 0, 0)"
-                stroke="${directionIcon.strokeColor}" 
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="${directionIcon.strokeWeight / directionIcon.scale}" 
-                fill="${directionIcon.fillColor}"/>
-                </g>
-                </svg>`,
-            iconSize: [64, 64], // Set the size of your SVG
-            iconAnchor: [32, 32], // Point of the icon corresponding to marker's location
-        });
-        let directionMarker = L.marker([midLat, midLng], {
-            icon: directionMarkerIcon,
-            zIndex: Layers.AlertMarker,
-        });
-
-        // Store the marker in the global array
-        allAlertMarkers.push(serviceAlertMarker);
-        allAlertMarkers.push(directionMarker);
+    // When the user clicks on the button, open the modal
+    document.getElementById("about-button").onclick = function () {
+        document.getElementById("about-modal").style.display = "flex";
     }
+
+    // When the user clicks on <span> (x), close the modal
+    document.getElementsByClassName("close")[0].onclick = function () {
+        document.getElementById("about-modal").style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function (event) {
+        let modal = document.getElementById("about-modal");
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    initMap()
+        .then(initLegends)
+        .then(loadTransitData)
+        .then(fetchAndPlotAlerts);
+
+    // refetch every 5 minutes
+    setInterval(fetchAndPlotAlerts, 5 * 60 * 1000);
 }

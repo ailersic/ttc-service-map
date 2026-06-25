@@ -1,3 +1,5 @@
+import math from './math.ts';
+
 /** Utility functions for handling 2D geometry */
 namespace geometry {
 
@@ -7,6 +9,19 @@ namespace geometry {
     export type PointLike<T extends {}, X extends keyof T, Y extends keyof T> = T & {
         [k in X | Y]: number;
     };
+
+    export type LatLng = {
+        latitude: number;
+        longitude: number;
+    };
+
+    export function latLngToPoint({ latitude, longitude }: LatLng): Point {
+        return [latitude, longitude];
+    }
+
+    export function pointToLatLng([latitude, longitude]: Point): LatLng {
+        return { latitude, longitude };
+    }
 
     export function squareDistance(a: Point, b: Point): number {
         const [ax, ay] = a;
@@ -127,24 +142,48 @@ namespace geometry {
         return dotuv / (distance(a, b) * distance(b, c));
     }
 
-    export function snapToPolyLine(p: Point, pl: Point[]): { point: Point, t: number } | null {
+    export function lengthPolyLine(pl: Point[], closed: boolean = false) {
+        let sumDistance = pl.reduce(({ sum, previous }, current) => {
+            if (previous) {
+                sum += distance(previous, current);
+            }
+            return { sum, previous: current };
+        }, { sum: 0, previous: null as Point | null }).sum;
+        if (closed) {
+            sumDistance += distance(pl[0], pl[pl.length - 1]);
+        }
+        return sumDistance;
+    }
+
+    export function snapToPolyLine(p: Point, pl: Point[]): {
+        point: Point;
+        t: number;
+        arcPosition: number;
+        snapDistance: number;
+    } | null {
         const nearest = {
             point: null as Point | null,
             t: NaN,
-            sqrDist: Infinity,
+            arcPosition: NaN,
+            snapDistance: Infinity,
         };
+        let arcPosition = 0;
         for (let i = 0; i < pl.length - 1; i++) {
             const { point: snapPoint, t } = snapToLine(p, pl[i], pl[i + 1]);
-            const snapSquareDistance = squareDistance(snapPoint, p);
-            if (snapSquareDistance < nearest.sqrDist) {
+            const snapDistance = distance(snapPoint, p);
+            if (snapDistance < nearest.snapDistance) {
                 nearest.point = snapPoint;
-                nearest.sqrDist = snapSquareDistance;
+                nearest.snapDistance = snapDistance;
                 nearest.t = t + i;
+                nearest.arcPosition = arcPosition + t * snapDistance;
             }
+            arcPosition += snapDistance;
         }
         return nearest.point && {
-            point: nearest.point!,
+            point: nearest.point,
             t: nearest.t,
+            arcPosition: nearest.arcPosition,
+            snapDistance: nearest.snapDistance,
         };
     }
 
@@ -171,6 +210,23 @@ namespace geometry {
         if (f1 > 0 && t0 !== t1) {
             result.push(lerp(pl[i1], pl[i1 + 1], f1));
         }
+        return result;
+    }
+
+    /** This function assumes `anchors` are ordered along `pl` */
+    export function polyLineToSegments(pl: Point[], t: number[], clipEnds: boolean = true): Point[][] {
+        const result = [] as Point[][];
+        if (!clipEnds) {
+            t.unshift(0);
+            t.push(pl.length - 1);
+        }
+        t.reduce((t0, t1) => {
+            if (isNaN(t0)) {
+                return t1;
+            }
+            result.push(slicePolyLine(pl, t0, t1));
+            return t1;
+        }, NaN);
         return result;
     }
 
@@ -278,6 +334,171 @@ namespace geometry {
         }
         smoothened.push(points[points.length - 1]);
         return smoothened;
+    }
+
+    export function lerpPolyLine(points: Point[], t: number, mode: 'FloatingIndex' | 'ArcPosition') {
+        switch (mode) {
+            case 'FloatingIndex':
+                const i = t * (points.length - 1);
+                const f = i % 1;
+                return lerp(points[Math.floor(i)], points[Math.ceil(i)], f);
+            case 'ArcPosition':
+                let lengthToP0 = 0;
+                for (let i = 1; i < points.length; i++) {
+                    const p0 = points[i - 1];
+                    const p1 = points[i];
+                    const dist = distance(p0, p1);
+                    if (lengthToP0 + dist < t) {
+                        return lerp(p0, p1, (t - lengthToP0) / dist);
+                    }
+                    lengthToP0 += dist;
+                }
+                // Went past end
+                return points[points.length - 1];
+        }
+    }
+
+    export function midPolyLine(points1: Point[], points2: Point[]) {
+        const result = [];
+        const n = math.lcm(points1.length - 1, points2.length - 1) + 1;
+        // TODO: this loop can be optimized
+        const length1 = lengthPolyLine(points1);
+        const length2 = lengthPolyLine(points2);
+        for (let i = 0; i < n; i++) {
+            const t = i / (n - 1);
+            result.push(midpoint(lerpPolyLine(points1, t * length1, 'ArcPosition'), lerpPolyLine(points2, t * length2, 'ArcPosition')));
+        }
+        return result;
+    }
+
+    export enum PathSegmentType {
+        Merged = 'Merged',
+        Split = 'Split',
+        OneWay = 'OneWay',
+    };
+    export type PathSegmentMerged = { type: PathSegmentType.Merged; twoWay: Point[] };
+    export type PathSegmentSplit = { type: PathSegmentType.Split; forward: Point[], backward: Point[] };
+    export type PathSegmentOneWay = { type: PathSegmentType.OneWay; oneWay: Point[] };
+    export type PathSegment = PathSegmentMerged | PathSegmentSplit | PathSegmentOneWay;
+    export type Path = PathSegment[];
+
+    // untested, may have issues if arclengths of points1 and points2 are significantly different
+    export function consolidate(
+        pointsDirection0: Point[],
+        /** Expected to be listed in the 'forward' direction */
+        pointsDirection1: Point[],
+        threshold: number,
+    ): Path {
+        const result: Path = [];
+        const simpleMerge = midPolyLine(pointsDirection0, pointsDirection1);
+        let segment: PathSegment | undefined;
+        let i = 0;
+        let j = 0;
+        let p0: Point | undefined;
+        let p1: Point | undefined;
+        let s0: Point | undefined;
+        let s1: Point | undefined;
+        let t0: number | undefined;
+        let t1: number | undefined;
+        while (i < pointsDirection0.length || j < pointsDirection1.length) {
+            if (!p0 && i < pointsDirection0.length) {
+                p0 = pointsDirection0[i];
+                const snap0 = snapToPolyLine(p0, simpleMerge)!;
+                s0 = snap0.point;
+                t0 = snap0.t;
+            }
+            if (!p1 && j < pointsDirection1.length) {
+                p1 = pointsDirection1[j];
+                const snap1 = snapToPolyLine(p1, simpleMerge)!;
+                s1 = snap1.point;
+                t1 = snap1.t;
+            }
+            let point: Point;
+            let snap: Point;
+            let t: number;
+            let choice: 0 | 1;
+            if (p1 === undefined || t0! < t1!) {
+                choice = 0;
+                point = p0!;
+                snap = s0!;
+                t = t0!;
+                p0 = undefined;
+                i++;
+            } else {
+                choice = 1;
+                point = p1;
+                snap = s1!;
+                t = t1!;
+                p1 = undefined;
+                j++;
+            }
+            if (distance(snap, point) < threshold) {
+                // merged point is acceptable at t
+                if (!segment || segment.type !== PathSegmentType.Merged) {
+                    segment && result.push(segment);
+                    segment = { type: PathSegmentType.Merged, twoWay: [] };
+                }
+                segment.twoWay.push(snap);
+            } else {
+                // merged point is not acceptable, use original point
+                if (!segment || segment.type !== PathSegmentType.Split) {
+                    segment && result.push(segment);
+                    segment = { type: PathSegmentType.Split, forward: [], backward: [] };
+                }
+                (choice === 0 ? segment.forward : segment.backward).push(snap);
+            }
+        }
+        segment && result.push(segment);
+        return result;
+    }
+
+    export function snapToPath(point: Point, path: Path, direction?: 'forward' | 'backward'): {
+        point: Point;
+        segmentIndex: number;
+        positionInSegment: number;
+        snapDistance: number;
+    } {
+        const nearest = {
+            point: [NaN, NaN] as Point,
+            segmentIndex: NaN,
+            positionInSegment: NaN,
+            snapDistance: Infinity,
+        };
+        path.forEach((segment, i) => {
+            let snap: ReturnType<typeof snapToPolyLine>;
+            switch (segment.type) {
+                case PathSegmentType.Merged:
+                    snap = snapToPolyLine(point, segment.twoWay);
+                    break;
+                case PathSegmentType.OneWay:
+                    snap = snapToPolyLine(point, segment.oneWay);
+                    break;
+                case PathSegmentType.Split:
+                    switch (direction) {
+                        case 'forward':
+                            snap = snapToPolyLine(point, segment.forward);
+                            break;
+                        case 'backward':
+                            snap = snapToPolyLine(point, segment.backward);
+                            break;
+                        case undefined:
+                            const snapForward = snapToPolyLine(point, segment.forward);
+                            const snapBackward = snapToPolyLine(point, segment.backward);
+                            snap = snapForward!.snapDistance < snapBackward!.snapDistance
+                                ? snapForward
+                                : snapBackward; 
+                            break;
+                    }
+                    break;
+            }
+            if (snap!.snapDistance < nearest.snapDistance) {
+                nearest.point = snap!.point;
+                nearest.positionInSegment = snap!.arcPosition;
+                nearest.segmentIndex = i;
+                nearest.snapDistance = snap!.snapDistance;
+            }
+        });
+        return nearest;
     }
 };
 

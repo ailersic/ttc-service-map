@@ -1,7 +1,7 @@
 import { PagesFunction, Response } from '@cloudflare/workers-types';
-import connect, { EnvWithDb } from '../../../prisma/prisma.ts';
 import TtcApi from '../../../models/TtcApi.ts';
+import connect, { EnvWithDb } from '../../../prisma/prisma.ts';
 
 export const onRequestGet: PagesFunction<EnvWithDb> = async (context) => {
-    return global.Response.json(await new TtcApi(connect(context.env)).getSubwayStations()) as unknown as Response;
+    return global.Response.json(await new TtcApi(connect(context.env)).getAccessibilityAlerts()) as unknown as Response;
 };

@@ -1,5 +1,5 @@
 /*eslint-disable block-scoped-var, id-length, no-control-regex, no-magic-numbers, no-prototype-builtins, no-redeclare, no-shadow, no-var, sort-vars*/
-import * as $protobuf from "protobufjs/minimal";
+import $protobuf from "protobufjs/minimal.js";
 
 // Common aliases
 const $Reader = $protobuf.Reader, $Writer = $protobuf.Writer, $util = $protobuf.util;
@@ -38,7 +38,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             this.entity = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -113,9 +113,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        FeedMessage.decode = function decode(reader, length, error) {
+        FeedMessage.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.FeedMessage();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -123,17 +127,17 @@ export const transit_realtime = $root.transit_realtime = (() => {
                     break;
                 switch (tag >>> 3) {
                 case 1: {
-                        message.header = $root.transit_realtime.FeedHeader.decode(reader, reader.uint32());
+                        message.header = $root.transit_realtime.FeedHeader.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 2: {
                         if (!(message.entity && message.entity.length))
                             message.entity = [];
-                        message.entity.push($root.transit_realtime.FeedEntity.decode(reader, reader.uint32()));
+                        message.entity.push($root.transit_realtime.FeedEntity.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -166,11 +170,15 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        FeedMessage.verify = function verify(message) {
+        FeedMessage.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             {
-                let error = $root.transit_realtime.FeedHeader.verify(message.header);
+                let error = $root.transit_realtime.FeedHeader.verify(message.header, long + 1);
                 if (error)
                     return "header." + error;
             }
@@ -178,7 +186,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 if (!Array.isArray(message.entity))
                     return "entity: array expected";
                 for (let i = 0; i < message.entity.length; ++i) {
-                    let error = $root.transit_realtime.FeedEntity.verify(message.entity[i]);
+                    let error = $root.transit_realtime.FeedEntity.verify(message.entity[i], long + 1);
                     if (error)
                         return "entity." + error;
                 }
@@ -194,14 +202,18 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.FeedMessage} FeedMessage
          */
-        FeedMessage.fromObject = function fromObject(object) {
+        FeedMessage.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.FeedMessage)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.FeedMessage();
             if (object.header != null) {
                 if (typeof object.header !== "object")
                     throw TypeError(".transit_realtime.FeedMessage.header: object expected");
-                message.header = $root.transit_realtime.FeedHeader.fromObject(object.header);
+                message.header = $root.transit_realtime.FeedHeader.fromObject(object.header, long + 1);
             }
             if (object.entity) {
                 if (!Array.isArray(object.entity))
@@ -210,7 +222,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 for (let i = 0; i < object.entity.length; ++i) {
                     if (typeof object.entity[i] !== "object")
                         throw TypeError(".transit_realtime.FeedMessage.entity: object expected");
-                    message.entity[i] = $root.transit_realtime.FeedEntity.fromObject(object.entity[i]);
+                    message.entity[i] = $root.transit_realtime.FeedEntity.fromObject(object.entity[i], long + 1);
                 }
             }
             return message;
@@ -295,7 +307,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
         function FeedHeader(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -389,9 +401,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        FeedHeader.decode = function decode(reader, length, error) {
+        FeedHeader.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.FeedHeader();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -415,7 +431,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -448,9 +464,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        FeedHeader.verify = function verify(message) {
+        FeedHeader.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (!$util.isString(message.gtfs_realtime_version))
                 return "gtfs_realtime_version: string expected";
             if (message.incrementality != null && message.hasOwnProperty("incrementality"))
@@ -478,9 +498,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.FeedHeader} FeedHeader
          */
-        FeedHeader.fromObject = function fromObject(object) {
+        FeedHeader.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.FeedHeader)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.FeedHeader();
             if (object.gtfs_realtime_version != null)
                 message.gtfs_realtime_version = String(object.gtfs_realtime_version);
@@ -621,7 +645,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
         function FeedEntity(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -755,9 +779,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        FeedEntity.decode = function decode(reader, length, error) {
+        FeedEntity.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.FeedEntity();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -773,31 +801,31 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 case 3: {
-                        message.trip_update = $root.transit_realtime.TripUpdate.decode(reader, reader.uint32());
+                        message.trip_update = $root.transit_realtime.TripUpdate.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 4: {
-                        message.vehicle = $root.transit_realtime.VehiclePosition.decode(reader, reader.uint32());
+                        message.vehicle = $root.transit_realtime.VehiclePosition.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 5: {
-                        message.alert = $root.transit_realtime.Alert.decode(reader, reader.uint32());
+                        message.alert = $root.transit_realtime.Alert.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 6: {
-                        message.shape = $root.transit_realtime.Shape.decode(reader, reader.uint32());
+                        message.shape = $root.transit_realtime.Shape.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 7: {
-                        message.stop = $root.transit_realtime.Stop.decode(reader, reader.uint32());
+                        message.stop = $root.transit_realtime.Stop.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 8: {
-                        message.trip_modifications = $root.transit_realtime.TripModifications.decode(reader, reader.uint32());
+                        message.trip_modifications = $root.transit_realtime.TripModifications.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -830,41 +858,45 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        FeedEntity.verify = function verify(message) {
+        FeedEntity.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (!$util.isString(message.id))
                 return "id: string expected";
             if (message.is_deleted != null && message.hasOwnProperty("is_deleted"))
                 if (typeof message.is_deleted !== "boolean")
                     return "is_deleted: boolean expected";
             if (message.trip_update != null && message.hasOwnProperty("trip_update")) {
-                let error = $root.transit_realtime.TripUpdate.verify(message.trip_update);
+                let error = $root.transit_realtime.TripUpdate.verify(message.trip_update, long + 1);
                 if (error)
                     return "trip_update." + error;
             }
             if (message.vehicle != null && message.hasOwnProperty("vehicle")) {
-                let error = $root.transit_realtime.VehiclePosition.verify(message.vehicle);
+                let error = $root.transit_realtime.VehiclePosition.verify(message.vehicle, long + 1);
                 if (error)
                     return "vehicle." + error;
             }
             if (message.alert != null && message.hasOwnProperty("alert")) {
-                let error = $root.transit_realtime.Alert.verify(message.alert);
+                let error = $root.transit_realtime.Alert.verify(message.alert, long + 1);
                 if (error)
                     return "alert." + error;
             }
             if (message.shape != null && message.hasOwnProperty("shape")) {
-                let error = $root.transit_realtime.Shape.verify(message.shape);
+                let error = $root.transit_realtime.Shape.verify(message.shape, long + 1);
                 if (error)
                     return "shape." + error;
             }
             if (message.stop != null && message.hasOwnProperty("stop")) {
-                let error = $root.transit_realtime.Stop.verify(message.stop);
+                let error = $root.transit_realtime.Stop.verify(message.stop, long + 1);
                 if (error)
                     return "stop." + error;
             }
             if (message.trip_modifications != null && message.hasOwnProperty("trip_modifications")) {
-                let error = $root.transit_realtime.TripModifications.verify(message.trip_modifications);
+                let error = $root.transit_realtime.TripModifications.verify(message.trip_modifications, long + 1);
                 if (error)
                     return "trip_modifications." + error;
             }
@@ -879,9 +911,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.FeedEntity} FeedEntity
          */
-        FeedEntity.fromObject = function fromObject(object) {
+        FeedEntity.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.FeedEntity)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.FeedEntity();
             if (object.id != null)
                 message.id = String(object.id);
@@ -890,32 +926,32 @@ export const transit_realtime = $root.transit_realtime = (() => {
             if (object.trip_update != null) {
                 if (typeof object.trip_update !== "object")
                     throw TypeError(".transit_realtime.FeedEntity.trip_update: object expected");
-                message.trip_update = $root.transit_realtime.TripUpdate.fromObject(object.trip_update);
+                message.trip_update = $root.transit_realtime.TripUpdate.fromObject(object.trip_update, long + 1);
             }
             if (object.vehicle != null) {
                 if (typeof object.vehicle !== "object")
                     throw TypeError(".transit_realtime.FeedEntity.vehicle: object expected");
-                message.vehicle = $root.transit_realtime.VehiclePosition.fromObject(object.vehicle);
+                message.vehicle = $root.transit_realtime.VehiclePosition.fromObject(object.vehicle, long + 1);
             }
             if (object.alert != null) {
                 if (typeof object.alert !== "object")
                     throw TypeError(".transit_realtime.FeedEntity.alert: object expected");
-                message.alert = $root.transit_realtime.Alert.fromObject(object.alert);
+                message.alert = $root.transit_realtime.Alert.fromObject(object.alert, long + 1);
             }
             if (object.shape != null) {
                 if (typeof object.shape !== "object")
                     throw TypeError(".transit_realtime.FeedEntity.shape: object expected");
-                message.shape = $root.transit_realtime.Shape.fromObject(object.shape);
+                message.shape = $root.transit_realtime.Shape.fromObject(object.shape, long + 1);
             }
             if (object.stop != null) {
                 if (typeof object.stop !== "object")
                     throw TypeError(".transit_realtime.FeedEntity.stop: object expected");
-                message.stop = $root.transit_realtime.Stop.fromObject(object.stop);
+                message.stop = $root.transit_realtime.Stop.fromObject(object.stop, long + 1);
             }
             if (object.trip_modifications != null) {
                 if (typeof object.trip_modifications !== "object")
                     throw TypeError(".transit_realtime.FeedEntity.trip_modifications: object expected");
-                message.trip_modifications = $root.transit_realtime.TripModifications.fromObject(object.trip_modifications);
+                message.trip_modifications = $root.transit_realtime.TripModifications.fromObject(object.trip_modifications, long + 1);
             }
             return message;
         };
@@ -1017,7 +1053,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             this.stop_time_update = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -1132,9 +1168,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        TripUpdate.decode = function decode(reader, length, error) {
+        TripUpdate.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.TripUpdate();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -1142,17 +1182,17 @@ export const transit_realtime = $root.transit_realtime = (() => {
                     break;
                 switch (tag >>> 3) {
                 case 1: {
-                        message.trip = $root.transit_realtime.TripDescriptor.decode(reader, reader.uint32());
+                        message.trip = $root.transit_realtime.TripDescriptor.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 3: {
-                        message.vehicle = $root.transit_realtime.VehicleDescriptor.decode(reader, reader.uint32());
+                        message.vehicle = $root.transit_realtime.VehicleDescriptor.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 2: {
                         if (!(message.stop_time_update && message.stop_time_update.length))
                             message.stop_time_update = [];
-                        message.stop_time_update.push($root.transit_realtime.TripUpdate.StopTimeUpdate.decode(reader, reader.uint32()));
+                        message.stop_time_update.push($root.transit_realtime.TripUpdate.StopTimeUpdate.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 case 4: {
@@ -1164,11 +1204,11 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 case 6: {
-                        message.trip_properties = $root.transit_realtime.TripUpdate.TripProperties.decode(reader, reader.uint32());
+                        message.trip_properties = $root.transit_realtime.TripUpdate.TripProperties.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -1201,16 +1241,20 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        TripUpdate.verify = function verify(message) {
+        TripUpdate.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             {
-                let error = $root.transit_realtime.TripDescriptor.verify(message.trip);
+                let error = $root.transit_realtime.TripDescriptor.verify(message.trip, long + 1);
                 if (error)
                     return "trip." + error;
             }
             if (message.vehicle != null && message.hasOwnProperty("vehicle")) {
-                let error = $root.transit_realtime.VehicleDescriptor.verify(message.vehicle);
+                let error = $root.transit_realtime.VehicleDescriptor.verify(message.vehicle, long + 1);
                 if (error)
                     return "vehicle." + error;
             }
@@ -1218,7 +1262,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 if (!Array.isArray(message.stop_time_update))
                     return "stop_time_update: array expected";
                 for (let i = 0; i < message.stop_time_update.length; ++i) {
-                    let error = $root.transit_realtime.TripUpdate.StopTimeUpdate.verify(message.stop_time_update[i]);
+                    let error = $root.transit_realtime.TripUpdate.StopTimeUpdate.verify(message.stop_time_update[i], long + 1);
                     if (error)
                         return "stop_time_update." + error;
                 }
@@ -1230,7 +1274,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 if (!$util.isInteger(message.delay))
                     return "delay: integer expected";
             if (message.trip_properties != null && message.hasOwnProperty("trip_properties")) {
-                let error = $root.transit_realtime.TripUpdate.TripProperties.verify(message.trip_properties);
+                let error = $root.transit_realtime.TripUpdate.TripProperties.verify(message.trip_properties, long + 1);
                 if (error)
                     return "trip_properties." + error;
             }
@@ -1245,19 +1289,23 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.TripUpdate} TripUpdate
          */
-        TripUpdate.fromObject = function fromObject(object) {
+        TripUpdate.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.TripUpdate)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.TripUpdate();
             if (object.trip != null) {
                 if (typeof object.trip !== "object")
                     throw TypeError(".transit_realtime.TripUpdate.trip: object expected");
-                message.trip = $root.transit_realtime.TripDescriptor.fromObject(object.trip);
+                message.trip = $root.transit_realtime.TripDescriptor.fromObject(object.trip, long + 1);
             }
             if (object.vehicle != null) {
                 if (typeof object.vehicle !== "object")
                     throw TypeError(".transit_realtime.TripUpdate.vehicle: object expected");
-                message.vehicle = $root.transit_realtime.VehicleDescriptor.fromObject(object.vehicle);
+                message.vehicle = $root.transit_realtime.VehicleDescriptor.fromObject(object.vehicle, long + 1);
             }
             if (object.stop_time_update) {
                 if (!Array.isArray(object.stop_time_update))
@@ -1266,7 +1314,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 for (let i = 0; i < object.stop_time_update.length; ++i) {
                     if (typeof object.stop_time_update[i] !== "object")
                         throw TypeError(".transit_realtime.TripUpdate.stop_time_update: object expected");
-                    message.stop_time_update[i] = $root.transit_realtime.TripUpdate.StopTimeUpdate.fromObject(object.stop_time_update[i]);
+                    message.stop_time_update[i] = $root.transit_realtime.TripUpdate.StopTimeUpdate.fromObject(object.stop_time_update[i], long + 1);
                 }
             }
             if (object.timestamp != null)
@@ -1283,7 +1331,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             if (object.trip_properties != null) {
                 if (typeof object.trip_properties !== "object")
                     throw TypeError(".transit_realtime.TripUpdate.trip_properties: object expected");
-                message.trip_properties = $root.transit_realtime.TripUpdate.TripProperties.fromObject(object.trip_properties);
+                message.trip_properties = $root.transit_realtime.TripUpdate.TripProperties.fromObject(object.trip_properties, long + 1);
             }
             return message;
         };
@@ -1384,7 +1432,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             function StopTimeEvent(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
                             this[keys[i]] = properties[keys[i]];
             }
 
@@ -1479,9 +1527,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            StopTimeEvent.decode = function decode(reader, length, error) {
+            StopTimeEvent.decode = function decode(reader, length, error, long) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.TripUpdate.StopTimeEvent();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
@@ -1505,7 +1557,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                             break;
                         }
                     default:
-                        reader.skipType(tag & 7);
+                        reader.skipType(tag & 7, long);
                         break;
                     }
                 }
@@ -1536,9 +1588,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            StopTimeEvent.verify = function verify(message) {
+            StopTimeEvent.verify = function verify(message, long) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
                 if (message.delay != null && message.hasOwnProperty("delay"))
                     if (!$util.isInteger(message.delay))
                         return "delay: integer expected";
@@ -1562,9 +1618,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} object Plain object
              * @returns {transit_realtime.TripUpdate.StopTimeEvent} StopTimeEvent
              */
-            StopTimeEvent.fromObject = function fromObject(object) {
+            StopTimeEvent.fromObject = function fromObject(object, long) {
                 if (object instanceof $root.transit_realtime.TripUpdate.StopTimeEvent)
                     return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let message = new $root.transit_realtime.TripUpdate.StopTimeEvent();
                 if (object.delay != null)
                     message.delay = object.delay | 0;
@@ -1690,7 +1750,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             function StopTimeUpdate(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
                             this[keys[i]] = properties[keys[i]];
             }
 
@@ -1815,9 +1875,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            StopTimeUpdate.decode = function decode(reader, length, error) {
+            StopTimeUpdate.decode = function decode(reader, length, error, long) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.TripUpdate.StopTimeUpdate();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
@@ -1833,11 +1897,11 @@ export const transit_realtime = $root.transit_realtime = (() => {
                             break;
                         }
                     case 2: {
-                            message.arrival = $root.transit_realtime.TripUpdate.StopTimeEvent.decode(reader, reader.uint32());
+                            message.arrival = $root.transit_realtime.TripUpdate.StopTimeEvent.decode(reader, reader.uint32(), undefined, long + 1);
                             break;
                         }
                     case 3: {
-                            message.departure = $root.transit_realtime.TripUpdate.StopTimeEvent.decode(reader, reader.uint32());
+                            message.departure = $root.transit_realtime.TripUpdate.StopTimeEvent.decode(reader, reader.uint32(), undefined, long + 1);
                             break;
                         }
                     case 7: {
@@ -1849,11 +1913,11 @@ export const transit_realtime = $root.transit_realtime = (() => {
                             break;
                         }
                     case 6: {
-                            message.stop_time_properties = $root.transit_realtime.TripUpdate.StopTimeUpdate.StopTimeProperties.decode(reader, reader.uint32());
+                            message.stop_time_properties = $root.transit_realtime.TripUpdate.StopTimeUpdate.StopTimeProperties.decode(reader, reader.uint32(), undefined, long + 1);
                             break;
                         }
                     default:
-                        reader.skipType(tag & 7);
+                        reader.skipType(tag & 7, long);
                         break;
                     }
                 }
@@ -1884,9 +1948,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            StopTimeUpdate.verify = function verify(message) {
+            StopTimeUpdate.verify = function verify(message, long) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
                 if (message.stop_sequence != null && message.hasOwnProperty("stop_sequence"))
                     if (!$util.isInteger(message.stop_sequence))
                         return "stop_sequence: integer expected";
@@ -1894,12 +1962,12 @@ export const transit_realtime = $root.transit_realtime = (() => {
                     if (!$util.isString(message.stop_id))
                         return "stop_id: string expected";
                 if (message.arrival != null && message.hasOwnProperty("arrival")) {
-                    let error = $root.transit_realtime.TripUpdate.StopTimeEvent.verify(message.arrival);
+                    let error = $root.transit_realtime.TripUpdate.StopTimeEvent.verify(message.arrival, long + 1);
                     if (error)
                         return "arrival." + error;
                 }
                 if (message.departure != null && message.hasOwnProperty("departure")) {
-                    let error = $root.transit_realtime.TripUpdate.StopTimeEvent.verify(message.departure);
+                    let error = $root.transit_realtime.TripUpdate.StopTimeEvent.verify(message.departure, long + 1);
                     if (error)
                         return "departure." + error;
                 }
@@ -1929,7 +1997,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 if (message.stop_time_properties != null && message.hasOwnProperty("stop_time_properties")) {
-                    let error = $root.transit_realtime.TripUpdate.StopTimeUpdate.StopTimeProperties.verify(message.stop_time_properties);
+                    let error = $root.transit_realtime.TripUpdate.StopTimeUpdate.StopTimeProperties.verify(message.stop_time_properties, long + 1);
                     if (error)
                         return "stop_time_properties." + error;
                 }
@@ -1944,9 +2012,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} object Plain object
              * @returns {transit_realtime.TripUpdate.StopTimeUpdate} StopTimeUpdate
              */
-            StopTimeUpdate.fromObject = function fromObject(object) {
+            StopTimeUpdate.fromObject = function fromObject(object, long) {
                 if (object instanceof $root.transit_realtime.TripUpdate.StopTimeUpdate)
                     return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let message = new $root.transit_realtime.TripUpdate.StopTimeUpdate();
                 if (object.stop_sequence != null)
                     message.stop_sequence = object.stop_sequence >>> 0;
@@ -1955,12 +2027,12 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 if (object.arrival != null) {
                     if (typeof object.arrival !== "object")
                         throw TypeError(".transit_realtime.TripUpdate.StopTimeUpdate.arrival: object expected");
-                    message.arrival = $root.transit_realtime.TripUpdate.StopTimeEvent.fromObject(object.arrival);
+                    message.arrival = $root.transit_realtime.TripUpdate.StopTimeEvent.fromObject(object.arrival, long + 1);
                 }
                 if (object.departure != null) {
                     if (typeof object.departure !== "object")
                         throw TypeError(".transit_realtime.TripUpdate.StopTimeUpdate.departure: object expected");
-                    message.departure = $root.transit_realtime.TripUpdate.StopTimeEvent.fromObject(object.departure);
+                    message.departure = $root.transit_realtime.TripUpdate.StopTimeEvent.fromObject(object.departure, long + 1);
                 }
                 switch (object.departure_occupancy_status) {
                 default:
@@ -2033,7 +2105,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 if (object.stop_time_properties != null) {
                     if (typeof object.stop_time_properties !== "object")
                         throw TypeError(".transit_realtime.TripUpdate.StopTimeUpdate.stop_time_properties: object expected");
-                    message.stop_time_properties = $root.transit_realtime.TripUpdate.StopTimeUpdate.StopTimeProperties.fromObject(object.stop_time_properties);
+                    message.stop_time_properties = $root.transit_realtime.TripUpdate.StopTimeUpdate.StopTimeProperties.fromObject(object.stop_time_properties, long + 1);
                 }
                 return message;
             };
@@ -2144,7 +2216,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 function StopTimeProperties(properties) {
                     if (properties)
                         for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                            if (properties[keys[i]] != null)
+                            if (properties[keys[i]] != null && keys[i] !== "__proto__")
                                 this[keys[i]] = properties[keys[i]];
                 }
 
@@ -2239,9 +2311,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
                  * @throws {Error} If the payload is not a reader or valid buffer
                  * @throws {$protobuf.util.ProtocolError} If required fields are missing
                  */
-                StopTimeProperties.decode = function decode(reader, length, error) {
+                StopTimeProperties.decode = function decode(reader, length, error, long) {
                     if (!(reader instanceof $Reader))
                         reader = $Reader.create(reader);
+                    if (long === undefined)
+                        long = 0;
+                    if (long > $Reader.recursionLimit)
+                        throw Error("maximum nesting depth exceeded");
                     let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.TripUpdate.StopTimeUpdate.StopTimeProperties();
                     while (reader.pos < end) {
                         let tag = reader.uint32();
@@ -2265,7 +2341,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                                 break;
                             }
                         default:
-                            reader.skipType(tag & 7);
+                            reader.skipType(tag & 7, long);
                             break;
                         }
                     }
@@ -2296,9 +2372,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
                  * @param {Object.<string,*>} message Plain object to verify
                  * @returns {string|null} `null` if valid, otherwise the reason why it is not
                  */
-                StopTimeProperties.verify = function verify(message) {
+                StopTimeProperties.verify = function verify(message, long) {
                     if (typeof message !== "object" || message === null)
                         return "object expected";
+                    if (long === undefined)
+                        long = 0;
+                    if (long > $util.recursionLimit)
+                        return "maximum nesting depth exceeded";
                     if (message.assigned_stop_id != null && message.hasOwnProperty("assigned_stop_id"))
                         if (!$util.isString(message.assigned_stop_id))
                             return "assigned_stop_id: string expected";
@@ -2336,9 +2416,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
                  * @param {Object.<string,*>} object Plain object
                  * @returns {transit_realtime.TripUpdate.StopTimeUpdate.StopTimeProperties} StopTimeProperties
                  */
-                StopTimeProperties.fromObject = function fromObject(object) {
+                StopTimeProperties.fromObject = function fromObject(object, long) {
                     if (object instanceof $root.transit_realtime.TripUpdate.StopTimeUpdate.StopTimeProperties)
                         return object;
+                    if (long === undefined)
+                        long = 0;
+                    if (long > $util.recursionLimit)
+                        throw Error("maximum nesting depth exceeded");
                     let message = new $root.transit_realtime.TripUpdate.StopTimeUpdate.StopTimeProperties();
                     if (object.assigned_stop_id != null)
                         message.assigned_stop_id = String(object.assigned_stop_id);
@@ -2500,7 +2584,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             function TripProperties(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
                             this[keys[i]] = properties[keys[i]];
             }
 
@@ -2615,9 +2699,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            TripProperties.decode = function decode(reader, length, error) {
+            TripProperties.decode = function decode(reader, length, error, long) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.TripUpdate.TripProperties();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
@@ -2649,7 +2737,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                             break;
                         }
                     default:
-                        reader.skipType(tag & 7);
+                        reader.skipType(tag & 7, long);
                         break;
                     }
                 }
@@ -2680,9 +2768,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            TripProperties.verify = function verify(message) {
+            TripProperties.verify = function verify(message, long) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
                 if (message.trip_id != null && message.hasOwnProperty("trip_id"))
                     if (!$util.isString(message.trip_id))
                         return "trip_id: string expected";
@@ -2712,9 +2804,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} object Plain object
              * @returns {transit_realtime.TripUpdate.TripProperties} TripProperties
              */
-            TripProperties.fromObject = function fromObject(object) {
+            TripProperties.fromObject = function fromObject(object, long) {
                 if (object instanceof $root.transit_realtime.TripUpdate.TripProperties)
                     return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let message = new $root.transit_realtime.TripUpdate.TripProperties();
                 if (object.trip_id != null)
                     message.trip_id = String(object.trip_id);
@@ -2830,7 +2926,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             this.multi_carriage_details = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -2996,9 +3092,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        VehiclePosition.decode = function decode(reader, length, error) {
+        VehiclePosition.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.VehiclePosition();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -3006,15 +3106,15 @@ export const transit_realtime = $root.transit_realtime = (() => {
                     break;
                 switch (tag >>> 3) {
                 case 1: {
-                        message.trip = $root.transit_realtime.TripDescriptor.decode(reader, reader.uint32());
+                        message.trip = $root.transit_realtime.TripDescriptor.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 8: {
-                        message.vehicle = $root.transit_realtime.VehicleDescriptor.decode(reader, reader.uint32());
+                        message.vehicle = $root.transit_realtime.VehicleDescriptor.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 2: {
-                        message.position = $root.transit_realtime.Position.decode(reader, reader.uint32());
+                        message.position = $root.transit_realtime.Position.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 3: {
@@ -3048,11 +3148,11 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 case 11: {
                         if (!(message.multi_carriage_details && message.multi_carriage_details.length))
                             message.multi_carriage_details = [];
-                        message.multi_carriage_details.push($root.transit_realtime.VehiclePosition.CarriageDetails.decode(reader, reader.uint32()));
+                        message.multi_carriage_details.push($root.transit_realtime.VehiclePosition.CarriageDetails.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -3083,21 +3183,25 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        VehiclePosition.verify = function verify(message) {
+        VehiclePosition.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.trip != null && message.hasOwnProperty("trip")) {
-                let error = $root.transit_realtime.TripDescriptor.verify(message.trip);
+                let error = $root.transit_realtime.TripDescriptor.verify(message.trip, long + 1);
                 if (error)
                     return "trip." + error;
             }
             if (message.vehicle != null && message.hasOwnProperty("vehicle")) {
-                let error = $root.transit_realtime.VehicleDescriptor.verify(message.vehicle);
+                let error = $root.transit_realtime.VehicleDescriptor.verify(message.vehicle, long + 1);
                 if (error)
                     return "vehicle." + error;
             }
             if (message.position != null && message.hasOwnProperty("position")) {
-                let error = $root.transit_realtime.Position.verify(message.position);
+                let error = $root.transit_realtime.Position.verify(message.position, long + 1);
                 if (error)
                     return "position." + error;
             }
@@ -3152,7 +3256,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 if (!Array.isArray(message.multi_carriage_details))
                     return "multi_carriage_details: array expected";
                 for (let i = 0; i < message.multi_carriage_details.length; ++i) {
-                    let error = $root.transit_realtime.VehiclePosition.CarriageDetails.verify(message.multi_carriage_details[i]);
+                    let error = $root.transit_realtime.VehiclePosition.CarriageDetails.verify(message.multi_carriage_details[i], long + 1);
                     if (error)
                         return "multi_carriage_details." + error;
                 }
@@ -3168,24 +3272,28 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.VehiclePosition} VehiclePosition
          */
-        VehiclePosition.fromObject = function fromObject(object) {
+        VehiclePosition.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.VehiclePosition)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.VehiclePosition();
             if (object.trip != null) {
                 if (typeof object.trip !== "object")
                     throw TypeError(".transit_realtime.VehiclePosition.trip: object expected");
-                message.trip = $root.transit_realtime.TripDescriptor.fromObject(object.trip);
+                message.trip = $root.transit_realtime.TripDescriptor.fromObject(object.trip, long + 1);
             }
             if (object.vehicle != null) {
                 if (typeof object.vehicle !== "object")
                     throw TypeError(".transit_realtime.VehiclePosition.vehicle: object expected");
-                message.vehicle = $root.transit_realtime.VehicleDescriptor.fromObject(object.vehicle);
+                message.vehicle = $root.transit_realtime.VehicleDescriptor.fromObject(object.vehicle, long + 1);
             }
             if (object.position != null) {
                 if (typeof object.position !== "object")
                     throw TypeError(".transit_realtime.VehiclePosition.position: object expected");
-                message.position = $root.transit_realtime.Position.fromObject(object.position);
+                message.position = $root.transit_realtime.Position.fromObject(object.position, long + 1);
             }
             if (object.current_stop_sequence != null)
                 message.current_stop_sequence = object.current_stop_sequence >>> 0;
@@ -3301,7 +3409,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 for (let i = 0; i < object.multi_carriage_details.length; ++i) {
                     if (typeof object.multi_carriage_details[i] !== "object")
                         throw TypeError(".transit_realtime.VehiclePosition.multi_carriage_details: object expected");
-                    message.multi_carriage_details[i] = $root.transit_realtime.VehiclePosition.CarriageDetails.fromObject(object.multi_carriage_details[i]);
+                    message.multi_carriage_details[i] = $root.transit_realtime.VehiclePosition.CarriageDetails.fromObject(object.multi_carriage_details[i], long + 1);
                 }
             }
             return message;
@@ -3483,7 +3591,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             function CarriageDetails(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
                             this[keys[i]] = properties[keys[i]];
             }
 
@@ -3588,9 +3696,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            CarriageDetails.decode = function decode(reader, length, error) {
+            CarriageDetails.decode = function decode(reader, length, error, long) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.VehiclePosition.CarriageDetails();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
@@ -3618,7 +3730,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                             break;
                         }
                     default:
-                        reader.skipType(tag & 7);
+                        reader.skipType(tag & 7, long);
                         break;
                     }
                 }
@@ -3649,9 +3761,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            CarriageDetails.verify = function verify(message) {
+            CarriageDetails.verify = function verify(message, long) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
                 if (message.id != null && message.hasOwnProperty("id"))
                     if (!$util.isString(message.id))
                         return "id: string expected";
@@ -3690,9 +3806,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} object Plain object
              * @returns {transit_realtime.VehiclePosition.CarriageDetails} CarriageDetails
              */
-            CarriageDetails.fromObject = function fromObject(object) {
+            CarriageDetails.fromObject = function fromObject(object, long) {
                 if (object instanceof $root.transit_realtime.VehiclePosition.CarriageDetails)
                     return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let message = new $root.transit_realtime.VehiclePosition.CarriageDetails();
                 if (object.id != null)
                     message.id = String(object.id);
@@ -3849,7 +3969,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             this.informed_entity = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -4046,9 +4166,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Alert.decode = function decode(reader, length, error) {
+        Alert.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.Alert();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -4058,13 +4182,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 case 1: {
                         if (!(message.active_period && message.active_period.length))
                             message.active_period = [];
-                        message.active_period.push($root.transit_realtime.TimeRange.decode(reader, reader.uint32()));
+                        message.active_period.push($root.transit_realtime.TimeRange.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 case 5: {
                         if (!(message.informed_entity && message.informed_entity.length))
                             message.informed_entity = [];
-                        message.informed_entity.push($root.transit_realtime.EntitySelector.decode(reader, reader.uint32()));
+                        message.informed_entity.push($root.transit_realtime.EntitySelector.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 case 6: {
@@ -4076,23 +4200,23 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 case 8: {
-                        message.url = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32());
+                        message.url = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 10: {
-                        message.header_text = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32());
+                        message.header_text = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 11: {
-                        message.description_text = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32());
+                        message.description_text = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 12: {
-                        message.tts_header_text = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32());
+                        message.tts_header_text = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 13: {
-                        message.tts_description_text = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32());
+                        message.tts_description_text = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 14: {
@@ -4100,23 +4224,23 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 case 15: {
-                        message.image = $root.transit_realtime.TranslatedImage.decode(reader, reader.uint32());
+                        message.image = $root.transit_realtime.TranslatedImage.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 16: {
-                        message.image_alternative_text = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32());
+                        message.image_alternative_text = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 17: {
-                        message.cause_detail = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32());
+                        message.cause_detail = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 18: {
-                        message.effect_detail = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32());
+                        message.effect_detail = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -4147,14 +4271,18 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Alert.verify = function verify(message) {
+        Alert.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.active_period != null && message.hasOwnProperty("active_period")) {
                 if (!Array.isArray(message.active_period))
                     return "active_period: array expected";
                 for (let i = 0; i < message.active_period.length; ++i) {
-                    let error = $root.transit_realtime.TimeRange.verify(message.active_period[i]);
+                    let error = $root.transit_realtime.TimeRange.verify(message.active_period[i], long + 1);
                     if (error)
                         return "active_period." + error;
                 }
@@ -4163,7 +4291,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 if (!Array.isArray(message.informed_entity))
                     return "informed_entity: array expected";
                 for (let i = 0; i < message.informed_entity.length; ++i) {
-                    let error = $root.transit_realtime.EntitySelector.verify(message.informed_entity[i]);
+                    let error = $root.transit_realtime.EntitySelector.verify(message.informed_entity[i], long + 1);
                     if (error)
                         return "informed_entity." + error;
                 }
@@ -4204,27 +4332,27 @@ export const transit_realtime = $root.transit_realtime = (() => {
                     break;
                 }
             if (message.url != null && message.hasOwnProperty("url")) {
-                let error = $root.transit_realtime.TranslatedString.verify(message.url);
+                let error = $root.transit_realtime.TranslatedString.verify(message.url, long + 1);
                 if (error)
                     return "url." + error;
             }
             if (message.header_text != null && message.hasOwnProperty("header_text")) {
-                let error = $root.transit_realtime.TranslatedString.verify(message.header_text);
+                let error = $root.transit_realtime.TranslatedString.verify(message.header_text, long + 1);
                 if (error)
                     return "header_text." + error;
             }
             if (message.description_text != null && message.hasOwnProperty("description_text")) {
-                let error = $root.transit_realtime.TranslatedString.verify(message.description_text);
+                let error = $root.transit_realtime.TranslatedString.verify(message.description_text, long + 1);
                 if (error)
                     return "description_text." + error;
             }
             if (message.tts_header_text != null && message.hasOwnProperty("tts_header_text")) {
-                let error = $root.transit_realtime.TranslatedString.verify(message.tts_header_text);
+                let error = $root.transit_realtime.TranslatedString.verify(message.tts_header_text, long + 1);
                 if (error)
                     return "tts_header_text." + error;
             }
             if (message.tts_description_text != null && message.hasOwnProperty("tts_description_text")) {
-                let error = $root.transit_realtime.TranslatedString.verify(message.tts_description_text);
+                let error = $root.transit_realtime.TranslatedString.verify(message.tts_description_text, long + 1);
                 if (error)
                     return "tts_description_text." + error;
             }
@@ -4239,22 +4367,22 @@ export const transit_realtime = $root.transit_realtime = (() => {
                     break;
                 }
             if (message.image != null && message.hasOwnProperty("image")) {
-                let error = $root.transit_realtime.TranslatedImage.verify(message.image);
+                let error = $root.transit_realtime.TranslatedImage.verify(message.image, long + 1);
                 if (error)
                     return "image." + error;
             }
             if (message.image_alternative_text != null && message.hasOwnProperty("image_alternative_text")) {
-                let error = $root.transit_realtime.TranslatedString.verify(message.image_alternative_text);
+                let error = $root.transit_realtime.TranslatedString.verify(message.image_alternative_text, long + 1);
                 if (error)
                     return "image_alternative_text." + error;
             }
             if (message.cause_detail != null && message.hasOwnProperty("cause_detail")) {
-                let error = $root.transit_realtime.TranslatedString.verify(message.cause_detail);
+                let error = $root.transit_realtime.TranslatedString.verify(message.cause_detail, long + 1);
                 if (error)
                     return "cause_detail." + error;
             }
             if (message.effect_detail != null && message.hasOwnProperty("effect_detail")) {
-                let error = $root.transit_realtime.TranslatedString.verify(message.effect_detail);
+                let error = $root.transit_realtime.TranslatedString.verify(message.effect_detail, long + 1);
                 if (error)
                     return "effect_detail." + error;
             }
@@ -4269,9 +4397,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.Alert} Alert
          */
-        Alert.fromObject = function fromObject(object) {
+        Alert.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.Alert)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.Alert();
             if (object.active_period) {
                 if (!Array.isArray(object.active_period))
@@ -4280,7 +4412,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 for (let i = 0; i < object.active_period.length; ++i) {
                     if (typeof object.active_period[i] !== "object")
                         throw TypeError(".transit_realtime.Alert.active_period: object expected");
-                    message.active_period[i] = $root.transit_realtime.TimeRange.fromObject(object.active_period[i]);
+                    message.active_period[i] = $root.transit_realtime.TimeRange.fromObject(object.active_period[i], long + 1);
                 }
             }
             if (object.informed_entity) {
@@ -4290,7 +4422,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 for (let i = 0; i < object.informed_entity.length; ++i) {
                     if (typeof object.informed_entity[i] !== "object")
                         throw TypeError(".transit_realtime.Alert.informed_entity: object expected");
-                    message.informed_entity[i] = $root.transit_realtime.EntitySelector.fromObject(object.informed_entity[i]);
+                    message.informed_entity[i] = $root.transit_realtime.EntitySelector.fromObject(object.informed_entity[i], long + 1);
                 }
             }
             switch (object.cause) {
@@ -4404,27 +4536,27 @@ export const transit_realtime = $root.transit_realtime = (() => {
             if (object.url != null) {
                 if (typeof object.url !== "object")
                     throw TypeError(".transit_realtime.Alert.url: object expected");
-                message.url = $root.transit_realtime.TranslatedString.fromObject(object.url);
+                message.url = $root.transit_realtime.TranslatedString.fromObject(object.url, long + 1);
             }
             if (object.header_text != null) {
                 if (typeof object.header_text !== "object")
                     throw TypeError(".transit_realtime.Alert.header_text: object expected");
-                message.header_text = $root.transit_realtime.TranslatedString.fromObject(object.header_text);
+                message.header_text = $root.transit_realtime.TranslatedString.fromObject(object.header_text, long + 1);
             }
             if (object.description_text != null) {
                 if (typeof object.description_text !== "object")
                     throw TypeError(".transit_realtime.Alert.description_text: object expected");
-                message.description_text = $root.transit_realtime.TranslatedString.fromObject(object.description_text);
+                message.description_text = $root.transit_realtime.TranslatedString.fromObject(object.description_text, long + 1);
             }
             if (object.tts_header_text != null) {
                 if (typeof object.tts_header_text !== "object")
                     throw TypeError(".transit_realtime.Alert.tts_header_text: object expected");
-                message.tts_header_text = $root.transit_realtime.TranslatedString.fromObject(object.tts_header_text);
+                message.tts_header_text = $root.transit_realtime.TranslatedString.fromObject(object.tts_header_text, long + 1);
             }
             if (object.tts_description_text != null) {
                 if (typeof object.tts_description_text !== "object")
                     throw TypeError(".transit_realtime.Alert.tts_description_text: object expected");
-                message.tts_description_text = $root.transit_realtime.TranslatedString.fromObject(object.tts_description_text);
+                message.tts_description_text = $root.transit_realtime.TranslatedString.fromObject(object.tts_description_text, long + 1);
             }
             switch (object.severity_level) {
             default:
@@ -4453,22 +4585,22 @@ export const transit_realtime = $root.transit_realtime = (() => {
             if (object.image != null) {
                 if (typeof object.image !== "object")
                     throw TypeError(".transit_realtime.Alert.image: object expected");
-                message.image = $root.transit_realtime.TranslatedImage.fromObject(object.image);
+                message.image = $root.transit_realtime.TranslatedImage.fromObject(object.image, long + 1);
             }
             if (object.image_alternative_text != null) {
                 if (typeof object.image_alternative_text !== "object")
                     throw TypeError(".transit_realtime.Alert.image_alternative_text: object expected");
-                message.image_alternative_text = $root.transit_realtime.TranslatedString.fromObject(object.image_alternative_text);
+                message.image_alternative_text = $root.transit_realtime.TranslatedString.fromObject(object.image_alternative_text, long + 1);
             }
             if (object.cause_detail != null) {
                 if (typeof object.cause_detail !== "object")
                     throw TypeError(".transit_realtime.Alert.cause_detail: object expected");
-                message.cause_detail = $root.transit_realtime.TranslatedString.fromObject(object.cause_detail);
+                message.cause_detail = $root.transit_realtime.TranslatedString.fromObject(object.cause_detail, long + 1);
             }
             if (object.effect_detail != null) {
                 if (typeof object.effect_detail !== "object")
                     throw TypeError(".transit_realtime.Alert.effect_detail: object expected");
-                message.effect_detail = $root.transit_realtime.TranslatedString.fromObject(object.effect_detail);
+                message.effect_detail = $root.transit_realtime.TranslatedString.fromObject(object.effect_detail, long + 1);
             }
             return message;
         };
@@ -4675,7 +4807,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
         function TimeRange(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -4750,9 +4882,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        TimeRange.decode = function decode(reader, length, error) {
+        TimeRange.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.TimeRange();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -4768,7 +4904,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -4799,9 +4935,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        TimeRange.verify = function verify(message) {
+        TimeRange.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.start != null && message.hasOwnProperty("start"))
                 if (!$util.isInteger(message.start) && !(message.start && $util.isInteger(message.start.low) && $util.isInteger(message.start.high)))
                     return "start: integer|Long expected";
@@ -4819,9 +4959,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.TimeRange} TimeRange
          */
-        TimeRange.fromObject = function fromObject(object) {
+        TimeRange.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.TimeRange)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.TimeRange();
             if (object.start != null)
                 if ($util.Long)
@@ -4935,7 +5079,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
         function Position(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -5038,9 +5182,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Position.decode = function decode(reader, length, error) {
+        Position.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.Position();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -5068,7 +5216,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -5103,9 +5251,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Position.verify = function verify(message) {
+        Position.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (typeof message.latitude !== "number")
                 return "latitude: number expected";
             if (typeof message.longitude !== "number")
@@ -5130,9 +5282,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.Position} Position
          */
-        Position.fromObject = function fromObject(object) {
+        Position.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.Position)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.Position();
             if (object.latitude != null)
                 message.latitude = Number(object.latitude);
@@ -5235,7 +5391,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
         function TripDescriptor(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -5360,9 +5516,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        TripDescriptor.decode = function decode(reader, length, error) {
+        TripDescriptor.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.TripDescriptor();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -5394,11 +5554,11 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 case 7: {
-                        message.modified_trip = $root.transit_realtime.TripDescriptor.ModifiedTripSelector.decode(reader, reader.uint32());
+                        message.modified_trip = $root.transit_realtime.TripDescriptor.ModifiedTripSelector.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -5429,9 +5589,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        TripDescriptor.verify = function verify(message) {
+        TripDescriptor.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.trip_id != null && message.hasOwnProperty("trip_id"))
                 if (!$util.isString(message.trip_id))
                     return "trip_id: string expected";
@@ -5462,7 +5626,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                     break;
                 }
             if (message.modified_trip != null && message.hasOwnProperty("modified_trip")) {
-                let error = $root.transit_realtime.TripDescriptor.ModifiedTripSelector.verify(message.modified_trip);
+                let error = $root.transit_realtime.TripDescriptor.ModifiedTripSelector.verify(message.modified_trip, long + 1);
                 if (error)
                     return "modified_trip." + error;
             }
@@ -5477,9 +5641,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.TripDescriptor} TripDescriptor
          */
-        TripDescriptor.fromObject = function fromObject(object) {
+        TripDescriptor.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.TripDescriptor)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.TripDescriptor();
             if (object.trip_id != null)
                 message.trip_id = String(object.trip_id);
@@ -5534,7 +5702,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             if (object.modified_trip != null) {
                 if (typeof object.modified_trip !== "object")
                     throw TypeError(".transit_realtime.TripDescriptor.modified_trip: object expected");
-                message.modified_trip = $root.transit_realtime.TripDescriptor.ModifiedTripSelector.fromObject(object.modified_trip);
+                message.modified_trip = $root.transit_realtime.TripDescriptor.ModifiedTripSelector.fromObject(object.modified_trip, long + 1);
             }
             return message;
         };
@@ -5653,7 +5821,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             function ModifiedTripSelector(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
                             this[keys[i]] = properties[keys[i]];
             }
 
@@ -5748,9 +5916,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            ModifiedTripSelector.decode = function decode(reader, length, error) {
+            ModifiedTripSelector.decode = function decode(reader, length, error, long) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.TripDescriptor.ModifiedTripSelector();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
@@ -5774,7 +5946,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                             break;
                         }
                     default:
-                        reader.skipType(tag & 7);
+                        reader.skipType(tag & 7, long);
                         break;
                     }
                 }
@@ -5805,9 +5977,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            ModifiedTripSelector.verify = function verify(message) {
+            ModifiedTripSelector.verify = function verify(message, long) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
                 if (message.modifications_id != null && message.hasOwnProperty("modifications_id"))
                     if (!$util.isString(message.modifications_id))
                         return "modifications_id: string expected";
@@ -5831,9 +6007,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} object Plain object
              * @returns {transit_realtime.TripDescriptor.ModifiedTripSelector} ModifiedTripSelector
              */
-            ModifiedTripSelector.fromObject = function fromObject(object) {
+            ModifiedTripSelector.fromObject = function fromObject(object, long) {
                 if (object instanceof $root.transit_realtime.TripDescriptor.ModifiedTripSelector)
                     return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let message = new $root.transit_realtime.TripDescriptor.ModifiedTripSelector();
                 if (object.modifications_id != null)
                     message.modifications_id = String(object.modifications_id);
@@ -5931,7 +6111,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
         function VehicleDescriptor(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -6026,9 +6206,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        VehicleDescriptor.decode = function decode(reader, length, error) {
+        VehicleDescriptor.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.VehicleDescriptor();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -6052,7 +6236,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -6083,9 +6267,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        VehicleDescriptor.verify = function verify(message) {
+        VehicleDescriptor.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.id != null && message.hasOwnProperty("id"))
                 if (!$util.isString(message.id))
                     return "id: string expected";
@@ -6116,9 +6304,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.VehicleDescriptor} VehicleDescriptor
          */
-        VehicleDescriptor.fromObject = function fromObject(object) {
+        VehicleDescriptor.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.VehicleDescriptor)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.VehicleDescriptor();
             if (object.id != null)
                 message.id = String(object.id);
@@ -6255,7 +6447,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
         function EntitySelector(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -6370,9 +6562,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        EntitySelector.decode = function decode(reader, length, error) {
+        EntitySelector.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.EntitySelector();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -6392,7 +6588,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 case 4: {
-                        message.trip = $root.transit_realtime.TripDescriptor.decode(reader, reader.uint32());
+                        message.trip = $root.transit_realtime.TripDescriptor.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 5: {
@@ -6404,7 +6600,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -6435,9 +6631,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        EntitySelector.verify = function verify(message) {
+        EntitySelector.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.agency_id != null && message.hasOwnProperty("agency_id"))
                 if (!$util.isString(message.agency_id))
                     return "agency_id: string expected";
@@ -6448,7 +6648,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 if (!$util.isInteger(message.route_type))
                     return "route_type: integer expected";
             if (message.trip != null && message.hasOwnProperty("trip")) {
-                let error = $root.transit_realtime.TripDescriptor.verify(message.trip);
+                let error = $root.transit_realtime.TripDescriptor.verify(message.trip, long + 1);
                 if (error)
                     return "trip." + error;
             }
@@ -6469,9 +6669,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.EntitySelector} EntitySelector
          */
-        EntitySelector.fromObject = function fromObject(object) {
+        EntitySelector.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.EntitySelector)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.EntitySelector();
             if (object.agency_id != null)
                 message.agency_id = String(object.agency_id);
@@ -6482,7 +6686,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             if (object.trip != null) {
                 if (typeof object.trip !== "object")
                     throw TypeError(".transit_realtime.EntitySelector.trip: object expected");
-                message.trip = $root.transit_realtime.TripDescriptor.fromObject(object.trip);
+                message.trip = $root.transit_realtime.TripDescriptor.fromObject(object.trip, long + 1);
             }
             if (object.stop_id != null)
                 message.stop_id = String(object.stop_id);
@@ -6577,7 +6781,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             this.translation = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -6643,9 +6847,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        TranslatedString.decode = function decode(reader, length, error) {
+        TranslatedString.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.TranslatedString();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -6655,11 +6863,11 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 case 1: {
                         if (!(message.translation && message.translation.length))
                             message.translation = [];
-                        message.translation.push($root.transit_realtime.TranslatedString.Translation.decode(reader, reader.uint32()));
+                        message.translation.push($root.transit_realtime.TranslatedString.Translation.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -6690,14 +6898,18 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        TranslatedString.verify = function verify(message) {
+        TranslatedString.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.translation != null && message.hasOwnProperty("translation")) {
                 if (!Array.isArray(message.translation))
                     return "translation: array expected";
                 for (let i = 0; i < message.translation.length; ++i) {
-                    let error = $root.transit_realtime.TranslatedString.Translation.verify(message.translation[i]);
+                    let error = $root.transit_realtime.TranslatedString.Translation.verify(message.translation[i], long + 1);
                     if (error)
                         return "translation." + error;
                 }
@@ -6713,9 +6925,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.TranslatedString} TranslatedString
          */
-        TranslatedString.fromObject = function fromObject(object) {
+        TranslatedString.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.TranslatedString)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.TranslatedString();
             if (object.translation) {
                 if (!Array.isArray(object.translation))
@@ -6724,7 +6940,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 for (let i = 0; i < object.translation.length; ++i) {
                     if (typeof object.translation[i] !== "object")
                         throw TypeError(".transit_realtime.TranslatedString.translation: object expected");
-                    message.translation[i] = $root.transit_realtime.TranslatedString.Translation.fromObject(object.translation[i]);
+                    message.translation[i] = $root.transit_realtime.TranslatedString.Translation.fromObject(object.translation[i], long + 1);
                 }
             }
             return message;
@@ -6800,7 +7016,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             function Translation(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
                             this[keys[i]] = properties[keys[i]];
             }
 
@@ -6874,9 +7090,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            Translation.decode = function decode(reader, length, error) {
+            Translation.decode = function decode(reader, length, error, long) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.TranslatedString.Translation();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
@@ -6892,7 +7112,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                             break;
                         }
                     default:
-                        reader.skipType(tag & 7);
+                        reader.skipType(tag & 7, long);
                         break;
                     }
                 }
@@ -6925,9 +7145,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            Translation.verify = function verify(message) {
+            Translation.verify = function verify(message, long) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
                 if (!$util.isString(message.text))
                     return "text: string expected";
                 if (message.language != null && message.hasOwnProperty("language"))
@@ -6944,9 +7168,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} object Plain object
              * @returns {transit_realtime.TranslatedString.Translation} Translation
              */
-            Translation.fromObject = function fromObject(object) {
+            Translation.fromObject = function fromObject(object, long) {
                 if (object instanceof $root.transit_realtime.TranslatedString.Translation)
                     return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let message = new $root.transit_realtime.TranslatedString.Translation();
                 if (object.text != null)
                     message.text = String(object.text);
@@ -7032,7 +7260,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             this.localized_image = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -7098,9 +7326,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        TranslatedImage.decode = function decode(reader, length, error) {
+        TranslatedImage.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.TranslatedImage();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -7110,11 +7342,11 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 case 1: {
                         if (!(message.localized_image && message.localized_image.length))
                             message.localized_image = [];
-                        message.localized_image.push($root.transit_realtime.TranslatedImage.LocalizedImage.decode(reader, reader.uint32()));
+                        message.localized_image.push($root.transit_realtime.TranslatedImage.LocalizedImage.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -7145,14 +7377,18 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        TranslatedImage.verify = function verify(message) {
+        TranslatedImage.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.localized_image != null && message.hasOwnProperty("localized_image")) {
                 if (!Array.isArray(message.localized_image))
                     return "localized_image: array expected";
                 for (let i = 0; i < message.localized_image.length; ++i) {
-                    let error = $root.transit_realtime.TranslatedImage.LocalizedImage.verify(message.localized_image[i]);
+                    let error = $root.transit_realtime.TranslatedImage.LocalizedImage.verify(message.localized_image[i], long + 1);
                     if (error)
                         return "localized_image." + error;
                 }
@@ -7168,9 +7404,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.TranslatedImage} TranslatedImage
          */
-        TranslatedImage.fromObject = function fromObject(object) {
+        TranslatedImage.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.TranslatedImage)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.TranslatedImage();
             if (object.localized_image) {
                 if (!Array.isArray(object.localized_image))
@@ -7179,7 +7419,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 for (let i = 0; i < object.localized_image.length; ++i) {
                     if (typeof object.localized_image[i] !== "object")
                         throw TypeError(".transit_realtime.TranslatedImage.localized_image: object expected");
-                    message.localized_image[i] = $root.transit_realtime.TranslatedImage.LocalizedImage.fromObject(object.localized_image[i]);
+                    message.localized_image[i] = $root.transit_realtime.TranslatedImage.LocalizedImage.fromObject(object.localized_image[i], long + 1);
                 }
             }
             return message;
@@ -7256,7 +7496,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             function LocalizedImage(properties) {
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
                             this[keys[i]] = properties[keys[i]];
             }
 
@@ -7339,9 +7579,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            LocalizedImage.decode = function decode(reader, length, error) {
+            LocalizedImage.decode = function decode(reader, length, error, long) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.TranslatedImage.LocalizedImage();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
@@ -7361,7 +7605,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                             break;
                         }
                     default:
-                        reader.skipType(tag & 7);
+                        reader.skipType(tag & 7, long);
                         break;
                     }
                 }
@@ -7396,9 +7640,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            LocalizedImage.verify = function verify(message) {
+            LocalizedImage.verify = function verify(message, long) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
                 if (!$util.isString(message.url))
                     return "url: string expected";
                 if (!$util.isString(message.media_type))
@@ -7417,9 +7665,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} object Plain object
              * @returns {transit_realtime.TranslatedImage.LocalizedImage} LocalizedImage
              */
-            LocalizedImage.fromObject = function fromObject(object) {
+            LocalizedImage.fromObject = function fromObject(object, long) {
                 if (object instanceof $root.transit_realtime.TranslatedImage.LocalizedImage)
                     return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let message = new $root.transit_realtime.TranslatedImage.LocalizedImage();
                 if (object.url != null)
                     message.url = String(object.url);
@@ -7510,7 +7762,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
         function Shape(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -7585,9 +7837,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Shape.decode = function decode(reader, length, error) {
+        Shape.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.Shape();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -7603,7 +7859,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -7634,9 +7890,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Shape.verify = function verify(message) {
+        Shape.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.shape_id != null && message.hasOwnProperty("shape_id"))
                 if (!$util.isString(message.shape_id))
                     return "shape_id: string expected";
@@ -7654,9 +7914,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.Shape} Shape
          */
-        Shape.fromObject = function fromObject(object) {
+        Shape.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.Shape)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.Shape();
             if (object.shape_id != null)
                 message.shape_id = String(object.shape_id);
@@ -7751,7 +8015,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
         function Stop(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -7946,9 +8210,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        Stop.decode = function decode(reader, length, error) {
+        Stop.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.Stop();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -7960,19 +8228,19 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 case 2: {
-                        message.stop_code = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32());
+                        message.stop_code = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 3: {
-                        message.stop_name = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32());
+                        message.stop_name = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 4: {
-                        message.tts_stop_name = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32());
+                        message.tts_stop_name = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 5: {
-                        message.stop_desc = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32());
+                        message.stop_desc = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 6: {
@@ -7988,7 +8256,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 case 9: {
-                        message.stop_url = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32());
+                        message.stop_url = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 11: {
@@ -8008,11 +8276,11 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 case 15: {
-                        message.platform_code = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32());
+                        message.platform_code = $root.transit_realtime.TranslatedString.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -8043,29 +8311,33 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        Stop.verify = function verify(message) {
+        Stop.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.stop_id != null && message.hasOwnProperty("stop_id"))
                 if (!$util.isString(message.stop_id))
                     return "stop_id: string expected";
             if (message.stop_code != null && message.hasOwnProperty("stop_code")) {
-                let error = $root.transit_realtime.TranslatedString.verify(message.stop_code);
+                let error = $root.transit_realtime.TranslatedString.verify(message.stop_code, long + 1);
                 if (error)
                     return "stop_code." + error;
             }
             if (message.stop_name != null && message.hasOwnProperty("stop_name")) {
-                let error = $root.transit_realtime.TranslatedString.verify(message.stop_name);
+                let error = $root.transit_realtime.TranslatedString.verify(message.stop_name, long + 1);
                 if (error)
                     return "stop_name." + error;
             }
             if (message.tts_stop_name != null && message.hasOwnProperty("tts_stop_name")) {
-                let error = $root.transit_realtime.TranslatedString.verify(message.tts_stop_name);
+                let error = $root.transit_realtime.TranslatedString.verify(message.tts_stop_name, long + 1);
                 if (error)
                     return "tts_stop_name." + error;
             }
             if (message.stop_desc != null && message.hasOwnProperty("stop_desc")) {
-                let error = $root.transit_realtime.TranslatedString.verify(message.stop_desc);
+                let error = $root.transit_realtime.TranslatedString.verify(message.stop_desc, long + 1);
                 if (error)
                     return "stop_desc." + error;
             }
@@ -8079,7 +8351,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 if (!$util.isString(message.zone_id))
                     return "zone_id: string expected";
             if (message.stop_url != null && message.hasOwnProperty("stop_url")) {
-                let error = $root.transit_realtime.TranslatedString.verify(message.stop_url);
+                let error = $root.transit_realtime.TranslatedString.verify(message.stop_url, long + 1);
                 if (error)
                     return "stop_url." + error;
             }
@@ -8102,7 +8374,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 if (!$util.isString(message.level_id))
                     return "level_id: string expected";
             if (message.platform_code != null && message.hasOwnProperty("platform_code")) {
-                let error = $root.transit_realtime.TranslatedString.verify(message.platform_code);
+                let error = $root.transit_realtime.TranslatedString.verify(message.platform_code, long + 1);
                 if (error)
                     return "platform_code." + error;
             }
@@ -8117,31 +8389,35 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.Stop} Stop
          */
-        Stop.fromObject = function fromObject(object) {
+        Stop.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.Stop)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.Stop();
             if (object.stop_id != null)
                 message.stop_id = String(object.stop_id);
             if (object.stop_code != null) {
                 if (typeof object.stop_code !== "object")
                     throw TypeError(".transit_realtime.Stop.stop_code: object expected");
-                message.stop_code = $root.transit_realtime.TranslatedString.fromObject(object.stop_code);
+                message.stop_code = $root.transit_realtime.TranslatedString.fromObject(object.stop_code, long + 1);
             }
             if (object.stop_name != null) {
                 if (typeof object.stop_name !== "object")
                     throw TypeError(".transit_realtime.Stop.stop_name: object expected");
-                message.stop_name = $root.transit_realtime.TranslatedString.fromObject(object.stop_name);
+                message.stop_name = $root.transit_realtime.TranslatedString.fromObject(object.stop_name, long + 1);
             }
             if (object.tts_stop_name != null) {
                 if (typeof object.tts_stop_name !== "object")
                     throw TypeError(".transit_realtime.Stop.tts_stop_name: object expected");
-                message.tts_stop_name = $root.transit_realtime.TranslatedString.fromObject(object.tts_stop_name);
+                message.tts_stop_name = $root.transit_realtime.TranslatedString.fromObject(object.tts_stop_name, long + 1);
             }
             if (object.stop_desc != null) {
                 if (typeof object.stop_desc !== "object")
                     throw TypeError(".transit_realtime.Stop.stop_desc: object expected");
-                message.stop_desc = $root.transit_realtime.TranslatedString.fromObject(object.stop_desc);
+                message.stop_desc = $root.transit_realtime.TranslatedString.fromObject(object.stop_desc, long + 1);
             }
             if (object.stop_lat != null)
                 message.stop_lat = Number(object.stop_lat);
@@ -8152,7 +8428,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             if (object.stop_url != null) {
                 if (typeof object.stop_url !== "object")
                     throw TypeError(".transit_realtime.Stop.stop_url: object expected");
-                message.stop_url = $root.transit_realtime.TranslatedString.fromObject(object.stop_url);
+                message.stop_url = $root.transit_realtime.TranslatedString.fromObject(object.stop_url, long + 1);
             }
             if (object.parent_station != null)
                 message.parent_station = String(object.parent_station);
@@ -8183,7 +8459,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             if (object.platform_code != null) {
                 if (typeof object.platform_code !== "object")
                     throw TypeError(".transit_realtime.Stop.platform_code: object expected");
-                message.platform_code = $root.transit_realtime.TranslatedString.fromObject(object.platform_code);
+                message.platform_code = $root.transit_realtime.TranslatedString.fromObject(object.platform_code, long + 1);
             }
             return message;
         };
@@ -8320,7 +8596,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             this.modifications = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -8419,9 +8695,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        TripModifications.decode = function decode(reader, length, error) {
+        TripModifications.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.TripModifications();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -8431,7 +8711,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 case 1: {
                         if (!(message.selected_trips && message.selected_trips.length))
                             message.selected_trips = [];
-                        message.selected_trips.push($root.transit_realtime.TripModifications.SelectedTrips.decode(reader, reader.uint32()));
+                        message.selected_trips.push($root.transit_realtime.TripModifications.SelectedTrips.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 case 2: {
@@ -8449,11 +8729,11 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 case 4: {
                         if (!(message.modifications && message.modifications.length))
                             message.modifications = [];
-                        message.modifications.push($root.transit_realtime.TripModifications.Modification.decode(reader, reader.uint32()));
+                        message.modifications.push($root.transit_realtime.TripModifications.Modification.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -8484,14 +8764,18 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        TripModifications.verify = function verify(message) {
+        TripModifications.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.selected_trips != null && message.hasOwnProperty("selected_trips")) {
                 if (!Array.isArray(message.selected_trips))
                     return "selected_trips: array expected";
                 for (let i = 0; i < message.selected_trips.length; ++i) {
-                    let error = $root.transit_realtime.TripModifications.SelectedTrips.verify(message.selected_trips[i]);
+                    let error = $root.transit_realtime.TripModifications.SelectedTrips.verify(message.selected_trips[i], long + 1);
                     if (error)
                         return "selected_trips." + error;
                 }
@@ -8514,7 +8798,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 if (!Array.isArray(message.modifications))
                     return "modifications: array expected";
                 for (let i = 0; i < message.modifications.length; ++i) {
-                    let error = $root.transit_realtime.TripModifications.Modification.verify(message.modifications[i]);
+                    let error = $root.transit_realtime.TripModifications.Modification.verify(message.modifications[i], long + 1);
                     if (error)
                         return "modifications." + error;
                 }
@@ -8530,9 +8814,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.TripModifications} TripModifications
          */
-        TripModifications.fromObject = function fromObject(object) {
+        TripModifications.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.TripModifications)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.TripModifications();
             if (object.selected_trips) {
                 if (!Array.isArray(object.selected_trips))
@@ -8541,7 +8829,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 for (let i = 0; i < object.selected_trips.length; ++i) {
                     if (typeof object.selected_trips[i] !== "object")
                         throw TypeError(".transit_realtime.TripModifications.selected_trips: object expected");
-                    message.selected_trips[i] = $root.transit_realtime.TripModifications.SelectedTrips.fromObject(object.selected_trips[i]);
+                    message.selected_trips[i] = $root.transit_realtime.TripModifications.SelectedTrips.fromObject(object.selected_trips[i], long + 1);
                 }
             }
             if (object.start_times) {
@@ -8565,7 +8853,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 for (let i = 0; i < object.modifications.length; ++i) {
                     if (typeof object.modifications[i] !== "object")
                         throw TypeError(".transit_realtime.TripModifications.modifications: object expected");
-                    message.modifications[i] = $root.transit_realtime.TripModifications.Modification.fromObject(object.modifications[i]);
+                    message.modifications[i] = $root.transit_realtime.TripModifications.Modification.fromObject(object.modifications[i], long + 1);
                 }
             }
             return message;
@@ -8665,7 +8953,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 this.replacement_stops = [];
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
                             this[keys[i]] = properties[keys[i]];
             }
 
@@ -8781,9 +9069,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            Modification.decode = function decode(reader, length, error) {
+            Modification.decode = function decode(reader, length, error, long) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.TripModifications.Modification();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
@@ -8791,11 +9083,11 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     switch (tag >>> 3) {
                     case 1: {
-                            message.start_stop_selector = $root.transit_realtime.StopSelector.decode(reader, reader.uint32());
+                            message.start_stop_selector = $root.transit_realtime.StopSelector.decode(reader, reader.uint32(), undefined, long + 1);
                             break;
                         }
                     case 2: {
-                            message.end_stop_selector = $root.transit_realtime.StopSelector.decode(reader, reader.uint32());
+                            message.end_stop_selector = $root.transit_realtime.StopSelector.decode(reader, reader.uint32(), undefined, long + 1);
                             break;
                         }
                     case 3: {
@@ -8805,7 +9097,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                     case 4: {
                             if (!(message.replacement_stops && message.replacement_stops.length))
                                 message.replacement_stops = [];
-                            message.replacement_stops.push($root.transit_realtime.ReplacementStop.decode(reader, reader.uint32()));
+                            message.replacement_stops.push($root.transit_realtime.ReplacementStop.decode(reader, reader.uint32(), undefined, long + 1));
                             break;
                         }
                     case 5: {
@@ -8817,7 +9109,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                             break;
                         }
                     default:
-                        reader.skipType(tag & 7);
+                        reader.skipType(tag & 7, long);
                         break;
                     }
                 }
@@ -8848,16 +9140,20 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            Modification.verify = function verify(message) {
+            Modification.verify = function verify(message, long) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
                 if (message.start_stop_selector != null && message.hasOwnProperty("start_stop_selector")) {
-                    let error = $root.transit_realtime.StopSelector.verify(message.start_stop_selector);
+                    let error = $root.transit_realtime.StopSelector.verify(message.start_stop_selector, long + 1);
                     if (error)
                         return "start_stop_selector." + error;
                 }
                 if (message.end_stop_selector != null && message.hasOwnProperty("end_stop_selector")) {
-                    let error = $root.transit_realtime.StopSelector.verify(message.end_stop_selector);
+                    let error = $root.transit_realtime.StopSelector.verify(message.end_stop_selector, long + 1);
                     if (error)
                         return "end_stop_selector." + error;
                 }
@@ -8868,7 +9164,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                     if (!Array.isArray(message.replacement_stops))
                         return "replacement_stops: array expected";
                     for (let i = 0; i < message.replacement_stops.length; ++i) {
-                        let error = $root.transit_realtime.ReplacementStop.verify(message.replacement_stops[i]);
+                        let error = $root.transit_realtime.ReplacementStop.verify(message.replacement_stops[i], long + 1);
                         if (error)
                             return "replacement_stops." + error;
                     }
@@ -8890,19 +9186,23 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} object Plain object
              * @returns {transit_realtime.TripModifications.Modification} Modification
              */
-            Modification.fromObject = function fromObject(object) {
+            Modification.fromObject = function fromObject(object, long) {
                 if (object instanceof $root.transit_realtime.TripModifications.Modification)
                     return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let message = new $root.transit_realtime.TripModifications.Modification();
                 if (object.start_stop_selector != null) {
                     if (typeof object.start_stop_selector !== "object")
                         throw TypeError(".transit_realtime.TripModifications.Modification.start_stop_selector: object expected");
-                    message.start_stop_selector = $root.transit_realtime.StopSelector.fromObject(object.start_stop_selector);
+                    message.start_stop_selector = $root.transit_realtime.StopSelector.fromObject(object.start_stop_selector, long + 1);
                 }
                 if (object.end_stop_selector != null) {
                     if (typeof object.end_stop_selector !== "object")
                         throw TypeError(".transit_realtime.TripModifications.Modification.end_stop_selector: object expected");
-                    message.end_stop_selector = $root.transit_realtime.StopSelector.fromObject(object.end_stop_selector);
+                    message.end_stop_selector = $root.transit_realtime.StopSelector.fromObject(object.end_stop_selector, long + 1);
                 }
                 if (object.propagated_modification_delay != null)
                     message.propagated_modification_delay = object.propagated_modification_delay | 0;
@@ -8913,7 +9213,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                     for (let i = 0; i < object.replacement_stops.length; ++i) {
                         if (typeof object.replacement_stops[i] !== "object")
                             throw TypeError(".transit_realtime.TripModifications.Modification.replacement_stops: object expected");
-                        message.replacement_stops[i] = $root.transit_realtime.ReplacementStop.fromObject(object.replacement_stops[i]);
+                        message.replacement_stops[i] = $root.transit_realtime.ReplacementStop.fromObject(object.replacement_stops[i], long + 1);
                     }
                 }
                 if (object.service_alert_id != null)
@@ -9028,7 +9328,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                 this.trip_ids = [];
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                        if (properties[keys[i]] != null)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
                             this[keys[i]] = properties[keys[i]];
             }
 
@@ -9104,9 +9404,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            SelectedTrips.decode = function decode(reader, length, error) {
+            SelectedTrips.decode = function decode(reader, length, error, long) {
                 if (!(reader instanceof $Reader))
                     reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.TripModifications.SelectedTrips();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
@@ -9124,7 +9428,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                             break;
                         }
                     default:
-                        reader.skipType(tag & 7);
+                        reader.skipType(tag & 7, long);
                         break;
                     }
                 }
@@ -9155,9 +9459,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
              */
-            SelectedTrips.verify = function verify(message) {
+            SelectedTrips.verify = function verify(message, long) {
                 if (typeof message !== "object" || message === null)
                     return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
                 if (message.trip_ids != null && message.hasOwnProperty("trip_ids")) {
                     if (!Array.isArray(message.trip_ids))
                         return "trip_ids: array expected";
@@ -9179,9 +9487,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
              * @param {Object.<string,*>} object Plain object
              * @returns {transit_realtime.TripModifications.SelectedTrips} SelectedTrips
              */
-            SelectedTrips.fromObject = function fromObject(object) {
+            SelectedTrips.fromObject = function fromObject(object, long) {
                 if (object instanceof $root.transit_realtime.TripModifications.SelectedTrips)
                     return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
                 let message = new $root.transit_realtime.TripModifications.SelectedTrips();
                 if (object.trip_ids) {
                     if (!Array.isArray(object.trip_ids))
@@ -9275,7 +9587,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
         function StopSelector(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -9350,9 +9662,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        StopSelector.decode = function decode(reader, length, error) {
+        StopSelector.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.StopSelector();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -9368,7 +9684,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -9399,9 +9715,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        StopSelector.verify = function verify(message) {
+        StopSelector.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.stop_sequence != null && message.hasOwnProperty("stop_sequence"))
                 if (!$util.isInteger(message.stop_sequence))
                     return "stop_sequence: integer expected";
@@ -9419,9 +9739,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.StopSelector} StopSelector
          */
-        StopSelector.fromObject = function fromObject(object) {
+        StopSelector.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.StopSelector)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.StopSelector();
             if (object.stop_sequence != null)
                 message.stop_sequence = object.stop_sequence >>> 0;
@@ -9504,7 +9828,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
         function ReplacementStop(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
                         this[keys[i]] = properties[keys[i]];
         }
 
@@ -9579,9 +9903,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ReplacementStop.decode = function decode(reader, length, error) {
+        ReplacementStop.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let end = length === undefined ? reader.len : reader.pos + length, message = new $root.transit_realtime.ReplacementStop();
             while (reader.pos < end) {
                 let tag = reader.uint32();
@@ -9597,7 +9925,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
                         break;
                     }
                 default:
-                    reader.skipType(tag & 7);
+                    reader.skipType(tag & 7, long);
                     break;
                 }
             }
@@ -9628,9 +9956,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ReplacementStop.verify = function verify(message) {
+        ReplacementStop.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
             if (message.travel_time_to_stop != null && message.hasOwnProperty("travel_time_to_stop"))
                 if (!$util.isInteger(message.travel_time_to_stop))
                     return "travel_time_to_stop: integer expected";
@@ -9648,9 +9980,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @param {Object.<string,*>} object Plain object
          * @returns {transit_realtime.ReplacementStop} ReplacementStop
          */
-        ReplacementStop.fromObject = function fromObject(object) {
+        ReplacementStop.fromObject = function fromObject(object, long) {
             if (object instanceof $root.transit_realtime.ReplacementStop)
                 return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
             let message = new $root.transit_realtime.ReplacementStop();
             if (object.travel_time_to_stop != null)
                 message.travel_time_to_stop = object.travel_time_to_stop | 0;
